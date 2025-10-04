@@ -17,9 +17,8 @@
 - Enrolled Classes:
   - Notices - created by course teacher for specific course
   - Materials - Shared by teacher
-  - Assignments - created by teacher and AI generated quiz after each section to unlock next section.
+  - Assignments - created by teacher and AI generated quiz random for each student after each section to unlock next section.
   - Discussions - Chatting group for that course.
-  - Class Schedule - Time table of that course
   - Attendance - for that course lectures and labs
 
 ## Chat Page
@@ -37,6 +36,7 @@
 # Faculty Portal:
 
 - Courses management - Create, Update, Delete courses, Create assignments, materials, notices, Present QR code for attendance
+- Time Table Management - Create, Update, Delete time tables for courses
 - Schedule management - Create, Update, Delete schedule
 - Student tracking - Hod can view for all courses, teachers can see for specific course Attendance, Grades, Applications
 - Communication tools - Notice posting, Form creation and management, Group creation and assigning student Group moderators
