@@ -1,4 +1,9 @@
-# 🎓 CampusHub
+<div align="center">
+  <img src="https://raw.githubusercontent.com/The-Tech-Tentacles/CampusHub/main/Docs/assets/logo.png" alt="CampusHub Logo" width="150"/>
+
+# CampusHub
+
+</div>
 
 <div align="center">
 
