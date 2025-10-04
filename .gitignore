@@ -1,0 +1,21 @@
+# Full stack Website
+# React, Next, Nodejs
+**/build/*
+**/dist/*
+**/out/*
+**/logs/*
+**/temp/*
+**/tmp/*
+**/public/uploads/*
+**/node_modules/*
+**/.next/*
+**/.nuxt/*
+**/.vercel/*
+**/.cache/*
+**/.vscode/*
+**/.idea/*
+**/.DS_Store
+**/Thumbs.db
+**/.env
+
+
