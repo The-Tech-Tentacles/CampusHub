@@ -1,6 +1,7 @@
 import { useAuthStore } from "@/stores/auth-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
 import {
   Bell,
@@ -12,41 +13,216 @@ import {
   Code,
   Calculator,
   Users,
+  AlertTriangle,
+  Info,
+  Eye,
+  ArrowRight,
 } from "lucide-react";
 
 export default function Dashboard() {
   const { user } = useAuthStore();
   const [, setLocation] = useLocation();
 
-  const upcomingClasses = [
-    {
-      id: "1",
-      title: "Data Structures Lab",
-      subject: "Data Structures",
-      time: "10:00 AM - 11:00 AM",
-      location: "Lab 301",
-      icon: Code,
-      color: "primary",
-    },
-    {
-      id: "2",
-      title: "Operating Systems Lecture",
-      subject: "Operating Systems",
-      time: "11:30 AM - 12:30 PM",
-      location: "Room 205",
-      icon: Calculator,
-      color: "coral",
-    },
-    {
-      id: "3",
-      title: "Database Management",
-      subject: "Database Management",
-      time: "4:00 PM - 5:00 PM",
-      location: "Room 104",
-      icon: BookOpen,
-      color: "purple",
-    },
-  ];
+  // Time-based greeting function
+  const getTimeBasedGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 6) return "Good Night ";
+    if (hour < 12) return "Good Morning ";
+    if (hour < 17) return "Good Afternoon ";
+    if (hour < 21) return "Good Evening ";
+    return "Good Night 🌙";
+  };
+
+  // Get today's day of the week
+  const getTodaySchedule = () => {
+    const days = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    const today = days[new Date().getDay()];
+
+    const timetable: Record<
+      string,
+      Record<string, { subject: string; room: string; type: string }>
+    > = {
+      Monday: {
+        "9:00 AM": {
+          subject: "Data Structures",
+          room: "Room 205",
+          type: "Lecture",
+        },
+        "11:00 AM": {
+          subject: "Operating Systems",
+          room: "Lab 301",
+          type: "Lab",
+        },
+        "2:00 PM": {
+          subject: "Database Management",
+          room: "Room 104",
+          type: "Lecture",
+        },
+      },
+      Tuesday: {
+        "10:00 AM": {
+          subject: "Computer Networks",
+          room: "Room 302",
+          type: "Lecture",
+        },
+        "1:00 PM": {
+          subject: "Software Engineering",
+          room: "Room 201",
+          type: "Lecture",
+        },
+        "3:00 PM": { subject: "Data Structures", room: "Lab 301", type: "Lab" },
+      },
+      Wednesday: {
+        "9:00 AM": {
+          subject: "Database Management",
+          room: "Lab 205",
+          type: "Lab",
+        },
+        "12:00 PM": {
+          subject: "Computer Architecture",
+          room: "Room 105",
+          type: "Lecture",
+        },
+      },
+      Thursday: {
+        "10:00 AM": {
+          subject: "Operating Systems",
+          room: "Room 302",
+          type: "Lecture",
+        },
+        "2:00 PM": {
+          subject: "Software Engineering",
+          room: "Lab 401",
+          type: "Lab",
+        },
+      },
+      Friday: {
+        "9:00 AM": {
+          subject: "Computer Networks",
+          room: "Lab 303",
+          type: "Lab",
+        },
+        "11:00 AM": { subject: "Seminar", room: "Auditorium", type: "Seminar" },
+      },
+    };
+
+    const todayClasses = timetable[today] || {};
+
+    return Object.entries(todayClasses).map(([time, classInfo], index) => {
+      const getIcon = (type: string) => {
+        switch (type) {
+          case "Lab":
+            return Code;
+          case "Seminar":
+            return Users;
+          default:
+            return BookOpen;
+        }
+      };
+
+      const getColor = (type: string) => {
+        switch (type) {
+          case "Lab":
+            return "primary";
+          case "Seminar":
+            return "purple";
+          default:
+            return "coral";
+        }
+      };
+
+      return {
+        id: `today-${index + 1}`,
+        title: `${classInfo.subject} ${classInfo.type}`,
+        subject: classInfo.subject,
+        time: time,
+        location: classInfo.room,
+        type: classInfo.type,
+        icon: getIcon(classInfo.type),
+        color: getColor(classInfo.type),
+      };
+    });
+  };
+
+  // Recent notices - only today's notices
+  const getTodayNotices = () => {
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
+
+    const allNotices = [
+      {
+        id: "1",
+        title: "Emergency: Campus Closure Due to Weather Alert",
+        content:
+          "Due to severe weather conditions expected tomorrow, all classes and campus activities are suspended.",
+        createdBy: "Dr. Sarah Johnson",
+        type: "urgent" as const,
+        publishedAt: new Date().toISOString(), // Today
+        isRead: false,
+      },
+      {
+        id: "2",
+        title: "Library Timings Extended for Exam Week",
+        content:
+          "To support students during the examination period, the central library will extend its operating hours.",
+        createdBy: "Library Administration",
+        type: "important" as const,
+        publishedAt: new Date().toISOString(), // Today
+        isRead: false,
+      },
+      {
+        id: "3",
+        title: "Mid-Semester Examination Schedule Released",
+        content:
+          "The schedule for mid-semester examinations has been finalized and is now available on the student portal.",
+        createdBy: "Academic Office",
+        type: "general" as const,
+        publishedAt: "2024-01-14T14:20:00Z", // Yesterday
+        isRead: false,
+      },
+    ];
+
+    // Filter notices published today
+    return allNotices.filter((notice) => {
+      const noticeDate = new Date(notice.publishedAt)
+        .toISOString()
+        .split("T")[0];
+      return noticeDate === today;
+    });
+  };
+
+  const todaySchedule = getTodaySchedule();
+  const todayNotices = getTodayNotices();
+
+  // Helper functions for notice styling
+  const getNoticeIcon = (type: "urgent" | "important" | "general") => {
+    switch (type) {
+      case "urgent":
+        return AlertTriangle;
+      case "important":
+        return Info;
+      case "general":
+        return Clock;
+    }
+  };
+
+  const getNoticeColor = (type: "urgent" | "important" | "general") => {
+    switch (type) {
+      case "urgent":
+        return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800";
+      case "important":
+        return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800";
+      case "general":
+        return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800";
+    }
+  };
 
   // Get current time and date
   const now = new Date();
@@ -64,17 +240,13 @@ export default function Dashboard() {
 
   const stats = [
     {
-      title: "Unread Notices",
-      value: "3",
-      icon: Bell,
-      description: "2 new today | urgent 1",
-      color: "text-chart-1",
-    },
-    {
       title: "Classes Today",
-      value: "4",
+      value: todaySchedule.length.toString(),
       icon: Calendar,
-      description: "Attendance coming soon",
+      description:
+        todaySchedule.length > 0
+          ? "View full timetable"
+          : "No classes scheduled",
       color: "text-chart-3",
     },
     {
@@ -102,7 +274,7 @@ export default function Dashboard() {
         <div className="relative bg-card/80 backdrop-blur-sm border rounded-xl p-3 sm:p-6">
           <div className="text-center">
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-              Welcome back, {user?.name || "Student"}!
+              {getTimeBasedGreeting()}, {user?.name || "Student"}!
             </h2>
             <p className="text-muted-foreground text-sm sm:text-base">
               {currentDate} • {currentTime}
@@ -111,7 +283,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => (
           <Card
             key={stat.title}
@@ -154,37 +326,159 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-1">
-        {/* <Card>
+      {/* Recent Notices - Today's Notices Only */}
+      {todayNotices.length > 0 && (
+        <Card className="hover:shadow-lg transition-all duration-300">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Recent Notices</CardTitle>
-              <Button variant="ghost" size="sm" data-testid="button-view-all-notices">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900 flex-shrink-0">
+                  <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-base sm:text-lg">
+                    Recent Notices
+                  </CardTitle>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    {todayNotices.length} new notice
+                    {todayNotices.length !== 1 ? "s" : ""} today
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2"
+                onClick={() => setLocation("/notices")}
+                data-testid="button-view-all-notices"
+              >
+                <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 View All
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {recentNotices.map((notice) => (
-              <div
-                key={notice.id}
-                className="flex items-start gap-3 p-3 rounded-lg hover-elevate active-elevate-2 cursor-pointer"
-                data-testid={`notice-${notice.id}`}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-medium text-sm">{notice.title}</h4>
-                    {notice.status === "unread" && (
-                      <div className="h-2 w-2 rounded-full bg-primary" />
-                    )}
+          <CardContent className="space-y-3 sm:space-y-4">
+            {todayNotices.map((notice) => {
+              const IconComponent = getNoticeIcon(notice.type);
+              return (
+                <div
+                  key={notice.id}
+                  className="group rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all duration-200 border border-border/50 hover:border-border overflow-hidden cursor-pointer"
+                  data-testid={`notice-${notice.id}`}
+                  onClick={() => setLocation("/notices")}
+                >
+                  {/* Mobile Layout */}
+                  <div className="flex sm:hidden flex-col p-3 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={`p-2 rounded-lg flex-shrink-0 ${
+                          notice.type === "urgent"
+                            ? "bg-red-100 dark:bg-red-900"
+                            : notice.type === "important"
+                            ? "bg-amber-100 dark:bg-amber-900"
+                            : "bg-blue-100 dark:bg-blue-900"
+                        }`}
+                      >
+                        <IconComponent
+                          className={`h-4 w-4 ${
+                            notice.type === "urgent"
+                              ? "text-red-600 dark:text-red-400"
+                              : notice.type === "important"
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-blue-600 dark:text-blue-400"
+                          }`}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h4 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">
+                            {notice.title}
+                          </h4>
+                          {!notice.isRead && (
+                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse flex-shrink-0 mt-1" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                          {notice.content}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <Badge
+                            variant="secondary"
+                            className={`text-[10px] px-2 py-0.5 ${getNoticeColor(
+                              notice.type
+                            )}`}
+                          >
+                            {notice.type.toUpperCase()}
+                          </Badge>
+                          <p className="text-xs text-muted-foreground">
+                            by {notice.createdBy}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">{notice.date}</p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card> */}
 
+                  {/* Desktop Layout */}
+                  <div className="hidden sm:flex items-start gap-4 p-4">
+                    <div
+                      className={`p-3 rounded-lg flex-shrink-0 ${
+                        notice.type === "urgent"
+                          ? "bg-red-100 dark:bg-red-900"
+                          : notice.type === "important"
+                          ? "bg-amber-100 dark:bg-amber-900"
+                          : "bg-blue-100 dark:bg-blue-900"
+                      }`}
+                    >
+                      <IconComponent
+                        className={`h-5 w-5 ${
+                          notice.type === "urgent"
+                            ? "text-red-600 dark:text-red-400"
+                            : notice.type === "important"
+                            ? "text-amber-600 dark:text-amber-400"
+                            : "text-blue-600 dark:text-blue-400"
+                        }`}
+                      />
+                    </div>
+                    <div className="flex flex-1 min-w-0 justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-2 mb-2">
+                          <h4 className="font-semibold text-foreground text-base line-clamp-1">
+                            {notice.title}
+                          </h4>
+                          {!notice.isRead && (
+                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse flex-shrink-0 mt-2" />
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                          {notice.content}
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <Badge
+                            variant="secondary"
+                            className={`text-xs px-2 py-1 ${getNoticeColor(
+                              notice.type
+                            )}`}
+                          >
+                            {notice.type.toUpperCase()}
+                          </Badge>
+                          <p className="text-sm text-muted-foreground">
+                            by {notice.createdBy}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center ml-4">
+                        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-6 md:grid-cols-1">
         <Card className="hover:shadow-lg transition-all duration-300">
           <CardContent className="p-3 sm:p-6">
             {/* Header Section */}
@@ -195,10 +489,11 @@ export default function Dashboard() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="text-base sm:text-lg font-semibold text-foreground">
-                    Today's Schedule
+                    Today's Timetable
                   </h3>
                   <p className="text-xs sm:text-sm text-muted-foreground">
-                    3 upcoming events
+                    {todaySchedule.length} class
+                    {todaySchedule.length !== 1 ? "es" : ""} scheduled
                   </p>
                 </div>
                 <Button
@@ -208,25 +503,67 @@ export default function Dashboard() {
                   data-testid="button-view-schedule"
                   onClick={() => setLocation("/timetable")}
                 >
-                  View All
+                  View All Days
                 </Button>
               </div>
             </div>
 
             {/* Schedule Items */}
             <div className="space-y-3 sm:space-y-4">
-              {upcomingClasses.map((event, index) => (
-                <div
-                  key={event.id}
-                  className="group rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all duration-200 border border-border/50 hover:border-border overflow-hidden"
-                  data-testid={`class-${event.id}`}
-                >
-                  {/* Mobile Layout */}
-                  <div className="flex sm:hidden flex-col p-3 space-y-3">
-                    {/* Top Row: Icon, Title, and Time */}
-                    <div className="flex items-center gap-3">
+              {todaySchedule.length > 0 ? (
+                todaySchedule.map((event, index) => (
+                  <div
+                    key={event.id}
+                    className="group rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all duration-200 border border-border/50 hover:border-border overflow-hidden"
+                    data-testid={`class-${event.id}`}
+                  >
+                    {/* Mobile Layout */}
+                    <div className="flex sm:hidden flex-col p-3 space-y-3">
+                      {/* Top Row: Icon, Title, and Time */}
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`p-2 rounded-lg flex-shrink-0 ${
+                            event.color === "coral"
+                              ? "bg-red-100 dark:bg-red-900"
+                              : event.color === "primary"
+                              ? "bg-blue-100 dark:bg-blue-900"
+                              : "bg-purple-100 dark:bg-purple-900"
+                          }`}
+                        >
+                          <event.icon
+                            className={`h-4 w-4 ${
+                              event.color === "coral"
+                                ? "text-red-600 dark:text-red-400"
+                                : event.color === "primary"
+                                ? "text-blue-600 dark:text-blue-400"
+                                : "text-purple-600 dark:text-purple-400"
+                            }`}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-foreground text-sm leading-tight">
+                            {event.title}
+                          </h4>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <p className="font-bold text-foreground text-xs bg-primary/20 px-2 py-1 rounded-md">
+                            {event.time}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Bottom Row: Subject and Location */}
+                      <div className="flex items-center gap-2 text-muted-foreground text-xs pl-11">
+                        <span className="truncate">{event.subject}</span>
+                        <span>•</span>
+                        <span className="truncate">{event.location}</span>
+                      </div>
+                    </div>
+
+                    {/* Desktop Layout */}
+                    <div className="hidden sm:flex items-center gap-4 p-4">
                       <div
-                        className={`p-2 rounded-lg flex-shrink-0 ${
+                        className={`p-3 rounded-lg flex-shrink-0 ${
                           event.color === "coral"
                             ? "bg-red-100 dark:bg-red-900"
                             : event.color === "primary"
@@ -235,7 +572,7 @@ export default function Dashboard() {
                         }`}
                       >
                         <event.icon
-                          className={`h-4 w-4 ${
+                          className={`h-5 w-5 ${
                             event.color === "coral"
                               ? "text-red-600 dark:text-red-400"
                               : event.color === "primary"
@@ -244,66 +581,45 @@ export default function Dashboard() {
                           }`}
                         />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-foreground text-sm leading-tight">
-                          {event.title}
-                        </h4>
-                      </div>
-                      <div className="flex-shrink-0">
-                        <p className="font-bold text-foreground text-xs bg-primary/20 px-2 py-1 rounded-md">
-                          {event.time}
-                        </p>
-                      </div>
-                    </div>
 
-                    {/* Bottom Row: Subject and Location */}
-                    <div className="flex items-center gap-2 text-muted-foreground text-xs pl-11">
-                      <span className="truncate">{event.subject}</span>
-                      <span>•</span>
-                      <span className="truncate">{event.location}</span>
-                    </div>
-                  </div>
-
-                  {/* Desktop Layout */}
-                  <div className="hidden sm:flex items-center gap-4 p-4">
-                    <div
-                      className={`p-3 rounded-lg flex-shrink-0 ${
-                        event.color === "coral"
-                          ? "bg-red-100 dark:bg-red-900"
-                          : event.color === "primary"
-                          ? "bg-blue-100 dark:bg-blue-900"
-                          : "bg-purple-100 dark:bg-purple-900"
-                      }`}
-                    >
-                      <event.icon
-                        className={`h-5 w-5 ${
-                          event.color === "coral"
-                            ? "text-red-600 dark:text-red-400"
-                            : event.color === "primary"
-                            ? "text-blue-600 dark:text-blue-400"
-                            : "text-purple-600 dark:text-purple-400"
-                        }`}
-                      />
-                    </div>
-
-                    <div className="flex flex-1 min-w-0 flex-row items-center justify-between">
-                      <div className="flex flex-col items-start min-w-0">
-                        <h4 className="font-semibold text-foreground text-base">
-                          {event.title}
-                        </h4>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {event.subject} • {event.location}
-                        </p>
-                      </div>
-                      <div className="flex items-center ml-4">
-                        <p className="font-bold text-foreground text-base bg-primary/15 px-3 py-1.5 rounded-md">
-                          {event.time}
-                        </p>
+                      <div className="flex flex-1 min-w-0 flex-row items-center justify-between">
+                        <div className="flex flex-col items-start min-w-0">
+                          <h4 className="font-semibold text-foreground text-base">
+                            {event.title}
+                          </h4>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {event.subject} • {event.location}
+                          </p>
+                        </div>
+                        <div className="flex items-center ml-4">
+                          <p className="font-bold text-foreground text-base bg-primary/15 px-3 py-1.5 rounded-md">
+                            {event.time}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                  <h4 className="text-lg font-medium text-muted-foreground mb-2">
+                    No Classes Today
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Enjoy your free day! Check the full timetable for upcoming
+                    classes.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLocation("/timetable")}
+                    className="text-xs px-4 py-2"
+                  >
+                    View Full Timetable
+                  </Button>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>

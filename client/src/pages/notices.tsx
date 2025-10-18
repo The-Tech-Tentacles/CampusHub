@@ -84,7 +84,7 @@ export default function Notices() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
-  const [activeTab, setActiveTab] = useState("recent");
+  const [activeTab, setActiveTab] = useState("All");
 
   const canCreateNotice =
     user?.role && ["FACULTY", "HOD", "DEAN", "ADMIN"].includes(user.role);
@@ -172,16 +172,12 @@ export default function Notices() {
   // Tab-based filtering
   const getTabNotices = (tab: string) => {
     switch (tab) {
-      case "recent":
+      case "All":
         return searchedNotices.sort(
           (a, b) =>
             new Date(b.publishedAt).getTime() -
             new Date(a.publishedAt).getTime()
         );
-      case "unread":
-        return searchedNotices.filter((n) => !n.isRead);
-      case "urgent":
-        return searchedNotices.filter((n) => n.type === "urgent");
       case "my-dept":
         return searchedNotices.filter(
           (n) => n.scope === "DEPARTMENT" || n.scope === "GLOBAL"
@@ -317,44 +313,13 @@ export default function Notices() {
         onValueChange={setActiveTab}
         className="space-y-4"
       >
-        <TabsList className="grid w-full grid-cols-4 h-auto p-1">
+        <TabsList className="grid w-full grid-cols-2 h-auto p-1">
           <TabsTrigger
-            value="recent"
+            value="All"
             className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3"
           >
-            <Clock className="h-4 w-4" />
-            <span className="text-xs sm:text-sm">Recent</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="unread"
-            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3"
-          >
-            {/* <div className="h-2 w-2 rounded-full bg-blue-500" /> */}
             <AlarmClock className="h-4 w-4" />
-            <div className="flex items-center gap-1">
-              <span className="text-xs sm:text-sm">Unread</span>
-              <Badge
-                variant="secondary"
-                className="text-[10px] sm:text-xs h-4 min-w-4 sm:h-5 sm:min-w-5 px-1 sm:px-2 rounded-full"
-              >
-                {searchedNotices.filter((n) => !n.isRead).length}
-              </Badge>
-            </div>
-          </TabsTrigger>
-          <TabsTrigger
-            value="urgent"
-            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3"
-          >
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-            <div className="flex items-center gap-1">
-              <span className="text-xs sm:text-sm">Urgent</span>
-              <Badge
-                variant="destructive"
-                className="text-[10px] sm:text-xs h-4 min-w-4 sm:h-5 sm:min-w-5 px-1 sm:px-2 rounded-full"
-              >
-                {searchedNotices.filter((n) => n.type === "urgent").length}
-              </Badge>
-            </div>
+            <span className="text-xs sm:text-sm">All</span>
           </TabsTrigger>
           <TabsTrigger
             value="my-dept"

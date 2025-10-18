@@ -8,7 +8,8 @@ import { useAuthStore } from "@/stores/auth-store";
 export default function Schedule() {
   const { user } = useAuthStore();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const canCreateEvent = user?.role && ["FACULTY", "HOD", "DEAN", "ADMIN"].includes(user.role);
+  const canCreateEvent =
+    user?.role && ["FACULTY", "HOD", "DEAN", "ADMIN"].includes(user.role);
 
   const events = [
     {
@@ -69,12 +70,8 @@ export default function Schedule() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 m-2">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-serif font-bold">Schedule & Events</h1>
-          <p className="text-muted-foreground">View your academic calendar and events</p>
-        </div>
         {canCreateEvent && (
           <Button data-testid="button-create-event">
             <Plus className="h-4 w-4 mr-2" />
@@ -88,7 +85,10 @@ export default function Schedule() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+              {currentDate.toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric",
+              })}
             </CardTitle>
             <div className="flex gap-2">
               <Button
@@ -136,14 +136,23 @@ export default function Schedule() {
                     </div>
                     <div className="space-y-1 text-sm">
                       <p className="text-muted-foreground">
-                        📅 {new Date(event.date).toLocaleDateString()} • {event.time}
+                        📅 {new Date(event.date).toLocaleDateString()} •{" "}
+                        {event.time}
                       </p>
-                      <p className="text-muted-foreground">📍 {event.location}</p>
-                      <p className="text-muted-foreground">👤 {event.instructor}</p>
+                      <p className="text-muted-foreground">
+                        📍 {event.location}
+                      </p>
+                      <p className="text-muted-foreground">
+                        👤 {event.instructor}
+                      </p>
                     </div>
                   </div>
                   {canCreateEvent && (
-                    <Button variant="outline" size="sm" data-testid={`button-edit-event-${event.id}`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      data-testid={`button-edit-event-${event.id}`}
+                    >
                       Edit
                     </Button>
                   )}
@@ -163,14 +172,18 @@ export default function Schedule() {
             <div className="flex items-center justify-between p-3 rounded-lg border">
               <div>
                 <h4 className="font-medium">Mid-Semester Examinations</h4>
-                <p className="text-sm text-muted-foreground">Feb 15 - Feb 25, 2024</p>
+                <p className="text-sm text-muted-foreground">
+                  Feb 15 - Feb 25, 2024
+                </p>
               </div>
               <Badge>EXAM_PERIOD</Badge>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg border">
               <div>
                 <h4 className="font-medium">Spring Break</h4>
-                <p className="text-sm text-muted-foreground">Mar 1 - Mar 7, 2024</p>
+                <p className="text-sm text-muted-foreground">
+                  Mar 1 - Mar 7, 2024
+                </p>
               </div>
               <Badge variant="secondary">HOLIDAY</Badge>
             </div>
