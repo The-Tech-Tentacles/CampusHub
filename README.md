@@ -1,124 +1,182 @@
-<div align="center">
-  <img src="https://raw.githubusercontent.com/The-Tech-Tentacles/CampusHub/main/Docs/assets/logo.png" alt="CampusHub Logo" width="150"/>
+# CampusHub - University Management Platform
 
-# CampusHub
+A modern, full-stack university management platform built with React, TypeScript, Express, and PostgreSQL.
 
-</div>
+## 🚀 Features
 
-<div align="center">
+- **Dashboard**: Comprehensive overview with real-time information
+- **Schedule Management**: Interactive timetables and class schedules
+- **User Management**: Role-based access for students, faculty, and administrators
+- **Forms & Applications**: Digital form submission and management
+- **Notifications**: Real-time notification system
+- **Dark Mode**: Beautiful dark/light theme support
+- **Responsive Design**: Mobile-first, works on all devices
 
-[![License: Custom](https://img.shields.io/badge/License-Custom-blue.svg)](LICENSE)
-[![Status: Development](https://img.shields.io/badge/Status-Development-yellow.svg)]()
-[![Platform: Web](https://img.shields.io/badge/Platform-Web-green.svg)]()
+## 🛠️ Tech Stack
 
-</div>
+### Frontend
 
-## 🌟 Overview
+- **React 18** with TypeScript
+- **Vite** for fast development and building
+- **Tailwind CSS** for styling
+- **Radix UI** for accessible components
+- **React Router** for navigation
+- **Zustand** for state management
 
-CampusHub is a modern, comprehensive university management platform designed to streamline academic operations for students, faculty, and administrators. Built exclusively for universities, it provides an integrated solution for notices, forms, applications, course management, and communication.
+### Backend
 
-## 🚀 Key Features
+- **Express.js** with TypeScript
+- **PostgreSQL** with Drizzle ORM
+- **Express Session** for authentication
+- **RESTful API** architecture
 
-### For Students
+## 📋 Prerequisites
 
-- **📢 Notices Dashboard**: Department-specific and university-wide announcements
-- **📋 Forms Management**: Digital forms with completion tracking and reminders
-- **📅 Schedule View**: Daily schedules and academic calendar
-- **🎓 Course Portal**: Materials, assignments, discussions, and attendance
-- **💬 Group Chat**: Discord/Slack-style communication
-- **👤 Profile Management**: QR attendance scanner, grades, and applications
+- **Node.js** (v18 or higher)
+- **PostgreSQL** (v12 or higher)
+- **npm** or **yarn**
 
-### For Faculty
+## 🚀 Getting Started
 
-- **👩‍🏫 Profile Management**: Manage personal and academic information
-- **📢 Notices Dashboard**: Department-specific and university-wide announcements for faculty
-- **📅 Schedule & Calendar Management**: Create academic events and course timetables
-- **📚 Course Management**: Create and manage courses, assignments, and materials
-- **📊 Student Tracking**: Attendance, grades, and application monitoring
-- **🔔 Communication Tools**: Notice posting and form creation
-- **📱 QR Attendance**: Generate attendance QR codes
-
-### For Administrators
-
-- **🏛️ System Management**: University-wide oversight and control
-- **📋 Approval Workflows**: Notice and form approval systems
-- **📈 Analytics Dashboard**: Comprehensive reporting and insights
-
-## 🎯 Mission
-
-_"Empowering universities with technology to create seamless academic experiences for students, faculty, and administrators."_
-
-## 🏢 About The Tech Tentacles
-
-The Tech Tentacles is a startup organization focused on creating innovative educational technology solutions. We believe in making education more accessible, organized, and efficient through cutting-edge technology.
-
-**Vision**: To revolutionize university management systems with intuitive, scalable, and secure platforms.
-
-## 🛠️ Technology Stack
-
-- **Frontend**: React.js, TypeScript, Tailwind CSS
-- **Backend**: Node.js, Express.js, TypeScript
-- **Database**: PostgreSQL
-- **Authentication**: JWT with role-based access control
-- **Real-time**: Socket.io for live features
-- **File Storage**: Cloud-based solutions
-- **Deployment**: Docker, CI/CD pipelines
-
-## 📦 Installation
-
-### Prerequisites
-
-- Node.js (v18 or higher)
-- PostgreSQL
-- Git
-
-### Quick Start
+### 1. Clone the repository
 
 ```bash
-# Clone the repository
-git clone https://github.com/The-Tech-Tentacles/CampusHub.git
+git clone <your-repo-url>
 cd CampusHub
+```
 
-# Install dependencies
-npm run install:all
+### 2. Install dependencies
 
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your configuration
+```bash
+npm install
+```
 
-# Start development servers
+### 3. Set up environment variables
+
+Create a `.env` file in the root directory:
+
+```env
+DATABASE_URL="postgresql://username:password@localhost:5432/campushub"
+SESSION_SECRET="your-session-secret-here"
+NODE_ENV="development"
+PORT="5000"
+```
+
+### 4. Set up the database
+
+```bash
+# Push the database schema
+npm run db:push
+```
+
+### 5. Start development servers
+
+#### Option 1: Frontend only (React + Vite)
+
+```bash
 npm run dev
 ```
 
-## 🚧 Development Status
+Visit http://localhost:5173
 
-**Current Phase**: MVP Development
+#### Option 2: Backend only (Express server)
 
-### MVP Features (In Progress)
+```bash
+npm run dev:server
+```
 
-- [x] Project setup and architecture
-- [ ] User authentication system
-- [ ] Notices management
-- [ ] Forms system
-- [ ] Profile and applications
-- [ ] Basic dashboard
+Server runs on http://localhost:5000
 
-### Upcoming Features
+#### Option 3: Full-stack development
 
-- Course management system (LMS)
-- Advanced chat functionality
-- Mobile applications
-- Analytics dashboard
-- Integration APIs
+```bash
+npm run dev:full
+```
 
-See [development.md](Docs/development.md) for detailed roadmap and progress.
+Server runs on http://localhost:5000 with frontend served
 
-## 📖 Documentation
+## 📝 Available Scripts
 
-- [Development Guide](Docs/development.md) - Detailed development roadmap and guidelines
-- [Project Draft](Docs/CampusHub_Draft.md) - Initial project specifications
-- [API Documentation](Docs/api.md) - Coming soon
-- [User Guide](Docs/user-guide.md) - Coming soon
+- `npm run dev` - Start Vite dev server (frontend)
+- `npm run dev:server` - Start Express server (backend)
+- `npm run dev:full` - Start full-stack application
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run check` - Type checking
+- `npm run db:push` - Push database schema
+
+## 🏗️ Project Structure
+
+```
+├── client/                 # Frontend React application
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── pages/         # Page components
+│   │   ├── hooks/         # Custom React hooks
+│   │   ├── stores/        # Zustand state stores
+│   │   └── lib/           # Utility functions
+│   ├── index.html
+│   └── ...
+├── server/                # Backend Express application
+│   ├── index.ts          # Server entry point
+│   ├── routes.ts         # API routes
+│   ├── db.ts            # Database configuration
+│   └── ...
+├── shared/               # Shared types and schemas
+├── package.json
+├── vite.config.ts
+└── README.md
+```
+
+## 🎨 Key Features
+
+### Dashboard
+
+- Real-time current lecture information
+- Dynamic time display
+- Colorful stats cards
+- Responsive design with dark mode
+
+### Schedule Management
+
+- Interactive timetable view
+- Class schedule with locations and timings
+- Subject-specific color coding
+- Mobile-friendly layout
+
+### User Management
+
+- Role-based authentication (Student, Faculty, Admin)
+- Profile management
+- Permission-based UI rendering
+
+## 🌙 Dark Mode Support
+
+The application includes comprehensive dark mode support with:
+
+- Automatic system preference detection
+- Manual theme toggle
+- Consistent theming across all components
+- Proper contrast ratios for accessibility
+
+## 📱 Responsive Design
+
+Built mobile-first with Tailwind CSS:
+
+- Breakpoint-specific layouts
+- Touch-friendly interfaces
+- Optimized for all screen sizes
+- Progressive enhancement
+
+## 🔧 Configuration
+
+### Database Configuration
+
+The application uses Drizzle ORM with PostgreSQL. Configure your database connection in the `.env` file.
+
+### Vite Configuration
+
+Customize the Vite configuration in `vite.config.ts` for your development needs.
 
 ## 🤝 Contributing
 
@@ -157,5 +215,9 @@ This project is licensed under a Custom License - see the [LICENSE](LICENSE) fil
 ---
 
 <div align="center">
-  <strong>Built with 🚀 by The Tech Tentacles</strong>
+  <strong>Built with 🚀 by
+  <br />
+  Team: Rakesh Yadav
+  <br />
+  The Tech Tentacles</strong>
 </div>
