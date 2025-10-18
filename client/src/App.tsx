@@ -25,13 +25,17 @@ import AdminConfig from "@/pages/admin-config";
 import ComingSoon from "@/pages/coming-soon";
 import NotFound from "@/pages/not-found";
 
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+function ProtectedRoute({
+  component: Component,
+}: {
+  component: React.ComponentType;
+}) {
   const { isAuthenticated } = useAuthStore();
-  
+
   if (!isAuthenticated) {
     return <Redirect to="/login" />;
   }
-  
+
   return <Component />;
 }
 
@@ -47,9 +51,7 @@ function Router() {
       <Route path="/notices">
         {() => <ProtectedRoute component={Notices} />}
       </Route>
-      <Route path="/forms">
-        {() => <ProtectedRoute component={Forms} />}
-      </Route>
+      <Route path="/forms">{() => <ProtectedRoute component={Forms} />}</Route>
       <Route path="/schedule">
         {() => <ProtectedRoute component={Schedule} />}
       </Route>
@@ -81,7 +83,13 @@ function Router() {
         {() => <ProtectedRoute component={ComingSoon} />}
       </Route>
       <Route path="/">
-        {() => isAuthenticated ? <Redirect to="/dashboard" /> : <Redirect to="/login" />}
+        {() =>
+          isAuthenticated ? (
+            <Redirect to="/dashboard" />
+          ) : (
+            <Redirect to="/login" />
+          )
+        }
       </Route>
       <Route component={NotFound} />
     </Switch>
@@ -141,7 +149,7 @@ function MainLayout() {
             </div>
           </header>
           <main className="flex-1 overflow-auto">
-            <div className="container max-w-7xl mx-auto p-6">
+            <div className="container max-w-7xl mx-auto">
               <Router />
             </div>
           </main>

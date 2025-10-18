@@ -1,10 +1,26 @@
-import { useState, useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Filter, X, Clock, AlertTriangle, Info, Calendar, User, Eye } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Clock,
+  AlertTriangle,
+  AlarmClock,
+  Info,
+  Calendar,
+  User,
+  Eye,
+} from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import {
   Dialog,
@@ -24,22 +40,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 
 type NoticeType = "urgent" | "important" | "general";
 type NoticeScope = "GLOBAL" | "DEPARTMENT" | "YEAR" | "CLASS";
@@ -55,13 +55,6 @@ interface Notice {
   isRead: boolean;
   department?: string;
   year?: number;
-}
-
-interface FilterState {
-  types: NoticeType[];
-  scopes: NoticeScope[];
-  createdBy: string[];
-  dateRange: string;
 }
 
 const getTypeIcon = (type: NoticeType) => {
@@ -92,21 +85,16 @@ export default function Notices() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
   const [activeTab, setActiveTab] = useState("recent");
-  const [filters, setFilters] = useState<FilterState>({
-    types: [],
-    scopes: [],
-    createdBy: [],
-    dateRange: "",
-  });
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const canCreateNotice = user?.role && ["FACULTY", "HOD", "DEAN", "ADMIN"].includes(user.role);
+  const canCreateNotice =
+    user?.role && ["FACULTY", "HOD", "DEAN", "ADMIN"].includes(user.role);
 
   const notices: Notice[] = [
     {
       id: "1",
       title: "Emergency: Campus Closure Due to Weather Alert",
-      content: "Due to severe weather conditions expected tomorrow, all classes and campus activities are suspended. Students are advised to stay in their accommodations and follow safety protocols. The cafeteria will remain open with limited hours (8 AM - 6 PM). Emergency contact: +1-234-567-8900. Further updates will be shared via official channels.",
+      content:
+        "Due to severe weather conditions expected tomorrow, all classes and campus activities are suspended. Students are advised to stay in their accommodations and follow safety protocols. The cafeteria will remain open with limited hours (8 AM - 6 PM). Emergency contact: +1-234-567-8900. Further updates will be shared via official channels.",
       createdBy: "Dr. Sarah Johnson",
       type: "urgent",
       scope: "GLOBAL",
@@ -116,7 +104,8 @@ export default function Notices() {
     {
       id: "2",
       title: "Mid-Semester Examination Schedule Released",
-      content: "The schedule for mid-semester examinations has been finalized and is now available on the student portal. Students are required to check their exam timings, venues, and seat numbers before the examination week begins. Any discrepancies should be reported to the academic office within 48 hours. Study materials and guidelines are also available for download.",
+      content:
+        "The schedule for mid-semester examinations has been finalized and is now available on the student portal. Students are required to check their exam timings, venues, and seat numbers before the examination week begins. Any discrepancies should be reported to the academic office within 48 hours. Study materials and guidelines are also available for download.",
       createdBy: "Academic Office",
       type: "important",
       scope: "GLOBAL",
@@ -127,9 +116,10 @@ export default function Notices() {
     {
       id: "3",
       title: "Library Timings Extended for Exam Week",
-      content: "To support students during the examination period, the central library will extend its operating hours from 7:00 AM to 11:00 PM throughout the exam week. Additional study spaces have been arranged in the community hall. Students are encouraged to follow library rules and maintain silence in designated study areas.",
+      content:
+        "To support students during the examination period, the central library will extend its operating hours from 7:00 AM to 11:00 PM throughout the exam week. Additional study spaces have been arranged in the community hall. Students are encouraged to follow library rules and maintain silence in designated study areas.",
       createdBy: "Library Administration",
-      type: "general",
+      type: "urgent",
       scope: "GLOBAL",
       publishedAt: "2024-01-13T09:15:00Z",
       isRead: true,
@@ -137,7 +127,8 @@ export default function Notices() {
     {
       id: "4",
       title: "Guest Lecture: Future of AI and Quantum Computing",
-      content: "Join us for an exciting guest lecture by Prof. Michael Chen from MIT on 'The Convergence of AI and Quantum Computing: Shaping Tomorrow's Technology'. The session will cover cutting-edge research, career opportunities, and interactive Q&A. Venue: Main Auditorium, Date: January 20th, Time: 2:00 PM - 4:00 PM.",
+      content:
+        "Join us for an exciting guest lecture by Prof. Michael Chen from MIT on 'The Convergence of AI and Quantum Computing: Shaping Tomorrow's Technology'. The session will cover cutting-edge research, career opportunities, and interactive Q&A. Venue: Main Auditorium, Date: January 20th, Time: 2:00 PM - 4:00 PM.",
       createdBy: "Prof. David Williams",
       type: "important",
       scope: "DEPARTMENT",
@@ -148,7 +139,8 @@ export default function Notices() {
     {
       id: "5",
       title: "Annual Sports Day Registration Now Open",
-      content: "Get ready for the most exciting event of the year! Annual Sports Day registration is now live on the student portal. Choose from basketball, football, cricket, athletics, and many more events. Early bird registration gets exclusive merchandise. Deadline: January 25th. Let's make this sports day unforgettable!",
+      content:
+        "Get ready for the most exciting event of the year! Annual Sports Day registration is now live on the student portal. Choose from basketball, football, cricket, athletics, and many more events. Early bird registration gets exclusive merchandise. Deadline: January 25th. Let's make this sports day unforgettable!",
       createdBy: "Sports Committee",
       type: "general",
       scope: "GLOBAL",
@@ -158,7 +150,8 @@ export default function Notices() {
     {
       id: "6",
       title: "Scholarship Applications for Merit Students",
-      content: "Merit-based scholarship applications are now open for exceptional students. This scholarship covers 50% of tuition fees for the next semester. Eligibility: CGPA above 8.5, active participation in extracurricular activities, and clean disciplinary record. Application deadline: January 30th. Apply through the student portal.",
+      content:
+        "Merit-based scholarship applications are now open for exceptional students. This scholarship covers 50% of tuition fees for the next semester. Eligibility: CGPA above 8.5, active participation in extracurricular activities, and clean disciplinary record. Application deadline: January 30th. Apply through the student portal.",
       createdBy: "Financial Aid Office",
       type: "important",
       scope: "GLOBAL",
@@ -167,117 +160,44 @@ export default function Notices() {
     },
   ];
 
-  // Get unique values for filters
-  const uniqueCreatedBy = Array.from(new Set(notices.map(n => n.createdBy)));
-  
-  // Filter and search logic
-  const filteredNotices = useMemo(() => {
-    let filtered = notices;
-
-    // Search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(notice => 
-        notice.title.toLowerCase().includes(term) || 
-        notice.content.toLowerCase().includes(term)
-      );
-    }
-
-    // Type filter
-    if (filters.types.length > 0) {
-      filtered = filtered.filter(notice => filters.types.includes(notice.type));
-    }
-
-    // Scope filter
-    if (filters.scopes.length > 0) {
-      filtered = filtered.filter(notice => filters.scopes.includes(notice.scope));
-    }
-
-    // Created by filter
-    if (filters.createdBy.length > 0) {
-      filtered = filtered.filter(notice => filters.createdBy.includes(notice.createdBy));
-    }
-
-    // Date range filter
-    if (filters.dateRange) {
-      const now = new Date();
-      const filterDate = new Date();
-      
-      switch (filters.dateRange) {
-        case "today":
-          filterDate.setHours(0, 0, 0, 0);
-          filtered = filtered.filter(notice => new Date(notice.publishedAt) >= filterDate);
-          break;
-        case "week":
-          filterDate.setDate(now.getDate() - 7);
-          filtered = filtered.filter(notice => new Date(notice.publishedAt) >= filterDate);
-          break;
-        case "month":
-          filterDate.setMonth(now.getMonth() - 1);
-          filtered = filtered.filter(notice => new Date(notice.publishedAt) >= filterDate);
-          break;
-      }
-    }
-
-    return filtered;
-  }, [notices, searchTerm, filters]);
+  // Simple search logic
+  const searchedNotices = searchTerm
+    ? notices.filter(
+        (notice) =>
+          notice.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          notice.content.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : notices;
 
   // Tab-based filtering
   const getTabNotices = (tab: string) => {
     switch (tab) {
       case "recent":
-        return filteredNotices.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+        return searchedNotices.sort(
+          (a, b) =>
+            new Date(b.publishedAt).getTime() -
+            new Date(a.publishedAt).getTime()
+        );
       case "unread":
-        return filteredNotices.filter(n => !n.isRead);
+        return searchedNotices.filter((n) => !n.isRead);
       case "urgent":
-        return filteredNotices.filter(n => n.type === "urgent");
+        return searchedNotices.filter((n) => n.type === "urgent");
       case "my-dept":
-        return filteredNotices.filter(n => n.scope === "DEPARTMENT" || n.scope === "GLOBAL");
+        return searchedNotices.filter(
+          (n) => n.scope === "DEPARTMENT" || n.scope === "GLOBAL"
+        );
       default:
-        return filteredNotices;
+        return searchedNotices;
     }
   };
 
   const currentTabNotices = getTabNotices(activeTab);
 
-  const clearFilters = () => {
-    setFilters({
-      types: [],
-      scopes: [],
-      createdBy: [],
-      dateRange: "",
-    });
-  };
-
-  const hasActiveFilters = filters.types.length > 0 || filters.scopes.length > 0 || 
-    filters.createdBy.length > 0 || filters.dateRange;
-
-  const toggleFilter = (category: keyof FilterState, value: string) => {
-    setFilters(prev => {
-      if (category === 'dateRange') {
-        return {
-          ...prev,
-          [category]: prev[category] === value ? "" : value
-        };
-      }
-      
-      const currentArray = prev[category] as string[];
-      const newArray = currentArray.includes(value)
-        ? currentArray.filter(item => item !== value)
-        : currentArray.concat(value);
-      
-      return {
-        ...prev,
-        [category]: newArray
-      };
-    });
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
+
     if (diffInHours < 24) {
       return `${Math.floor(diffInHours)}h ago`;
     } else if (diffInHours < 168) {
@@ -288,7 +208,9 @@ export default function Notices() {
   };
 
   const truncateContent = (content: string, maxLength: number = 120) => {
-    return content.length > maxLength ? content.substring(0, maxLength) + "..." : content;
+    return content.length > maxLength
+      ? content.substring(0, maxLength) + "..."
+      : content;
   };
 
   const handleCreateNotice = () => {
@@ -297,14 +219,13 @@ export default function Notices() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6 p-3 md:p-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            📢 Campus Notices
+            📢 Notices
           </h1>
-          <p className="text-muted-foreground">Stay updated with the latest campus announcements</p>
         </div>
         {canCreateNotice && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -328,7 +249,11 @@ export default function Notices() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="content">Content</Label>
-                  <Textarea id="content" placeholder="Notice content" rows={5} />
+                  <Textarea
+                    id="content"
+                    placeholder="Notice content"
+                    rows={5}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -352,7 +277,9 @@ export default function Notices() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="GLOBAL">🌍 Global</SelectItem>
-                        <SelectItem value="DEPARTMENT">🏢 Department</SelectItem>
+                        <SelectItem value="DEPARTMENT">
+                          🏢 Department
+                        </SelectItem>
                         <SelectItem value="YEAR">📚 Year</SelectItem>
                         <SelectItem value="CLASS">👥 Class</SelectItem>
                       </SelectContent>
@@ -361,203 +288,85 @@ export default function Notices() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCreateOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleCreateNotice}>
-                  Publish Notice
-                </Button>
+                <Button onClick={handleCreateNotice}>Publish Notice</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         )}
       </div>
 
-      {/* Search and Filter Bar */}
+      {/* Search Bar */}
       <Card className="border-0 shadow-md bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20">
         <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search notices by title or content..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 border-0 bg-white/80 dark:bg-gray-900/80 focus:bg-white dark:focus:bg-gray-900"
-              />
-            </div>
-            
-            {/* Filter Button */}
-            <DropdownMenu open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="relative">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filters
-                  {hasActiveFilters && (
-                    <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                      {filters.types.length + filters.scopes.length + filters.createdBy.length + (filters.dateRange ? 1 : 0)}
-                    </Badge>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <div className="flex items-center justify-between p-2">
-                  <DropdownMenuLabel>Filters</DropdownMenuLabel>
-                  {hasActiveFilters && (
-                    <Button variant="ghost" size="sm" onClick={clearFilters}>
-                      <X className="h-3 w-3 mr-1" />
-                      Clear All
-                    </Button>
-                  )}
-                </div>
-                <DropdownMenuSeparator />
-                
-                {/* Priority Filters */}
-                <div className="p-2">
-                  <div className="font-medium text-sm mb-2">Priority</div>
-                  {(["urgent", "important", "general"] as NoticeType[]).map((type) => {
-                    const Icon = getTypeIcon(type);
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={type}
-                        checked={filters.types.includes(type)}
-                        onCheckedChange={() => toggleFilter("types", type)}
-                        className="capitalize"
-                      >
-                        <Icon className="h-4 w-4 mr-2" />
-                        {type}
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-                </div>
-                
-                <DropdownMenuSeparator />
-                
-                {/* Scope Filters */}
-                <div className="p-2">
-                  <div className="font-medium text-sm mb-2">Scope</div>
-                  {(["GLOBAL", "DEPARTMENT", "YEAR", "CLASS"] as NoticeScope[]).map((scope) => (
-                    <DropdownMenuCheckboxItem
-                      key={scope}
-                      checked={filters.scopes.includes(scope)}
-                      onCheckedChange={() => toggleFilter("scopes", scope)}
-                    >
-                      {scope.toLowerCase().replace("_", " ")}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </div>
-                
-                <DropdownMenuSeparator />
-                
-                {/* Date Range */}
-                <div className="p-2">
-                  <div className="font-medium text-sm mb-2">Date Range</div>
-                  {[
-                    { value: "today", label: "Today" },
-                    { value: "week", label: "This Week" },
-                    { value: "month", label: "This Month" },
-                  ].map((range) => (
-                    <DropdownMenuCheckboxItem
-                      key={range.value}
-                      checked={filters.dateRange === range.value}
-                      onCheckedChange={(checked) => 
-                        setFilters(prev => ({ ...prev, dateRange: checked ? range.value : "" }))
-                      }
-                    >
-                      <Calendar className="h-4 w-4 mr-2" />
-                      {range.label}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </div>
-                
-                <DropdownMenuSeparator />
-                
-                {/* Created By */}
-                <div className="p-2">
-                  <div className="font-medium text-sm mb-2">Created By</div>
-                  {uniqueCreatedBy.slice(0, 5).map((creator) => (
-                    <DropdownMenuCheckboxItem
-                      key={creator}
-                      checked={filters.createdBy.includes(creator)}
-                      onCheckedChange={() => toggleFilter("createdBy", creator)}
-                    >
-                      <User className="h-4 w-4 mr-2" />
-                      {creator}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search notices"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 border-0 bg-white/80 dark:bg-gray-900/80 focus:bg-white dark:focus:bg-gray-900"
+            />
           </div>
-          
-          {/* Active Filters Display */}
-          {hasActiveFilters && (
-            <div className="flex flex-wrap gap-2 mt-4">
-              {filters.types.map(type => (
-                <Badge key={type} variant="secondary" className="gap-1">
-                  {type}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => toggleFilter("types", type)}
-                  />
-                </Badge>
-              ))}
-              {filters.scopes.map(scope => (
-                <Badge key={scope} variant="secondary" className="gap-1">
-                  {scope}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => toggleFilter("scopes", scope)}
-                  />
-                </Badge>
-              ))}
-              {filters.createdBy.map(creator => (
-                <Badge key={creator} variant="secondary" className="gap-1">
-                  {creator}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => toggleFilter("createdBy", creator)}
-                  />
-                </Badge>
-              ))}
-              {filters.dateRange && (
-                <Badge variant="secondary" className="gap-1">
-                  {filters.dateRange}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => setFilters(prev => ({ ...prev, dateRange: "" }))}
-                  />
-                </Badge>
-              )}
-            </div>
-          )}
         </CardContent>
       </Card>
 
       {/* Tabs Navigation */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto p-1">
-          <TabsTrigger value="recent" className="flex items-center gap-2">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
+        <TabsList className="grid w-full grid-cols-4 h-auto p-1">
+          <TabsTrigger
+            value="recent"
+            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3"
+          >
             <Clock className="h-4 w-4" />
-            <span className="hidden sm:inline">Recent</span>
+            <span className="text-xs sm:text-sm">Recent</span>
           </TabsTrigger>
-          <TabsTrigger value="unread" className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-blue-500" />
-            <span className="hidden sm:inline">Unread</span>
-            <Badge variant="secondary" className="ml-1">
-              {filteredNotices.filter(n => !n.isRead).length}
-            </Badge>
+          <TabsTrigger
+            value="unread"
+            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3"
+          >
+            {/* <div className="h-2 w-2 rounded-full bg-blue-500" /> */}
+            <AlarmClock className="h-4 w-4" />
+            <div className="flex items-center gap-1">
+              <span className="text-xs sm:text-sm">Unread</span>
+              <Badge
+                variant="secondary"
+                className="text-[10px] sm:text-xs h-4 min-w-4 sm:h-5 sm:min-w-5 px-1 sm:px-2 rounded-full"
+              >
+                {searchedNotices.filter((n) => !n.isRead).length}
+              </Badge>
+            </div>
           </TabsTrigger>
-          <TabsTrigger value="urgent" className="flex items-center gap-2">
+          <TabsTrigger
+            value="urgent"
+            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3"
+          >
             <AlertTriangle className="h-4 w-4 text-red-500" />
-            <span className="hidden sm:inline">Urgent</span>
-            <Badge variant="destructive" className="ml-1">
-              {filteredNotices.filter(n => n.type === "urgent").length}
-            </Badge>
+            <div className="flex items-center gap-1">
+              <span className="text-xs sm:text-sm">Urgent</span>
+              <Badge
+                variant="destructive"
+                className="text-[10px] sm:text-xs h-4 min-w-4 sm:h-5 sm:min-w-5 px-1 sm:px-2 rounded-full"
+              >
+                {searchedNotices.filter((n) => n.type === "urgent").length}
+              </Badge>
+            </div>
           </TabsTrigger>
-          <TabsTrigger value="my-dept" className="flex items-center gap-2">
+          <TabsTrigger
+            value="my-dept"
+            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3"
+          >
             <Info className="h-4 w-4" />
-            <span className="hidden sm:inline">My Dept</span>
+            <span className="text-xs sm:text-sm">My Dept</span>
           </TabsTrigger>
         </TabsList>
 
@@ -568,8 +377,8 @@ export default function Notices() {
               <div className="text-4xl mb-4">📭</div>
               <h3 className="text-lg font-semibold mb-2">No notices found</h3>
               <p className="text-muted-foreground">
-                {searchTerm || hasActiveFilters 
-                  ? "Try adjusting your search or filters" 
+                {searchTerm
+                  ? "Try adjusting your search or filters"
                   : "No notices available at the moment"}
               </p>
             </Card>
@@ -581,19 +390,27 @@ export default function Notices() {
                   key={notice.id}
                   className="group hover:shadow-lg transition-all duration-200 border-l-4"
                   style={{
-                    borderLeftColor: notice.type === "urgent" ? "#ef4444" : 
-                                   notice.type === "important" ? "#f59e0b" : "#3b82f6"
+                    borderLeftColor:
+                      notice.type === "urgent"
+                        ? "#ef4444"
+                        : notice.type === "important"
+                        ? "#f59e0b"
+                        : "#3b82f6",
                   }}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <TypeIcon className={`h-4 w-4 ${
-                            notice.type === "urgent" ? "text-red-500" :
-                            notice.type === "important" ? "text-amber-500" :
-                            "text-blue-500"
-                          }`} />
+                          <TypeIcon
+                            className={`h-4 w-4 ${
+                              notice.type === "urgent"
+                                ? "text-red-500"
+                                : notice.type === "important"
+                                ? "text-amber-500"
+                                : "text-blue-500"
+                            }`}
+                          />
                           <Badge className={getTypeColor(notice.type)}>
                             {notice.type}
                           </Badge>
@@ -625,8 +442,8 @@ export default function Notices() {
                           {notice.scope.toLowerCase()}
                         </Badge>
                       </div>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => setSelectedNotice(notice)}
                         className="hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950"
@@ -644,7 +461,10 @@ export default function Notices() {
       </Tabs>
 
       {/* Notice Detail Modal */}
-      <Dialog open={!!selectedNotice} onOpenChange={() => setSelectedNotice(null)}>
+      <Dialog
+        open={!!selectedNotice}
+        onOpenChange={() => setSelectedNotice(null)}
+      >
         <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
           {selectedNotice && (
             <>
@@ -652,11 +472,17 @@ export default function Notices() {
                 <div className="flex items-center gap-2 mb-2">
                   {(() => {
                     const TypeIcon = getTypeIcon(selectedNotice.type);
-                    return <TypeIcon className={`h-5 w-5 ${
-                      selectedNotice.type === "urgent" ? "text-red-500" :
-                      selectedNotice.type === "important" ? "text-amber-500" :
-                      "text-blue-500"
-                    }`} />;
+                    return (
+                      <TypeIcon
+                        className={`h-5 w-5 ${
+                          selectedNotice.type === "urgent"
+                            ? "text-red-500"
+                            : selectedNotice.type === "important"
+                            ? "text-amber-500"
+                            : "text-blue-500"
+                        }`}
+                      />
+                    );
                   })()}
                   <Badge className={getTypeColor(selectedNotice.type)}>
                     {selectedNotice.type}
@@ -675,7 +501,11 @@ export default function Notices() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
-                    <span>{new Date(selectedNotice.publishedAt).toLocaleDateString()}</span>
+                    <span>
+                      {new Date(
+                        selectedNotice.publishedAt
+                      ).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
               </DialogHeader>
@@ -683,19 +513,11 @@ export default function Notices() {
                 {selectedNotice.content}
               </DialogDescription>
               <DialogFooter>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setSelectedNotice(null)}
                 >
                   Close
-                </Button>
-                <Button 
-                  onClick={() => {
-                    // Mark as read logic here
-                    setSelectedNotice(null);
-                  }}
-                >
-                  Mark as Read
                 </Button>
               </DialogFooter>
             </>

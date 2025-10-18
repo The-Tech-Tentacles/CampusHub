@@ -35,7 +35,7 @@ export default function Login() {
     { name: string; email: string; department: string }
   > = {
     STUDENT: {
-      name: "Rakesh Yadav",
+      name: "Rax",
       email: "rakesh.yadav@campus.edu",
       department: "AI & DS",
     },
