@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Filter } from "lucide-react";
-import { StatusBadge } from "@/components/status-badge";
+import { Search, Plus, Filter, X, Clock, AlertTriangle, Info, Calendar, User, Eye } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import {
   Dialog,
@@ -25,56 +24,272 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+
+type NoticeType = "urgent" | "important" | "general";
+type NoticeScope = "GLOBAL" | "DEPARTMENT" | "YEAR" | "CLASS";
+
+interface Notice {
+  id: string;
+  title: string;
+  content: string;
+  createdBy: string;
+  type: NoticeType;
+  scope: NoticeScope;
+  publishedAt: string;
+  isRead: boolean;
+  department?: string;
+  year?: number;
+}
+
+interface FilterState {
+  types: NoticeType[];
+  scopes: NoticeScope[];
+  createdBy: string[];
+  dateRange: string;
+}
+
+const getTypeIcon = (type: NoticeType) => {
+  switch (type) {
+    case "urgent":
+      return AlertTriangle;
+    case "important":
+      return Info;
+    case "general":
+      return Clock;
+  }
+};
+
+const getTypeColor = (type: NoticeType) => {
+  switch (type) {
+    case "urgent":
+      return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800";
+    case "important":
+      return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800";
+    case "general":
+      return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800";
+  }
+};
 
 export default function Notices() {
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
+  const [activeTab, setActiveTab] = useState("recent");
+  const [filters, setFilters] = useState<FilterState>({
+    types: [],
+    scopes: [],
+    createdBy: [],
+    dateRange: "",
+  });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const canCreateNotice = user?.role && ["FACULTY", "HOD", "DEAN", "ADMIN"].includes(user.role);
 
-  const notices = [
+  const notices: Notice[] = [
     {
       id: "1",
-      title: "Mid-Semester Examination Schedule Released",
-      content: "The schedule for mid-semester examinations has been released. Please check your respective department notice boards for detailed timings.",
+      title: "Emergency: Campus Closure Due to Weather Alert",
+      content: "Due to severe weather conditions expected tomorrow, all classes and campus activities are suspended. Students are advised to stay in their accommodations and follow safety protocols. The cafeteria will remain open with limited hours (8 AM - 6 PM). Emergency contact: +1-234-567-8900. Further updates will be shared via official channels.",
       createdBy: "Dr. Sarah Johnson",
-      status: "approved" as const,
+      type: "urgent",
       scope: "GLOBAL",
-      publishedAt: "2024-01-15",
+      publishedAt: "2024-01-15T10:30:00Z",
       isRead: false,
     },
     {
       id: "2",
-      title: "Library Timings Extended for Exam Week",
-      content: "The central library will remain open from 7 AM to 11 PM during the examination week to facilitate student preparation.",
-      createdBy: "Library Administration",
-      status: "approved" as const,
+      title: "Mid-Semester Examination Schedule Released",
+      content: "The schedule for mid-semester examinations has been finalized and is now available on the student portal. Students are required to check their exam timings, venues, and seat numbers before the examination week begins. Any discrepancies should be reported to the academic office within 48 hours. Study materials and guidelines are also available for download.",
+      createdBy: "Academic Office",
+      type: "important",
       scope: "GLOBAL",
-      publishedAt: "2024-01-14",
+      publishedAt: "2024-01-14T14:20:00Z",
       isRead: false,
+      department: "All Departments",
     },
     {
       id: "3",
-      title: "Guest Lecture on AI and Machine Learning",
-      content: "A special guest lecture will be conducted by Prof. Michael Chen from MIT on the latest trends in AI research.",
-      createdBy: "Prof. David Williams",
-      status: "approved" as const,
-      scope: "DEPARTMENT",
-      publishedAt: "2024-01-13",
+      title: "Library Timings Extended for Exam Week",
+      content: "To support students during the examination period, the central library will extend its operating hours from 7:00 AM to 11:00 PM throughout the exam week. Additional study spaces have been arranged in the community hall. Students are encouraged to follow library rules and maintain silence in designated study areas.",
+      createdBy: "Library Administration",
+      type: "general",
+      scope: "GLOBAL",
+      publishedAt: "2024-01-13T09:15:00Z",
       isRead: true,
     },
     {
       id: "4",
-      title: "Sports Day Registration Open",
-      content: "Annual sports day registration is now open. Students can register for various events through the student portal.",
+      title: "Guest Lecture: Future of AI and Quantum Computing",
+      content: "Join us for an exciting guest lecture by Prof. Michael Chen from MIT on 'The Convergence of AI and Quantum Computing: Shaping Tomorrow's Technology'. The session will cover cutting-edge research, career opportunities, and interactive Q&A. Venue: Main Auditorium, Date: January 20th, Time: 2:00 PM - 4:00 PM.",
+      createdBy: "Prof. David Williams",
+      type: "important",
+      scope: "DEPARTMENT",
+      publishedAt: "2024-01-12T16:45:00Z",
+      isRead: true,
+      department: "Computer Science",
+    },
+    {
+      id: "5",
+      title: "Annual Sports Day Registration Now Open",
+      content: "Get ready for the most exciting event of the year! Annual Sports Day registration is now live on the student portal. Choose from basketball, football, cricket, athletics, and many more events. Early bird registration gets exclusive merchandise. Deadline: January 25th. Let's make this sports day unforgettable!",
       createdBy: "Sports Committee",
-      status: "pending" as const,
+      type: "general",
       scope: "GLOBAL",
-      publishedAt: "2024-01-12",
+      publishedAt: "2024-01-11T11:30:00Z",
+      isRead: false,
+    },
+    {
+      id: "6",
+      title: "Scholarship Applications for Merit Students",
+      content: "Merit-based scholarship applications are now open for exceptional students. This scholarship covers 50% of tuition fees for the next semester. Eligibility: CGPA above 8.5, active participation in extracurricular activities, and clean disciplinary record. Application deadline: January 30th. Apply through the student portal.",
+      createdBy: "Financial Aid Office",
+      type: "important",
+      scope: "GLOBAL",
+      publishedAt: "2024-01-10T13:20:00Z",
       isRead: true,
     },
   ];
+
+  // Get unique values for filters
+  const uniqueCreatedBy = Array.from(new Set(notices.map(n => n.createdBy)));
+  
+  // Filter and search logic
+  const filteredNotices = useMemo(() => {
+    let filtered = notices;
+
+    // Search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(notice => 
+        notice.title.toLowerCase().includes(term) || 
+        notice.content.toLowerCase().includes(term)
+      );
+    }
+
+    // Type filter
+    if (filters.types.length > 0) {
+      filtered = filtered.filter(notice => filters.types.includes(notice.type));
+    }
+
+    // Scope filter
+    if (filters.scopes.length > 0) {
+      filtered = filtered.filter(notice => filters.scopes.includes(notice.scope));
+    }
+
+    // Created by filter
+    if (filters.createdBy.length > 0) {
+      filtered = filtered.filter(notice => filters.createdBy.includes(notice.createdBy));
+    }
+
+    // Date range filter
+    if (filters.dateRange) {
+      const now = new Date();
+      const filterDate = new Date();
+      
+      switch (filters.dateRange) {
+        case "today":
+          filterDate.setHours(0, 0, 0, 0);
+          filtered = filtered.filter(notice => new Date(notice.publishedAt) >= filterDate);
+          break;
+        case "week":
+          filterDate.setDate(now.getDate() - 7);
+          filtered = filtered.filter(notice => new Date(notice.publishedAt) >= filterDate);
+          break;
+        case "month":
+          filterDate.setMonth(now.getMonth() - 1);
+          filtered = filtered.filter(notice => new Date(notice.publishedAt) >= filterDate);
+          break;
+      }
+    }
+
+    return filtered;
+  }, [notices, searchTerm, filters]);
+
+  // Tab-based filtering
+  const getTabNotices = (tab: string) => {
+    switch (tab) {
+      case "recent":
+        return filteredNotices.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+      case "unread":
+        return filteredNotices.filter(n => !n.isRead);
+      case "urgent":
+        return filteredNotices.filter(n => n.type === "urgent");
+      case "my-dept":
+        return filteredNotices.filter(n => n.scope === "DEPARTMENT" || n.scope === "GLOBAL");
+      default:
+        return filteredNotices;
+    }
+  };
+
+  const currentTabNotices = getTabNotices(activeTab);
+
+  const clearFilters = () => {
+    setFilters({
+      types: [],
+      scopes: [],
+      createdBy: [],
+      dateRange: "",
+    });
+  };
+
+  const hasActiveFilters = filters.types.length > 0 || filters.scopes.length > 0 || 
+    filters.createdBy.length > 0 || filters.dateRange;
+
+  const toggleFilter = (category: keyof FilterState, value: string) => {
+    setFilters(prev => {
+      if (category === 'dateRange') {
+        return {
+          ...prev,
+          [category]: prev[category] === value ? "" : value
+        };
+      }
+      
+      const currentArray = prev[category] as string[];
+      const newArray = currentArray.includes(value)
+        ? currentArray.filter(item => item !== value)
+        : currentArray.concat(value);
+      
+      return {
+        ...prev,
+        [category]: newArray
+      };
+    });
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 24) {
+      return `${Math.floor(diffInHours)}h ago`;
+    } else if (diffInHours < 168) {
+      return `${Math.floor(diffInHours / 24)}d ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  const truncateContent = (content: string, maxLength: number = 120) => {
+    return content.length > maxLength ? content.substring(0, maxLength) + "..." : content;
+  };
 
   const handleCreateNotice = () => {
     console.log("Creating notice");
@@ -82,16 +297,19 @@ export default function Notices() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-6">
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-serif font-bold">Notices</h1>
-          <p className="text-muted-foreground">Stay updated with campus announcements</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            📢 Campus Notices
+          </h1>
+          <p className="text-muted-foreground">Stay updated with the latest campus announcements</p>
         </div>
         {canCreateNotice && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button data-testid="button-create-notice">
+              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Notice
               </Button>
@@ -100,43 +318,54 @@ export default function Notices() {
               <DialogHeader>
                 <DialogTitle>Create New Notice</DialogTitle>
                 <DialogDescription>
-                  Create a notice to be published to students and faculty
+                  Share important information with students and faculty
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Title</Label>
-                  <Input id="title" placeholder="Notice title" data-testid="input-notice-title" />
+                  <Input id="title" placeholder="Notice title" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="content">Content</Label>
-                  <Textarea
-                    id="content"
-                    placeholder="Notice content"
-                    rows={5}
-                    data-testid="input-notice-content"
-                  />
+                  <Textarea id="content" placeholder="Notice content" rows={5} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="scope">Scope</Label>
-                  <Select defaultValue="GLOBAL">
-                    <SelectTrigger data-testid="select-notice-scope">
-                      <SelectValue placeholder="Select scope" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="GLOBAL">Global</SelectItem>
-                      <SelectItem value="DEPARTMENT">Department</SelectItem>
-                      <SelectItem value="YEAR">Year</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Priority</Label>
+                    <Select defaultValue="general">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select priority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="urgent">🚨 Urgent</SelectItem>
+                        <SelectItem value="important">⚠️ Important</SelectItem>
+                        <SelectItem value="general">ℹ️ General</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="scope">Scope</Label>
+                    <Select defaultValue="GLOBAL">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select scope" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="GLOBAL">🌍 Global</SelectItem>
+                        <SelectItem value="DEPARTMENT">🏢 Department</SelectItem>
+                        <SelectItem value="YEAR">📚 Year</SelectItem>
+                        <SelectItem value="CLASS">👥 Class</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateNotice} data-testid="button-submit-notice">
-                  Create Notice
+                <Button onClick={handleCreateNotice}>
+                  Publish Notice
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -144,145 +373,335 @@ export default function Notices() {
         )}
       </div>
 
-      <Card>
+      {/* Search and Filter Bar */}
+      <Card className="border-0 shadow-md bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20">
         <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search notices..."
+                placeholder="Search notices by title or content..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-                data-testid="input-search-notices"
+                className="pl-9 border-0 bg-white/80 dark:bg-gray-900/80 focus:bg-white dark:focus:bg-gray-900"
               />
             </div>
-            <Button variant="outline" data-testid="button-filter">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
+            
+            {/* Filter Button */}
+            <DropdownMenu open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="relative">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                  {hasActiveFilters && (
+                    <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                      {filters.types.length + filters.scopes.length + filters.createdBy.length + (filters.dateRange ? 1 : 0)}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <div className="flex items-center justify-between p-2">
+                  <DropdownMenuLabel>Filters</DropdownMenuLabel>
+                  {hasActiveFilters && (
+                    <Button variant="ghost" size="sm" onClick={clearFilters}>
+                      <X className="h-3 w-3 mr-1" />
+                      Clear All
+                    </Button>
+                  )}
+                </div>
+                <DropdownMenuSeparator />
+                
+                {/* Priority Filters */}
+                <div className="p-2">
+                  <div className="font-medium text-sm mb-2">Priority</div>
+                  {(["urgent", "important", "general"] as NoticeType[]).map((type) => {
+                    const Icon = getTypeIcon(type);
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={type}
+                        checked={filters.types.includes(type)}
+                        onCheckedChange={() => toggleFilter("types", type)}
+                        className="capitalize"
+                      >
+                        <Icon className="h-4 w-4 mr-2" />
+                        {type}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+                </div>
+                
+                <DropdownMenuSeparator />
+                
+                {/* Scope Filters */}
+                <div className="p-2">
+                  <div className="font-medium text-sm mb-2">Scope</div>
+                  {(["GLOBAL", "DEPARTMENT", "YEAR", "CLASS"] as NoticeScope[]).map((scope) => (
+                    <DropdownMenuCheckboxItem
+                      key={scope}
+                      checked={filters.scopes.includes(scope)}
+                      onCheckedChange={() => toggleFilter("scopes", scope)}
+                    >
+                      {scope.toLowerCase().replace("_", " ")}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </div>
+                
+                <DropdownMenuSeparator />
+                
+                {/* Date Range */}
+                <div className="p-2">
+                  <div className="font-medium text-sm mb-2">Date Range</div>
+                  {[
+                    { value: "today", label: "Today" },
+                    { value: "week", label: "This Week" },
+                    { value: "month", label: "This Month" },
+                  ].map((range) => (
+                    <DropdownMenuCheckboxItem
+                      key={range.value}
+                      checked={filters.dateRange === range.value}
+                      onCheckedChange={(checked) => 
+                        setFilters(prev => ({ ...prev, dateRange: checked ? range.value : "" }))
+                      }
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      {range.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </div>
+                
+                <DropdownMenuSeparator />
+                
+                {/* Created By */}
+                <div className="p-2">
+                  <div className="font-medium text-sm mb-2">Created By</div>
+                  {uniqueCreatedBy.slice(0, 5).map((creator) => (
+                    <DropdownMenuCheckboxItem
+                      key={creator}
+                      checked={filters.createdBy.includes(creator)}
+                      onCheckedChange={() => toggleFilter("createdBy", creator)}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      {creator}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
+          
+          {/* Active Filters Display */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {filters.types.map(type => (
+                <Badge key={type} variant="secondary" className="gap-1">
+                  {type}
+                  <X 
+                    className="h-3 w-3 cursor-pointer" 
+                    onClick={() => toggleFilter("types", type)}
+                  />
+                </Badge>
+              ))}
+              {filters.scopes.map(scope => (
+                <Badge key={scope} variant="secondary" className="gap-1">
+                  {scope}
+                  <X 
+                    className="h-3 w-3 cursor-pointer" 
+                    onClick={() => toggleFilter("scopes", scope)}
+                  />
+                </Badge>
+              ))}
+              {filters.createdBy.map(creator => (
+                <Badge key={creator} variant="secondary" className="gap-1">
+                  {creator}
+                  <X 
+                    className="h-3 w-3 cursor-pointer" 
+                    onClick={() => toggleFilter("createdBy", creator)}
+                  />
+                </Badge>
+              ))}
+              {filters.dateRange && (
+                <Badge variant="secondary" className="gap-1">
+                  {filters.dateRange}
+                  <X 
+                    className="h-3 w-3 cursor-pointer" 
+                    onClick={() => setFilters(prev => ({ ...prev, dateRange: "" }))}
+                  />
+                </Badge>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all" data-testid="tab-all">All</TabsTrigger>
-          <TabsTrigger value="unread" data-testid="tab-unread">
-            Unread
-            <Badge variant="secondary" className="ml-2">3</Badge>
+      {/* Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto p-1">
+          <TabsTrigger value="recent" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            <span className="hidden sm:inline">Recent</span>
           </TabsTrigger>
-          {canCreateNotice && (
-            <TabsTrigger value="pending" data-testid="tab-pending">
-              Pending Approval
-              <Badge variant="secondary" className="ml-2">1</Badge>
-            </TabsTrigger>
-          )}
+          <TabsTrigger value="unread" className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-blue-500" />
+            <span className="hidden sm:inline">Unread</span>
+            <Badge variant="secondary" className="ml-1">
+              {filteredNotices.filter(n => !n.isRead).length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="urgent" className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <span className="hidden sm:inline">Urgent</span>
+            <Badge variant="destructive" className="ml-1">
+              {filteredNotices.filter(n => n.type === "urgent").length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="my-dept" className="flex items-center gap-2">
+            <Info className="h-4 w-4" />
+            <span className="hidden sm:inline">My Dept</span>
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-4">
-          {notices.map((notice) => (
-            <Card
-              key={notice.id}
-              className="hover-elevate cursor-pointer"
-              data-testid={`notice-card-${notice.id}`}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CardTitle className="text-lg">{notice.title}</CardTitle>
-                      {!notice.isRead && (
-                        <div className="h-2 w-2 rounded-full bg-primary" />
-                      )}
-                    </div>
-                    <CardDescription>{notice.content}</CardDescription>
-                  </div>
-                  <StatusBadge status={notice.status} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                  <span>By {notice.createdBy}</span>
-                  <span>•</span>
-                  <span>{new Date(notice.publishedAt).toLocaleDateString()}</span>
-                  <span>•</span>
-                  <Badge variant="outline">{notice.scope}</Badge>
-                </div>
-              </CardContent>
+        {/* Notices Content */}
+        <TabsContent value={activeTab} className="space-y-4">
+          {currentTabNotices.length === 0 ? (
+            <Card className="p-8 text-center">
+              <div className="text-4xl mb-4">📭</div>
+              <h3 className="text-lg font-semibold mb-2">No notices found</h3>
+              <p className="text-muted-foreground">
+                {searchTerm || hasActiveFilters 
+                  ? "Try adjusting your search or filters" 
+                  : "No notices available at the moment"}
+              </p>
             </Card>
-          ))}
-        </TabsContent>
-
-        <TabsContent value="unread" className="space-y-4">
-          {notices.filter(n => !n.isRead).map((notice) => (
-            <Card
-              key={notice.id}
-              className="hover-elevate cursor-pointer"
-              data-testid={`notice-card-${notice.id}`}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CardTitle className="text-lg">{notice.title}</CardTitle>
-                      <div className="h-2 w-2 rounded-full bg-primary" />
+          ) : (
+            currentTabNotices.map((notice) => {
+              const TypeIcon = getTypeIcon(notice.type);
+              return (
+                <Card
+                  key={notice.id}
+                  className="group hover:shadow-lg transition-all duration-200 border-l-4"
+                  style={{
+                    borderLeftColor: notice.type === "urgent" ? "#ef4444" : 
+                                   notice.type === "important" ? "#f59e0b" : "#3b82f6"
+                  }}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TypeIcon className={`h-4 w-4 ${
+                            notice.type === "urgent" ? "text-red-500" :
+                            notice.type === "important" ? "text-amber-500" :
+                            "text-blue-500"
+                          }`} />
+                          <Badge className={getTypeColor(notice.type)}>
+                            {notice.type}
+                          </Badge>
+                          {!notice.isRead && (
+                            <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                          )}
+                        </div>
+                        <CardTitle className="text-lg group-hover:text-blue-600 transition-colors">
+                          {notice.title}
+                        </CardTitle>
+                        <CardDescription className="mt-2 text-sm leading-relaxed">
+                          {truncateContent(notice.content)}
+                        </CardDescription>
+                      </div>
                     </div>
-                    <CardDescription>{notice.content}</CardDescription>
-                  </div>
-                  <StatusBadge status={notice.status} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                  <span>By {notice.createdBy}</span>
-                  <span>•</span>
-                  <span>{new Date(notice.publishedAt).toLocaleDateString()}</span>
-                  <span>•</span>
-                  <Badge variant="outline">{notice.scope}</Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-
-        {canCreateNotice && (
-          <TabsContent value="pending" className="space-y-4">
-            {notices.filter(n => n.status === "pending").map((notice) => (
-              <Card key={notice.id} data-testid={`notice-card-${notice.id}`}>
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{notice.title}</CardTitle>
-                      <CardDescription className="mt-2">{notice.content}</CardDescription>
-                    </div>
-                    <StatusBadge status={notice.status} />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                      <span>By {notice.createdBy}</span>
-                      <span>•</span>
-                      <span>{new Date(notice.publishedAt).toLocaleDateString()}</span>
-                      <span>•</span>
-                      <Badge variant="outline">{notice.scope}</Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" data-testid="button-reject">
-                        Reject
-                      </Button>
-                      <Button size="sm" data-testid="button-approve">
-                        Approve
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          <span>{notice.createdBy}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatDate(notice.publishedAt)}</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {notice.scope.toLowerCase()}
+                        </Badge>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setSelectedNotice(notice)}
+                        className="hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Read More
                       </Button>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
-        )}
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </TabsContent>
       </Tabs>
+
+      {/* Notice Detail Modal */}
+      <Dialog open={!!selectedNotice} onOpenChange={() => setSelectedNotice(null)}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          {selectedNotice && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-2 mb-2">
+                  {(() => {
+                    const TypeIcon = getTypeIcon(selectedNotice.type);
+                    return <TypeIcon className={`h-5 w-5 ${
+                      selectedNotice.type === "urgent" ? "text-red-500" :
+                      selectedNotice.type === "important" ? "text-amber-500" :
+                      "text-blue-500"
+                    }`} />;
+                  })()}
+                  <Badge className={getTypeColor(selectedNotice.type)}>
+                    {selectedNotice.type}
+                  </Badge>
+                  <Badge variant="outline">
+                    {selectedNotice.scope.toLowerCase()}
+                  </Badge>
+                </div>
+                <DialogTitle className="text-xl leading-relaxed">
+                  {selectedNotice.title}
+                </DialogTitle>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <User className="h-4 w-4" />
+                    <span>{selectedNotice.createdBy}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>{new Date(selectedNotice.publishedAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </DialogHeader>
+              <DialogDescription className="text-base leading-relaxed whitespace-pre-wrap">
+                {selectedNotice.content}
+              </DialogDescription>
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedNotice(null)}
+                >
+                  Close
+                </Button>
+                <Button 
+                  onClick={() => {
+                    // Mark as read logic here
+                    setSelectedNotice(null);
+                  }}
+                >
+                  Mark as Read
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

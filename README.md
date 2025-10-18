@@ -1,6 +1,14 @@
-# CampusHub - University Management Platform
+<div align="center">
+  <img src="https://raw.githubusercontent.com/The-Tech-Tentacles/CampusHub/main/Docs/assets/logo.png" alt="CampusHub Logo" width="150"/>
+</div>
 
-A modern, full-stack university management platform built with React, TypeScript, Express, and PostgreSQL.
+<div align="center">
+
+[![License: Custom](https://img.shields.io/badge/License-Custom-blue.svg)](LICENSE)
+[![Status: Development](https://img.shields.io/badge/Status-Development-yellow.svg)]()
+[![Platform: Web](https://img.shields.io/badge/Platform-Web-green.svg)]()
+
+</div>
 
 ## 🚀 Features
 

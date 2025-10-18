@@ -71,19 +71,20 @@ export default function Dashboard() {
       color: "text-chart-1",
     },
     {
-      title: "Forms",
-      value: "5",
-      icon: FileText,
-      description: "Submitted 3 | To Fill 2 | Due 1 this week",
-      color: "text-chart-2",
-    },
-    {
       title: "Classes Today",
       value: "4",
       icon: Calendar,
       description: "Attendance coming soon",
       color: "text-chart-3",
     },
+    {
+      title: "Forms",
+      value: "5",
+      icon: FileText,
+      description: "Submitted 3 | To Fill 2 | Due 1 this week",
+      color: "text-chart-2",
+    },
+
     {
       title: "Applications",
       value: "4",

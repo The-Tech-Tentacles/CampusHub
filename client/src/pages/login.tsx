@@ -2,9 +2,21 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuthStore, UserRole } from "@/stores/auth-store";
 import { GraduationCap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -18,11 +30,14 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [selectedRole, setSelectedRole] = useState<UserRole>("STUDENT");
 
-  const mockUsers: Record<UserRole, { name: string; email: string; department: string }> = {
+  const mockUsers: Record<
+    UserRole,
+    { name: string; email: string; department: string }
+  > = {
     STUDENT: {
-      name: "Alex Johnson",
-      email: "alex.johnson@campus.edu",
-      department: "Computer Science",
+      name: "Rakesh Yadav",
+      email: "rakesh.yadav@campus.edu",
+      department: "AI & DS",
     },
     FACULTY: {
       name: "Dr. Sarah Williams",
@@ -48,7 +63,7 @@ export default function Login() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const userTemplate = mockUsers[selectedRole];
     const mockUser = {
       id: `${selectedRole.toLowerCase()}-1`,
@@ -89,9 +104,12 @@ export default function Login() {
             </div>
           </div>
           <div className="space-y-4 max-w-md">
-            <h2 className="text-3xl font-serif font-semibold">Welcome to your digital campus</h2>
+            <h2 className="text-3xl font-serif font-semibold">
+              Welcome to your digital campus
+            </h2>
             <p className="text-lg opacity-90">
-              Access notices, manage your schedule, submit applications, and stay connected with your university community.
+              Access notices, manage your schedule, submit applications, and
+              stay connected with your university community.
             </p>
             <ul className="space-y-3 mt-6">
               <li className="flex items-center gap-3">
@@ -124,7 +142,9 @@ export default function Login() {
 
           <Card>
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-serif">Sign in to your account</CardTitle>
+              <CardTitle className="text-2xl font-serif">
+                Sign in to your account
+              </CardTitle>
               <CardDescription>
                 Enter your credentials to access your dashboard
               </CardDescription>
@@ -133,7 +153,12 @@ export default function Login() {
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="role">Login As</Label>
-                  <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as UserRole)}>
+                  <Select
+                    value={selectedRole}
+                    onValueChange={(value) =>
+                      setSelectedRole(value as UserRole)
+                    }
+                  >
                     <SelectTrigger id="role" data-testid="select-role">
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
@@ -168,7 +193,11 @@ export default function Login() {
                     data-testid="input-password"
                   />
                 </div>
-                <Button type="submit" className="w-full" data-testid="button-login">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  data-testid="button-login"
+                >
                   Sign In
                 </Button>
               </form>
