@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -20,8 +20,18 @@ import {
   Calendar,
   User,
   Eye,
+  ArrowRight,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
+import {
+  dataService,
+  Notice,
+  NoticeType,
+  getTypeIcon,
+  getTypeColor,
+  formatDate,
+  truncateContent,
+} from "@/services/dataService";
 import {
   Dialog,
   DialogContent,
@@ -41,124 +51,34 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type NoticeType = "urgent" | "important" | "general";
-type NoticeScope = "GLOBAL" | "DEPARTMENT" | "YEAR" | "CLASS";
-
-interface Notice {
-  id: string;
-  title: string;
-  content: string;
-  createdBy: string;
-  type: NoticeType;
-  scope: NoticeScope;
-  publishedAt: string;
-  isRead: boolean;
-  department?: string;
-  year?: number;
-}
-
-const getTypeIcon = (type: NoticeType) => {
-  switch (type) {
-    case "urgent":
-      return AlertTriangle;
-    case "important":
-      return Info;
-    case "general":
-      return Clock;
-  }
-};
-
-const getTypeColor = (type: NoticeType) => {
-  switch (type) {
-    case "urgent":
-      return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800";
-    case "important":
-      return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800";
-    case "general":
-      return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800";
-  }
-};
-
 export default function Notices() {
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
   const [activeTab, setActiveTab] = useState("All");
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const canCreateNotice =
     user?.role && ["FACULTY", "HOD", "DEAN", "ADMIN"].includes(user.role);
 
-  const notices: Notice[] = [
-    {
-      id: "1",
-      title: "Emergency: Campus Closure Due to Weather Alert",
-      content:
-        "Due to severe weather conditions expected tomorrow, all classes and campus activities are suspended. Students are advised to stay in their accommodations and follow safety protocols. The cafeteria will remain open with limited hours (8 AM - 6 PM). Emergency contact: +1-234-567-8900. Further updates will be shared via official channels.",
-      createdBy: "Dr. Sarah Johnson",
-      type: "urgent",
-      scope: "GLOBAL",
-      publishedAt: "2024-01-15T10:30:00Z",
-      isRead: false,
-    },
-    {
-      id: "2",
-      title: "Mid-Semester Examination Schedule Released",
-      content:
-        "The schedule for mid-semester examinations has been finalized and is now available on the student portal. Students are required to check their exam timings, venues, and seat numbers before the examination week begins. Any discrepancies should be reported to the academic office within 48 hours. Study materials and guidelines are also available for download.",
-      createdBy: "Academic Office",
-      type: "important",
-      scope: "GLOBAL",
-      publishedAt: "2024-01-14T14:20:00Z",
-      isRead: false,
-      department: "All Departments",
-    },
-    {
-      id: "3",
-      title: "Library Timings Extended for Exam Week",
-      content:
-        "To support students during the examination period, the central library will extend its operating hours from 7:00 AM to 11:00 PM throughout the exam week. Additional study spaces have been arranged in the community hall. Students are encouraged to follow library rules and maintain silence in designated study areas.",
-      createdBy: "Library Administration",
-      type: "urgent",
-      scope: "GLOBAL",
-      publishedAt: "2024-01-13T09:15:00Z",
-      isRead: true,
-    },
-    {
-      id: "4",
-      title: "Guest Lecture: Future of AI and Quantum Computing",
-      content:
-        "Join us for an exciting guest lecture by Prof. Michael Chen from MIT on 'The Convergence of AI and Quantum Computing: Shaping Tomorrow's Technology'. The session will cover cutting-edge research, career opportunities, and interactive Q&A. Venue: Main Auditorium, Date: January 20th, Time: 2:00 PM - 4:00 PM.",
-      createdBy: "Prof. David Williams",
-      type: "important",
-      scope: "DEPARTMENT",
-      publishedAt: "2024-01-12T16:45:00Z",
-      isRead: true,
-      department: "Computer Science",
-    },
-    {
-      id: "5",
-      title: "Annual Sports Day Registration Now Open",
-      content:
-        "Get ready for the most exciting event of the year! Annual Sports Day registration is now live on the student portal. Choose from basketball, football, cricket, athletics, and many more events. Early bird registration gets exclusive merchandise. Deadline: January 25th. Let's make this sports day unforgettable!",
-      createdBy: "Sports Committee",
-      type: "general",
-      scope: "GLOBAL",
-      publishedAt: "2024-01-11T11:30:00Z",
-      isRead: false,
-    },
-    {
-      id: "6",
-      title: "Scholarship Applications for Merit Students",
-      content:
-        "Merit-based scholarship applications are now open for exceptional students. This scholarship covers 50% of tuition fees for the next semester. Eligibility: CGPA above 8.5, active participation in extracurricular activities, and clean disciplinary record. Application deadline: January 30th. Apply through the student portal.",
-      createdBy: "Financial Aid Office",
-      type: "important",
-      scope: "GLOBAL",
-      publishedAt: "2024-01-10T13:20:00Z",
-      isRead: true,
-    },
-  ];
+  // Load notices from centralized service
+  useEffect(() => {
+    const loadNotices = async () => {
+      try {
+        setLoading(true);
+        const allNotices = await dataService.getNotices();
+        setNotices(allNotices);
+      } catch (error) {
+        console.error("Error loading notices:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadNotices();
+  }, []);
 
   // Simple search logic
   const searchedNotices = searchTerm
@@ -189,30 +109,30 @@ export default function Notices() {
 
   const currentTabNotices = getTabNotices(activeTab);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-    if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)}h ago`;
-    } else if (diffInHours < 168) {
-      return `${Math.floor(diffInHours / 24)}d ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
-  };
-
-  const truncateContent = (content: string, maxLength: number = 120) => {
-    return content.length > maxLength
-      ? content.substring(0, maxLength) + "..."
-      : content;
-  };
-
   const handleCreateNotice = () => {
     console.log("Creating notice");
     setIsCreateOpen(false);
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-2 p-3 md:p-6">
+        <div className="animate-pulse">
+          <div className="h-12 bg-gray-200 dark:bg-gray-800 rounded-lg mb-6"></div>
+          <div className="h-16 bg-gray-200 dark:bg-gray-800 rounded-xl mb-6"></div>
+          <div className="h-12 bg-gray-200 dark:bg-gray-800 rounded-lg mb-4"></div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="h-32 bg-gray-200 dark:bg-gray-800 rounded-lg"
+              ></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2 p-3 md:p-6">
@@ -226,7 +146,7 @@ export default function Notices() {
                 Create Notice
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-[600px] !left-4 !right-4 !translate-x-0 sm:!left-1/2 sm:!right-auto sm:!translate-x-[-50%]">
               <DialogHeader>
                 <DialogTitle>Create New Notice</DialogTitle>
                 <DialogDescription>
@@ -294,14 +214,14 @@ export default function Notices() {
 
       {/* Search Bar */}
       <Card className="border-0 shadow-md bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20">
-        <CardContent className="pt-6">
+        <CardContent className="p-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search notices"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 border-0 bg-white/80 dark:bg-gray-900/80 focus:bg-white dark:focus:bg-gray-900"
+              className="pl-9 border-2 border-gray-300 dark:border-gray-600 bg-white/80 dark:bg-gray-900/80 focus:bg-white dark:focus:bg-gray-900 focus:border-blue-500 dark:focus:border-blue-400 focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
             />
           </div>
         </CardContent>
@@ -311,19 +231,19 @@ export default function Notices() {
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        className="space-y-4"
+        className="space-y-2"
       >
         <TabsList className="grid w-full grid-cols-2 h-auto p-1">
           <TabsTrigger
             value="All"
-            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3"
+            className="flex flex-row items-center gap-1 py-2 px-1"
           >
             <AlarmClock className="h-4 w-4" />
             <span className="text-xs sm:text-sm">All</span>
           </TabsTrigger>
           <TabsTrigger
             value="my-dept"
-            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3"
+            className="flex flex-row items-center gap-1 py-2 px-1 "
           >
             <Info className="h-4 w-4" />
             <span className="text-xs sm:text-sm">My Dept</span>
@@ -374,6 +294,12 @@ export default function Notices() {
                           <Badge className={getTypeColor(notice.type)}>
                             {notice.type}
                           </Badge>
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-2"
+                          >
+                            {notice.scope.toLowerCase()}
+                          </Badge>
                           {!notice.isRead && (
                             <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
                           )}
@@ -391,25 +317,27 @@ export default function Notices() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          <span>{notice.createdBy}</span>
+                          <User className="h-3 w-3 text-blue-500" />
+                          <span className="text-blue-600 dark:text-blue-400 font-medium">
+                            {notice.createdBy}
+                          </span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{formatDate(notice.publishedAt)}</span>
+                          <Clock className="h-3 w-3 text-green-500" />
+                          <span className="text-green-600 dark:text-green-400">
+                            {formatDate(notice.publishedAt)}
+                          </span>
                         </div>
-                        <Badge variant="outline" className="text-xs">
-                          {notice.scope.toLowerCase()}
-                        </Badge>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setSelectedNotice(notice)}
-                        className="hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950"
+                        className="group/btn hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600 dark:hover:from-blue-950/30 dark:hover:to-purple-950/30 dark:hover:text-blue-400 border border-primary hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 border-radius-md"
                       >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Read More
+                        <Eye className="h-4 w-4 mr-1 group-hover/btn:scale-110 transition-transform duration-200" />
+                        <span className="font-medium">Read More</span>
+                        <ArrowRight className="h-3 w-3 ml-1 group-hover/btn:translate-x-0.5 transition-transform duration-200" />
                       </Button>
                     </div>
                   </CardContent>
@@ -425,7 +353,7 @@ export default function Notices() {
         open={!!selectedNotice}
         onOpenChange={() => setSelectedNotice(null)}
       >
-        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-[700px] max-h-[80vh] overflow-y-auto !left-4 !right-4 !translate-x-0 sm:!left-1/2 sm:!right-auto sm:!translate-x-[-50%]">
           {selectedNotice && (
             <>
               <DialogHeader>
@@ -447,7 +375,10 @@ export default function Notices() {
                   <Badge className={getTypeColor(selectedNotice.type)}>
                     {selectedNotice.type}
                   </Badge>
-                  <Badge variant="outline">
+                  <Badge
+                    variant="outline"
+                    className="bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-2 py-1"
+                  >
                     {selectedNotice.scope.toLowerCase()}
                   </Badge>
                 </div>
@@ -456,12 +387,14 @@ export default function Notices() {
                 </DialogTitle>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
-                    <User className="h-4 w-4" />
-                    <span>{selectedNotice.createdBy}</span>
+                    <User className="h-4 w-4 text-blue-500" />
+                    <span className="text-blue-600 dark:text-blue-400 font-medium">
+                      {selectedNotice.createdBy}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>
+                    <Calendar className="h-4 w-4 text-green-500" />
+                    <span className="text-green-600 dark:text-green-400">
                       {new Date(
                         selectedNotice.publishedAt
                       ).toLocaleDateString()}
@@ -473,12 +406,12 @@ export default function Notices() {
                 {selectedNotice.content}
               </DialogDescription>
               <DialogFooter>
-                <Button
+                {/* <Button
                   variant="outline"
                   onClick={() => setSelectedNotice(null)}
                 >
                   Close
-                </Button>
+                </Button> */}
               </DialogFooter>
             </>
           )}

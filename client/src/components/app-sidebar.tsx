@@ -132,7 +132,7 @@ export function AppSidebar() {
       url: "/attendance",
       icon: QrCode,
       roles: ["STUDENT", "FACULTY", "HOD", "DEAN", "ADMIN"],
-      emoji: "✅",
+      emoji: "📋",
     },
     {
       title: "Analytics",
@@ -266,7 +266,7 @@ export function AppSidebar() {
 
         {filteredFutureItems.length > 0 && (
           <>
-            <Separator className="my-4 mx-3" />
+            <Separator className="my-4" />
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2">
                 <div className="flex items-center gap-2">

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/auth-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,105 +19,74 @@ import {
   Eye,
   ArrowRight,
 } from "lucide-react";
+import {
+  dataService,
+  Notice,
+  TimetableSlot,
+  getTypeIcon,
+  getTypeColor,
+} from "@/services/dataService";
 
 export default function Dashboard() {
   const { user } = useAuthStore();
   const [, setLocation] = useLocation();
 
+  // State for data from centralized service
+  const [todaySchedule, setTodaySchedule] = useState<
+    (TimetableSlot & { time: string })[]
+  >([]);
+  const [todayNotices, setTodayNotices] = useState<Notice[]>([]);
+  const [stats, setStats] = useState({
+    classesToday: 0,
+    totalNotices: 0,
+    unreadNotices: 0,
+    pendingApplications: 0,
+    activeForms: 0,
+    totalUsers: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Load data from centralized service
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+
+        // Load all data in parallel
+        const [schedule, notices, dashboardStats] = await Promise.all([
+          dataService.getTodaySchedule(),
+          dataService.getNotices({ today: true }),
+          dataService.getStats(user?.role),
+        ]);
+
+        setTodaySchedule(schedule);
+        setTodayNotices(notices);
+        setStats(dashboardStats);
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user?.role]);
+
   // Time-based greeting function
   const getTimeBasedGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 6) return "Good Night ";
-    if (hour < 12) return "Good Morning ";
-    if (hour < 17) return "Good Afternoon ";
-    if (hour < 21) return "Good Evening ";
+    if (hour < 6) return "Good Night 🌙";
+    if (hour < 12) return "Good Morning ☀️";
+    if (hour < 17) return "Good Afternoon 🌤️";
+    if (hour < 21) return "Good Evening 🌅";
     return "Good Night 🌙";
   };
 
-  // Get today's day of the week
-  const getTodaySchedule = () => {
-    const days = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-    const today = days[new Date().getDay()];
-
-    const timetable: Record<
-      string,
-      Record<string, { subject: string; room: string; type: string }>
-    > = {
-      Monday: {
-        "9:00 AM": {
-          subject: "Data Structures",
-          room: "Room 205",
-          type: "Lecture",
-        },
-        "11:00 AM": {
-          subject: "Operating Systems",
-          room: "Lab 301",
-          type: "Lab",
-        },
-        "2:00 PM": {
-          subject: "Database Management",
-          room: "Room 104",
-          type: "Lecture",
-        },
-      },
-      Tuesday: {
-        "10:00 AM": {
-          subject: "Computer Networks",
-          room: "Room 302",
-          type: "Lecture",
-        },
-        "1:00 PM": {
-          subject: "Software Engineering",
-          room: "Room 201",
-          type: "Lecture",
-        },
-        "3:00 PM": { subject: "Data Structures", room: "Lab 301", type: "Lab" },
-      },
-      Wednesday: {
-        "9:00 AM": {
-          subject: "Database Management",
-          room: "Lab 205",
-          type: "Lab",
-        },
-        "12:00 PM": {
-          subject: "Computer Architecture",
-          room: "Room 105",
-          type: "Lecture",
-        },
-      },
-      Thursday: {
-        "10:00 AM": {
-          subject: "Operating Systems",
-          room: "Room 302",
-          type: "Lecture",
-        },
-        "2:00 PM": {
-          subject: "Software Engineering",
-          room: "Lab 401",
-          type: "Lab",
-        },
-      },
-      Friday: {
-        "9:00 AM": {
-          subject: "Computer Networks",
-          room: "Lab 303",
-          type: "Lab",
-        },
-        "11:00 AM": { subject: "Seminar", room: "Auditorium", type: "Seminar" },
-      },
-    };
-
-    const todayClasses = timetable[today] || {};
-
-    return Object.entries(todayClasses).map(([time, classInfo], index) => {
+  // Helper function to transform timetable data for display
+  const transformScheduleForDisplay = (
+    schedule: (TimetableSlot & { time: string })[]
+  ) => {
+    return schedule.map((item, index) => {
       const getIcon = (type: string) => {
         switch (type) {
           case "Lab":
@@ -141,87 +111,15 @@ export default function Dashboard() {
 
       return {
         id: `today-${index + 1}`,
-        title: `${classInfo.subject} ${classInfo.type}`,
-        subject: classInfo.subject,
-        time: time,
-        location: classInfo.room,
-        type: classInfo.type,
-        icon: getIcon(classInfo.type),
-        color: getColor(classInfo.type),
+        title: `${item.subject} ${item.type}`,
+        subject: item.subject,
+        time: item.time,
+        location: item.room,
+        type: item.type,
+        icon: getIcon(item.type),
+        color: getColor(item.type),
       };
     });
-  };
-
-  // Recent notices - only today's notices
-  const getTodayNotices = () => {
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
-
-    const allNotices = [
-      {
-        id: "1",
-        title: "Emergency: Campus Closure Due to Weather Alert",
-        content:
-          "Due to severe weather conditions expected tomorrow, all classes and campus activities are suspended.",
-        createdBy: "Dr. Sarah Johnson",
-        type: "urgent" as const,
-        publishedAt: new Date().toISOString(), // Today
-        isRead: false,
-      },
-      {
-        id: "2",
-        title: "Library Timings Extended for Exam Week",
-        content:
-          "To support students during the examination period, the central library will extend its operating hours.",
-        createdBy: "Library Administration",
-        type: "important" as const,
-        publishedAt: new Date().toISOString(), // Today
-        isRead: false,
-      },
-      {
-        id: "3",
-        title: "Mid-Semester Examination Schedule Released",
-        content:
-          "The schedule for mid-semester examinations has been finalized and is now available on the student portal.",
-        createdBy: "Academic Office",
-        type: "general" as const,
-        publishedAt: "2024-01-14T14:20:00Z", // Yesterday
-        isRead: false,
-      },
-    ];
-
-    // Filter notices published today
-    return allNotices.filter((notice) => {
-      const noticeDate = new Date(notice.publishedAt)
-        .toISOString()
-        .split("T")[0];
-      return noticeDate === today;
-    });
-  };
-
-  const todaySchedule = getTodaySchedule();
-  const todayNotices = getTodayNotices();
-
-  // Helper functions for notice styling
-  const getNoticeIcon = (type: "urgent" | "important" | "general") => {
-    switch (type) {
-      case "urgent":
-        return AlertTriangle;
-      case "important":
-        return Info;
-      case "general":
-        return Clock;
-    }
-  };
-
-  const getNoticeColor = (type: "urgent" | "important" | "general") => {
-    switch (type) {
-      case "urgent":
-        return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800";
-      case "important":
-        return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800";
-      case "general":
-        return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800";
-    }
   };
 
   // Get current time and date
@@ -238,33 +136,53 @@ export default function Dashboard() {
     day: "numeric",
   });
 
-  const stats = [
+  // Create display stats array from centralized data
+  const displayStats = [
     {
       title: "Classes Today",
-      value: todaySchedule.length.toString(),
+      value: stats.classesToday.toString(),
       icon: Calendar,
       description:
-        todaySchedule.length > 0
-          ? "View full timetable"
-          : "No classes scheduled",
+        stats.classesToday > 0 ? "View full timetable" : "No classes scheduled",
       color: "text-chart-3",
     },
     {
-      title: "Forms",
-      value: "5",
+      title: "Active Forms",
+      value: stats.activeForms.toString(),
       icon: FileText,
-      description: "Submitted 3 | To Fill 2 | Due 1 this week",
+      description: `${stats.activeForms} forms currently active`,
       color: "text-chart-2",
     },
-
     {
       title: "Applications",
-      value: "4",
+      value: stats.pendingApplications.toString(),
       icon: ClipboardList,
-      description: "Under review 1 | Approved 3 | Rejected 0",
+      description: `${stats.pendingApplications} pending review`,
       color: "text-chart-4",
     },
   ];
+
+  // Transform today's schedule for display
+  const displaySchedule = transformScheduleForDisplay(todaySchedule);
+
+  if (loading) {
+    return (
+      <div className="space-y-6 p-2">
+        <div className="animate-pulse">
+          <div className="h-32 bg-gray-200 dark:bg-gray-800 rounded-xl mb-6"></div>
+          <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mb-6">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-24 bg-gray-200 dark:bg-gray-800 rounded-lg"
+              ></div>
+            ))}
+          </div>
+          <div className="h-64 bg-gray-200 dark:bg-gray-800 rounded-xl"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-2">
@@ -284,7 +202,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {stats.map((stat) => (
+        {displayStats.map((stat) => (
           <Card
             key={stat.title}
             className="hover:shadow-md transition-shadow duration-200"
@@ -359,7 +277,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4">
             {todayNotices.map((notice) => {
-              const IconComponent = getNoticeIcon(notice.type);
+              const IconComponent = getTypeIcon(notice.type);
               return (
                 <div
                   key={notice.id}
@@ -404,7 +322,7 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between">
                           <Badge
                             variant="secondary"
-                            className={`text-[10px] px-2 py-0.5 ${getNoticeColor(
+                            className={`text-[10px] px-2 py-0.5 ${getTypeColor(
                               notice.type
                             )}`}
                           >
@@ -455,7 +373,7 @@ export default function Dashboard() {
                         <div className="flex items-center gap-3">
                           <Badge
                             variant="secondary"
-                            className={`text-xs px-2 py-1 ${getNoticeColor(
+                            className={`text-xs px-2 py-1 ${getTypeColor(
                               notice.type
                             )}`}
                           >
@@ -492,8 +410,8 @@ export default function Dashboard() {
                     Today's Timetable
                   </h3>
                   <p className="text-xs sm:text-sm text-muted-foreground">
-                    {todaySchedule.length} class
-                    {todaySchedule.length !== 1 ? "es" : ""} scheduled
+                    {displaySchedule.length} class
+                    {displaySchedule.length !== 1 ? "es" : ""} scheduled
                   </p>
                 </div>
                 <Button
@@ -510,8 +428,8 @@ export default function Dashboard() {
 
             {/* Schedule Items */}
             <div className="space-y-3 sm:space-y-4">
-              {todaySchedule.length > 0 ? (
-                todaySchedule.map((event, index) => (
+              {displaySchedule.length > 0 ? (
+                displaySchedule.map((event, index) => (
                   <div
                     key={event.id}
                     className="group rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all duration-200 border border-border/50 hover:border-border overflow-hidden"

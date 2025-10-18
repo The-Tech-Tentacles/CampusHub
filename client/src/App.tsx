@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { useAuthStore } from "@/stores/auth-store";
 import { useNotificationsStore } from "@/stores/notifications-store";
+import { dataService } from "@/services/dataService";
 import { useEffect } from "react";
 
 import Login from "@/pages/login";
@@ -137,32 +138,10 @@ function MainLayout() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      setNotifications([
-        {
-          id: "1",
-          type: "NOTICE",
-          title: "New Notice Published",
-          body: "Mid-Semester Examination Schedule has been released",
-          readAt: null,
-          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: "2",
-          type: "FORM",
-          title: "Form Submission Required",
-          body: "Student Feedback Form - Semester 1 is now available",
-          readAt: null,
-          createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: "3",
-          type: "APPLICATION",
-          title: "Application Approved",
-          body: "Your leave application has been approved",
-          readAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        },
-      ]);
+      // Load notifications from centralized data service
+      dataService.getNotifications().then((notifications) => {
+        setNotifications(notifications);
+      });
     }
   }, [isAuthenticated, setNotifications]);
 
