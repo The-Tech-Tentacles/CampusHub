@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +13,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStore } from "@/stores/auth-store";
 import { RoleBadge } from "@/components/role-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Phone, MapPin, Calendar, GraduationCap, User } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  GraduationCap,
+  User,
+} from "lucide-react";
 
 export default function Profile() {
   const { user } = useAuthStore();
@@ -28,10 +41,12 @@ export default function Profile() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 m-2">
       <div>
         <h1 className="text-3xl font-serif font-bold mb-2">Profile</h1>
-        <p className="text-muted-foreground">View and manage your profile information</p>
+        <p className="text-muted-foreground">
+          View and manage your profile information
+        </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -51,7 +66,11 @@ export default function Profile() {
                   <RoleBadge role={user?.role || "STUDENT"} />
                 </div>
               </div>
-              <Button variant="outline" className="w-full" data-testid="button-edit-profile">
+              <Button
+                variant="outline"
+                className="w-full"
+                data-testid="button-edit-profile"
+              >
                 Edit Profile Picture
               </Button>
             </div>
@@ -63,7 +82,9 @@ export default function Profile() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Personal Information</CardTitle>
-                <CardDescription>Your academic and contact details</CardDescription>
+                <CardDescription>
+                  Your academic and contact details
+                </CardDescription>
               </div>
               <Button
                 variant={isEditing ? "default" : "outline"}

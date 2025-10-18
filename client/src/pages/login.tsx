@@ -32,11 +32,12 @@ export default function Login() {
 
   const mockUsers: Record<
     UserRole,
-    { name: string; email: string; department: string }
+    { name: string; email: string; department: string; year?: string }
   > = {
     STUDENT: {
       name: "Rax",
       email: "rakesh.yadav@campus.edu",
+      year: "B. Tech",
       department: "AI & DS",
     },
     FACULTY: {
@@ -71,6 +72,7 @@ export default function Login() {
       email: email || userTemplate.email,
       role: selectedRole,
       department: userTemplate.department,
+      year: userTemplate.year,
       avatar: "",
     };
 

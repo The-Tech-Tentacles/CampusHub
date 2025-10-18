@@ -1,4 +1,4 @@
-import { Switch, Route, Redirect } from "wouter";
+import { Switch, Route, Redirect, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -99,6 +99,41 @@ function Router() {
 function MainLayout() {
   const { isAuthenticated } = useAuthStore();
   const { setNotifications } = useNotificationsStore();
+  const [location] = useLocation();
+
+  // Function to get the current tab name based on the route
+  const getCurrentTabName = (path: string): string => {
+    const routeMap: Record<string, string> = {
+      "/dashboard": "🏠 CampusHub",
+      "/notices": "📢 Notices",
+      "/forms": "📝 Forms",
+      "/schedule": "📅 Schedule",
+      "/timetable": "🗓️ Timetable",
+      "/applications": "📋 Applications",
+      "/profile": "👤 Profile",
+      "/admin-users": "👥 Users",
+      "/admin-config": "⚙️ Configuration",
+      "/settings": "🔧 Settings",
+      "/analytics": "📈 Analytics",
+    };
+
+    // Handle exact matches first
+    if (routeMap[path]) {
+      return routeMap[path];
+    }
+
+    // Handle partial matches for dynamic routes
+    for (const [route, name] of Object.entries(routeMap)) {
+      if (path.startsWith(route)) {
+        return name;
+      }
+    }
+
+    // Default fallback
+    return "🏠 Campus Hub";
+  };
+
+  const currentTabName = getCurrentTabName(location);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -142,7 +177,20 @@ function MainLayout() {
         <AppSidebar />
         <div className="flex flex-col flex-1 overflow-hidden">
           <header className="flex items-center justify-between gap-2 p-4 border-b bg-background">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
+            <div className="flex items-center gap-3">
+              <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <div className="hidden sm:block">
+                <h1 className="text-lg font-semibold text-foreground">
+                  {currentTabName}
+                </h1>
+              </div>
+              <div className="block sm:hidden">
+                <h1 className="text-base font-medium text-foreground">
+                  {currentTabName.split(" ").slice(-1)[0]}{" "}
+                  {/* Show only the last part on mobile */}
+                </h1>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <NotificationsDropdown />
               <ThemeToggle />

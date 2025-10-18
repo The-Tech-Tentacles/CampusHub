@@ -8,6 +8,7 @@ export interface User {
   email: string;
   role: UserRole;
   department?: string;
+  year?: string; // For students: "1st Year", "2nd Year", etc.
   avatar?: string;
 }
 
