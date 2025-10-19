@@ -58,6 +58,27 @@ export interface Application {
     status: ApplicationStatus;
     description: string;
     department?: string;
+    proof?: {
+        fileName: string;
+        fileUrl: string;
+        fileType: string;
+        uploadedAt: string;
+    };
+    mentorTeacher?: {
+        name: string;
+        email: string;
+        approvedAt?: string;
+        comments?: string;
+    };
+    hod?: {
+        name: string;
+        email: string;
+        approvedAt?: string;
+        comments?: string;
+    };
+    rejectedBy?: 'MENTOR' | 'HOD';
+    rejectedAt?: string;
+    rejectionReason?: string;
 }
 
 export interface Form {
@@ -71,6 +92,8 @@ export interface Form {
     department?: string;
     submissions: number;
     maxSubmissions?: number;
+    isSubmitted?: boolean;
+    submittedAt?: string;
 }
 
 export interface User {
@@ -262,6 +285,20 @@ const mockApplications: Application[] = [
         status: "PENDING",
         description: "Requesting 3 days leave for medical treatment",
         department: "Computer Science",
+        proof: {
+            fileName: "medical_certificate.pdf",
+            fileUrl: "/uploads/medical_certificate.pdf",
+            fileType: "application/pdf",
+            uploadedAt: "2024-01-15T10:00:00Z"
+        },
+        mentorTeacher: {
+            name: "Dr. Sarah Johnson",
+            email: "sarah.johnson@university.edu"
+        },
+        hod: {
+            name: "Prof. Michael Chen",
+            email: "michael.chen@university.edu"
+        }
     },
     {
         id: "2",
@@ -271,6 +308,22 @@ const mockApplications: Application[] = [
         submittedAt: "2024-01-14T15:30:00Z",
         status: "UNDER_REVIEW",
         description: "Request to change hostel room due to personal reasons",
+        proof: {
+            fileName: "hostel_complaint.jpg",
+            fileUrl: "/uploads/hostel_complaint.jpg",
+            fileType: "image/jpeg",
+            uploadedAt: "2024-01-14T15:30:00Z"
+        },
+        mentorTeacher: {
+            name: "Dr. Sarah Johnson",
+            email: "sarah.johnson@university.edu",
+            approvedAt: "2024-01-15T09:00:00Z",
+            comments: "Valid reason for room change request"
+        },
+        hod: {
+            name: "Prof. Michael Chen",
+            email: "michael.chen@university.edu"
+        }
     },
     {
         id: "3",
@@ -281,6 +334,24 @@ const mockApplications: Application[] = [
         status: "APPROVED",
         description: "Submission for extra credit in Database Management course",
         department: "Computer Science",
+        proof: {
+            fileName: "assignment_report.docx",
+            fileUrl: "/uploads/assignment_report.docx",
+            fileType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            uploadedAt: "2024-01-13T09:15:00Z"
+        },
+        mentorTeacher: {
+            name: "Dr. Sarah Johnson",
+            email: "sarah.johnson@university.edu",
+            approvedAt: "2024-01-14T10:00:00Z",
+            comments: "Excellent work on the assignment"
+        },
+        hod: {
+            name: "Prof. Michael Chen",
+            email: "michael.chen@university.edu",
+            approvedAt: "2024-01-14T16:00:00Z",
+            comments: "Approved for extra credits"
+        }
     },
     {
         id: "4",
@@ -290,21 +361,68 @@ const mockApplications: Application[] = [
         submittedAt: "2024-01-12T14:20:00Z",
         status: "APPROVED",
         description: "Permission to organize a tech talk in the auditorium",
+        proof: {
+            fileName: "event_proposal.pdf",
+            fileUrl: "/uploads/event_proposal.pdf",
+            fileType: "application/pdf",
+            uploadedAt: "2024-01-12T14:20:00Z"
+        },
+        mentorTeacher: {
+            name: "Dr. Robert Davis",
+            email: "robert.davis@university.edu",
+            approvedAt: "2024-01-13T11:00:00Z",
+            comments: "Great initiative for student development"
+        },
+        hod: {
+            name: "Prof. Lisa Anderson",
+            email: "lisa.anderson@university.edu",
+            approvedAt: "2024-01-13T15:30:00Z",
+            comments: "Approved with all necessary arrangements"
+        }
     },
+    {
+        id: "5",
+        title: "Research Project Extension Request",
+        type: "Academic",
+        submittedBy: "Alex Thompson",
+        submittedAt: "2024-01-16T11:00:00Z",
+        status: "REJECTED",
+        description: "Request for extension of research project deadline due to equipment failure",
+        department: "Computer Science",
+        proof: {
+            fileName: "equipment_failure_report.pdf",
+            fileUrl: "/uploads/equipment_failure_report.pdf",
+            fileType: "application/pdf",
+            uploadedAt: "2024-01-16T11:00:00Z"
+        },
+        mentorTeacher: {
+            name: "Dr. Sarah Johnson",
+            email: "sarah.johnson@university.edu"
+        },
+        hod: {
+            name: "Prof. Michael Chen",
+            email: "michael.chen@university.edu"
+        },
+        rejectedBy: "MENTOR",
+        rejectedAt: "2024-01-17T09:00:00Z",
+        rejectionReason: "Insufficient justification provided. Alternative solutions were available."
+    }
 ];
 
 // Mock Forms Data
 const mockForms: Form[] = [
+    // Available Forms (Active and not expired)
     {
         id: "1",
         title: "Course Feedback Form",
         description: "Mid-semester feedback for all enrolled courses",
         createdBy: "Academic Office",
         createdAt: "2024-01-10T09:00:00Z",
-        deadline: "2024-01-25T23:59:00Z",
+        deadline: "2026-01-25T23:59:00Z",
         status: "ACTIVE",
         submissions: 234,
         maxSubmissions: 500,
+        isSubmitted: false,
     },
     {
         id: "2",
@@ -312,22 +430,12 @@ const mockForms: Form[] = [
         description: "Submit your hostel room and mess preferences for next semester",
         createdBy: "Hostel Administration",
         createdAt: "2024-01-08T12:00:00Z",
-        deadline: "2024-01-30T18:00:00Z",
+        deadline: "2025-11-30T18:00:00Z",
         status: "ACTIVE",
         department: "All Departments",
         submissions: 156,
         maxSubmissions: 800,
-    },
-    {
-        id: "3",
-        title: "Alumni Mentorship Program Registration",
-        description: "Register for the alumni mentorship program to get guidance from industry experts",
-        createdBy: "Career Services",
-        createdAt: "2024-01-05T10:30:00Z",
-        deadline: "2024-01-20T17:00:00Z",
-        status: "ACTIVE",
-        submissions: 89,
-        maxSubmissions: 200,
+        isSubmitted: false,
     },
     {
         id: "4",
@@ -335,11 +443,80 @@ const mockForms: Form[] = [
         description: "Submit your final year research project proposal",
         createdBy: "Research Committee",
         createdAt: "2024-01-15T11:00:00Z",
-        deadline: "2024-02-15T23:59:00Z",
+        deadline: "2025-12-15T23:59:00Z",
         status: "ACTIVE",
         department: "Computer Science",
         submissions: 12,
         maxSubmissions: 50,
+        isSubmitted: false,
+    },
+    {
+        id: "6",
+        title: "Library Book Request",
+        description: "Request new books for the library collection",
+        createdBy: "Library Committee",
+        createdAt: "2024-10-01T09:00:00Z",
+        deadline: "2025-11-25T23:59:00Z",
+        status: "ACTIVE",
+        submissions: 45,
+        maxSubmissions: 100,
+        isSubmitted: false,
+    },
+
+    // Submitted Forms (Completed by user)
+    {
+        id: "7",
+        title: "Course Registration Form",
+        description: "Register for courses for the upcoming semester",
+        createdBy: "Academic Office",
+        createdAt: "2024-09-01T10:00:00Z",
+        deadline: "2024-10-01T23:59:00Z",
+        status: "ACTIVE",
+        submissions: 456,
+        maxSubmissions: 600,
+        isSubmitted: true,
+        submittedAt: "2024-09-15T14:30:00Z",
+    },
+    {
+        id: "8",
+        title: "Student ID Card Application",
+        description: "Apply for new student ID card or replacement",
+        createdBy: "Administration",
+        createdAt: "2024-08-15T11:00:00Z",
+        deadline: "2024-12-01T17:00:00Z",
+        status: "ACTIVE",
+        department: "All Departments",
+        submissions: 234,
+        maxSubmissions: 800,
+        isSubmitted: true,
+        submittedAt: "2024-08-20T16:45:00Z",
+    },
+    {
+        id: "9",
+        title: "Exam Hall Ticket Request",
+        description: "Download your exam hall ticket",
+        createdBy: "Examination Cell",
+        createdAt: "2024-09-20T08:00:00Z",
+        deadline: "2024-11-15T18:00:00Z",
+        status: "ACTIVE",
+        submissions: 567,
+        maxSubmissions: 700,
+        isSubmitted: true,
+        submittedAt: "2024-10-05T12:20:00Z",
+    },
+
+    // Missed Forms (Expired and not submitted)
+    {
+        id: "3",
+        title: "Alumni Mentorship Program Registration",
+        description: "Register for the alumni mentorship program to get guidance from industry experts",
+        createdBy: "Career Services",
+        createdAt: "2024-01-05T10:30:00Z",
+        deadline: "2024-10-15T17:00:00Z",
+        status: "INACTIVE",
+        submissions: 89,
+        maxSubmissions: 200,
+        isSubmitted: false,
     },
     {
         id: "5",
@@ -347,10 +524,37 @@ const mockForms: Form[] = [
         description: "Register for various sports events in the annual sports day",
         createdBy: "Sports Committee",
         createdAt: "2024-01-01T08:00:00Z",
-        deadline: "2024-01-15T20:00:00Z",
+        deadline: "2024-10-10T20:00:00Z",
         status: "INACTIVE",
         submissions: 345,
         maxSubmissions: 400,
+        isSubmitted: false,
+    },
+    {
+        id: "10",
+        title: "Scholarship Application Form",
+        description: "Apply for merit-based scholarships for this semester",
+        createdBy: "Scholarship Committee",
+        createdAt: "2024-08-01T09:00:00Z",
+        deadline: "2024-10-01T23:59:00Z",
+        status: "INACTIVE",
+        department: "All Departments",
+        submissions: 123,
+        maxSubmissions: 300,
+        isSubmitted: false,
+    },
+    {
+        id: "11",
+        title: "Campus Placement Registration",
+        description: "Register for upcoming campus placement opportunities",
+        createdBy: "Placement Cell",
+        createdAt: "2024-07-15T10:00:00Z",
+        deadline: "2024-09-30T18:00:00Z",
+        status: "INACTIVE",
+        department: "All Departments",
+        submissions: 298,
+        maxSubmissions: 400,
+        isSubmitted: false,
     },
 ];
 
@@ -719,9 +923,17 @@ class DataService {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         let filteredForms = [...this.forms];
+        const now = new Date();
 
         if (filters?.status) {
-            filteredForms = filteredForms.filter(form => form.status === filters.status);
+            if (filters.status === "ACTIVE") {
+                // Only return forms that are marked as ACTIVE AND not expired
+                filteredForms = filteredForms.filter(form =>
+                    form.status === "ACTIVE" && new Date(form.deadline) > now
+                );
+            } else {
+                filteredForms = filteredForms.filter(form => form.status === filters.status);
+            }
         }
 
         if (filters?.department) {
@@ -763,14 +975,39 @@ class DataService {
         pendingApplications: number;
         activeForms: number;
         totalUsers: number;
+        // Detailed form counts
+        submittedForms: number;
+        missedForms: number;
+        // Detailed application counts
+        approvedApplications: number;
+        rejectedApplications: number;
+        underReviewApplications: number;
     }> {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         const todaySchedule = await this.getTodaySchedule();
         const allNotices = await this.getNotices();
         const unreadNotices = await this.getNotices({ isRead: false });
+
+        // Application counts
         const pendingApps = await this.getApplications({ status: "PENDING" });
-        const activeForms = await this.getForms({ status: "ACTIVE" });
+        const approvedApps = await this.getApplications({ status: "APPROVED" });
+        const rejectedApps = await this.getApplications({ status: "REJECTED" });
+        const underReviewApps = await this.getApplications({ status: "UNDER_REVIEW" });
+
+        // Form counts
+        const activeForms = await this.getForms({ status: "ACTIVE" }); // Now excludes expired forms
+        const allForms = await this.getForms();
+        const now = new Date();
+        const submittedForms = allForms.filter(form => form.isSubmitted === true);
+        // Missed forms are expired forms that were not submitted
+        // They can be either INACTIVE (already expired) or ACTIVE forms that expired
+        const missedForms = allForms.filter(form =>
+            new Date(form.deadline) <= now &&
+            !form.isSubmitted &&
+            (form.status === "ACTIVE" || form.status === "INACTIVE")
+        );
+
         const allUsers = await this.getUsers();
 
         return {
@@ -780,6 +1017,12 @@ class DataService {
             pendingApplications: pendingApps.length,
             activeForms: activeForms.length,
             totalUsers: allUsers.length,
+            // Detailed counts
+            submittedForms: submittedForms.length,
+            missedForms: missedForms.length,
+            approvedApplications: approvedApps.length,
+            rejectedApplications: rejectedApps.length,
+            underReviewApplications: underReviewApps.length,
         };
     }
 

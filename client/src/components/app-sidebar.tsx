@@ -132,7 +132,7 @@ export function AppSidebar() {
       url: "/attendance",
       icon: QrCode,
       roles: ["STUDENT", "FACULTY", "HOD", "DEAN", "ADMIN"],
-      emoji: "📋",
+      emoji: "🗓️",
     },
     {
       title: "Analytics",

@@ -43,6 +43,12 @@ export default function Dashboard() {
     pendingApplications: 0,
     activeForms: 0,
     totalUsers: 0,
+    // Detailed counts
+    submittedForms: 0,
+    missedForms: 0,
+    approvedApplications: 0,
+    rejectedApplications: 0,
+    underReviewApplications: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -145,20 +151,25 @@ export default function Dashboard() {
       description:
         stats.classesToday > 0 ? "View full timetable" : "No classes scheduled",
       color: "text-chart-3",
+      link: "/timetable",
     },
     {
-      title: "Active Forms",
+      title: "Pending Forms",
       value: stats.activeForms.toString(),
       icon: FileText,
-      description: `${stats.activeForms} forms currently active`,
+      description: `${stats.submittedForms} submitted • ${stats.missedForms} missed`,
       color: "text-chart-2",
+      link: "/forms",
     },
     {
-      title: "Applications",
-      value: stats.pendingApplications.toString(),
+      title: "Pending Applications",
+      value: (
+        stats.pendingApplications + stats.underReviewApplications
+      ).toString(),
       icon: ClipboardList,
-      description: `${stats.pendingApplications} pending review`,
+      description: `${stats.approvedApplications} approved • ${stats.rejectedApplications} rejected`,
       color: "text-chart-4",
+      link: "/applications",
     },
   ];
 
@@ -206,6 +217,7 @@ export default function Dashboard() {
           <Card
             key={stat.title}
             className="hover:shadow-md transition-shadow duration-200"
+            onClick={() => setLocation(stat.link!)}
           >
             {/* Mobile Layout - Horizontal Rectangle */}
             <div className="flex md:hidden items-center p-4 gap-4">

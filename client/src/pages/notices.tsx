@@ -353,7 +353,7 @@ export default function Notices() {
         open={!!selectedNotice}
         onOpenChange={() => setSelectedNotice(null)}
       >
-        <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-[700px] max-h-[80vh] overflow-y-auto !left-4 !right-4 !translate-x-0 sm:!left-1/2 sm:!right-auto sm:!translate-x-[-50%]">
+        <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-[700px] max-h-[80vh] overflow-y-auto !left-4 !right-4 !translate-x-0 sm:!left-1/2 sm:!right-auto sm:!translate-x-[-50%] rounded-lg">
           {selectedNotice && (
             <>
               <DialogHeader>
