@@ -141,7 +141,7 @@ export default function Notices() {
         {canCreateNotice && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+              <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Notice
               </Button>
@@ -213,7 +213,7 @@ export default function Notices() {
       </div>
 
       {/* Search Bar */}
-      <Card className="border-0 shadow-md bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20">
+      <Card className="border-0 shadow-md bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
         <CardContent className="p-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -333,7 +333,7 @@ export default function Notices() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setSelectedNotice(notice)}
-                        className="group/btn hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600 dark:hover:from-blue-950/30 dark:hover:to-purple-950/30 dark:hover:text-blue-400 border border-primary hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 border-radius-md"
+                        className="group/btn hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 dark:hover:from-blue-950/30 dark:hover:to-indigo-950/30 dark:hover:text-blue-400 border border-primary hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-200 border-radius-md"
                       >
                         <Eye className="h-4 w-4 mr-1 group-hover/btn:scale-110 transition-transform duration-200" />
                         <span className="font-medium">Read More</span>

@@ -511,16 +511,16 @@ export default function Forms() {
                 return (
                   <Card
                     key={form.id}
-                    className="group hover:shadow-lg transition-all duration-200 border-2 border-transparent hover:border-purple-200 dark:hover:border-purple-800 h-80 flex flex-col"
+                    className="group hover:shadow-lg transition-all duration-200 border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-800 h-80 flex flex-col"
                     data-testid={`form-card-created-${form.id}`}
                   >
                     <CardHeader className="pb-3 flex-shrink-0">
                       <div className="flex items-start gap-3">
-                        <div className="rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-950/30 dark:to-pink-950/30 p-3">
-                          <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                        <div className="rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950/30 dark:to-indigo-950/30 p-3">
+                          <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <CardTitle className="text-lg group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2">
+                          <CardTitle className="text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
                             {form.title}
                           </CardTitle>
                           <CardDescription className="mt-1 text-sm leading-relaxed line-clamp-2">
@@ -540,8 +540,8 @@ export default function Forms() {
                       {/* Statistics */}
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 text-sm">
-                          <TrendingUp className="h-4 w-4 text-purple-500" />
-                          <span className="text-purple-600 dark:text-purple-400">
+                          <TrendingUp className="h-4 w-4 text-blue-500" />
+                          <span className="text-blue-600 dark:text-blue-400">
                             Managing Form
                           </span>
                         </div>

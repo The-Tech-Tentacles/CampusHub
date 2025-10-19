@@ -200,7 +200,7 @@ export default function Applications() {
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-200"
               data-testid="button-create-application"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -209,7 +209,7 @@ export default function Applications() {
           </DialogTrigger>
           <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-[700px] max-h-[80vh] overflow-y-auto !left-4 !right-4 !translate-x-0 sm:!left-1/2 sm:!right-auto sm:!translate-x-[-50%] rounded-lg">
             <DialogHeader>
-              <DialogTitle className="text-xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <DialogTitle className="text-xl bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                 New Application
               </DialogTitle>
               <DialogDescription>
@@ -230,7 +230,7 @@ export default function Applications() {
                       title: e.target.value,
                     })
                   }
-                  className="border-2 focus:border-purple-500 dark:focus:border-purple-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="border-2 focus:border-blue-500 dark:focus:border-blue-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </div>
               <div className="space-y-2">
@@ -242,7 +242,7 @@ export default function Applications() {
                   }
                 >
                   <SelectTrigger
-                    className="border-2 focus:border-purple-500 dark:focus:border-purple-400"
+                    className="border-2 focus:border-blue-500 dark:focus:border-blue-400"
                     data-testid="select-application-type"
                   >
                     <SelectValue placeholder="Select application type" />
@@ -268,14 +268,14 @@ export default function Applications() {
                       description: e.target.value,
                     })
                   }
-                  className="min-h-[120px] border-2 focus:border-purple-500 dark:focus:border-purple-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="min-h-[120px] border-2 focus:border-blue-500 dark:focus:border-blue-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="proof">
                   Supporting Document/Proof (Optional)
                 </Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-purple-400 transition-colors">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
                   <Input
                     id="proof"
                     type="file"
@@ -317,7 +317,7 @@ export default function Applications() {
                   !newApplication.description ||
                   !newApplication.proofFile
                 }
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
               >
                 Submit Application
               </Button>
@@ -327,7 +327,7 @@ export default function Applications() {
       </div>
 
       {/* Search Bar */}
-      <Card className="border-0 shadow-md bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+      <Card className="border-0 shadow-md bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
         <CardContent className="p-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -335,7 +335,7 @@ export default function Applications() {
               placeholder="Search applications"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 border-2 border-gray-300 dark:border-gray-600 bg-white/80 dark:bg-gray-900/80 focus:bg-white dark:focus:bg-gray-900 focus:border-purple-500 dark:focus:border-purple-400 focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+              className="pl-9 border-2 border-gray-300 dark:border-gray-600 bg-white/80 dark:bg-gray-900/80 focus:bg-white dark:focus:bg-gray-900 focus:border-blue-500 dark:focus:border-blue-400 focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
             />
           </div>
         </CardContent>
@@ -416,7 +416,7 @@ export default function Applications() {
                 return (
                   <Card
                     key={application.id}
-                    className="group hover:shadow-lg transition-all duration-200 border-2 border-transparent hover:border-purple-200 dark:hover:border-purple-800 min-h-[380px] flex flex-col"
+                    className="group hover:shadow-lg transition-all duration-200 border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-800 min-h-[380px] flex flex-col"
                     data-testid={`application-card-${application.id}`}
                   >
                     <CardHeader className="pb-3 flex-shrink-0">
@@ -427,7 +427,7 @@ export default function Applications() {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <CardTitle className="text-lg group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2">
+                          <CardTitle className="text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
                             {application.title}
                           </CardTitle>
                           <CardDescription className="mt-1 text-sm leading-relaxed line-clamp-2">
@@ -527,7 +527,7 @@ export default function Applications() {
                           <Crown className="h-4 w-4 text-gray-400" />
                           <div className="flex-1">
                             <p className="text-sm font-medium ">HOD </p>
-                            <p className="text-xs text-gray-600">
+                            <p className="text-xs text-gray-500">
                               {application.hod?.name || "Not assigned"}
                             </p>
                             {application.hod?.approvedAt && (
@@ -555,7 +555,7 @@ export default function Applications() {
                       {/* Action Button */}
                       <Button
                         variant="outline"
-                        className="w-full group/btn hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-950/30 hover:border-purple-500 transition-all duration-200"
+                        className="w-full group/btn hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/30 hover:border-blue-500 transition-all duration-200"
                         data-testid={`button-view-application-${application.id}`}
                       >
                         <Eye className="h-4 w-4 mr-2" />

@@ -362,16 +362,6 @@ export default function Schedule() {
                             </span>
                           </div>
                         )}
-
-                        {event.maxAttendees && (
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                            <span>
-                              {event.currentAttendees || 0}/{event.maxAttendees}{" "}
-                              attendees
-                            </span>
-                          </div>
-                        )}
                       </div>
                     </CardContent>
                   </Card>

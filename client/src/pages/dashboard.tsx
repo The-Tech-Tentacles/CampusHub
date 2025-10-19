@@ -259,7 +259,7 @@ export default function Dashboard() {
       {/* Recent Notices - Today's Notices Only */}
       {todayNotices.length > 0 && (
         <Card className="hover:shadow-lg transition-all duration-300">
-          <CardHeader>
+          <CardHeader className="p-3 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900 flex-shrink-0">
@@ -287,7 +287,7 @@ export default function Dashboard() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
             {todayNotices.map((notice) => {
               const IconComponent = getTypeIcon(notice.type);
               return (

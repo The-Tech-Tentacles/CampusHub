@@ -160,7 +160,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-6 border-b border-border/40">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="rounded-xl bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-3 shadow-lg">
+            <div className="rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 p-3 shadow-lg">
               <GraduationCap className="h-6 w-6 text-primary-foreground" />
             </div>
             <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 border-2 border-background animate-pulse" />
@@ -318,36 +318,25 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-border/40">
-        <div className="space-y-4" onClick={() => navigate("/profile")}>
+        <div
+          className="space-y-4"
+          onClick={() => (navigate("/profile"), handleMobileNavigation())}
+        >
           {/* User Profile Section */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-accent/50 via-accent/20 to-accent/10 border border-border/20">
-            <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 border border-border/20 text-white dark:text-gray-100">
+            <Avatar className="h-10 w-10 ring-2 ring-white/20">
               <AvatarImage src={user?.avatar} />
               <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold text-sm">
                 {user?.name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">{user?.name}</p>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-sm font-semibold truncate text-white dark:text-gray-100">
+                {user?.name}
+              </p>
+              <p className="text-xs truncate text-white/80 dark:text-gray-300">
                 {user?.email}
               </p>
-              {/* Department and Year for Students */}
-              <div className="flex items-center gap-2 mt-1">
-                {user?.department && (
-                  <Badge
-                    variant="secondary"
-                    className="text-[10px] px-2 py-0.5"
-                  >
-                    {user.department}
-                  </Badge>
-                )}
-                {user?.year && user?.role === "STUDENT" && (
-                  <Badge variant="outline" className="text-[10px] px-2 py-0.5">
-                    {user.year}
-                  </Badge>
-                )}
-              </div>
             </div>
           </div>
 

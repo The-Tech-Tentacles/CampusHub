@@ -759,7 +759,7 @@ const mockUsers: User[] = [
         email: "rakesh.yadav@campus.edu",
         role: "STUDENT",
         department: "AI & DS",
-        year: "3rd Year",
+        year: "B. Tech",
         enrollmentNumber: "21AI001",
         joiningDate: "2021-08-15",
     },
