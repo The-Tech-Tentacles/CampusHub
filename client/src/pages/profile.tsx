@@ -41,8 +41,7 @@ import {
   Globe,
   Github,
   Linkedin,
-  Instagram,
-  Twitter,
+  ExternalLink,
   Upload,
   CheckCircle2,
   TrendingUp,
@@ -96,8 +95,7 @@ export default function Profile() {
     socialLinks: {
       github: "johndoe",
       linkedin: "john-doe-dev",
-      instagram: "john_codes",
-      twitter: "johndev2003",
+      portfolio: "https://johndoe.dev",
     },
 
     // Skills & Achievements
@@ -426,21 +424,10 @@ export default function Profile() {
                   </Badge>
                   <Badge
                     variant="outline"
-                    className="flex items-center gap-2 justify-center py-2 px-3 border-pink-200 text-pink-700 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-300 cursor-pointer"
+                    className="flex items-center gap-2 justify-center py-2 px-3 border-purple-200 text-purple-700 hover:bg-purple-50 dark:border-purple-800 dark:text-purple-300 cursor-pointer col-span-2"
                   >
-                    <Instagram className="h-4 w-4" />
-                    <span className="text-xs font-medium">
-                      {studentProfile.socialLinks.instagram}
-                    </span>
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className="flex items-center gap-2 justify-center py-2 px-3 border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 cursor-pointer"
-                  >
-                    <Twitter className="h-4 w-4" />
-                    <span className="text-xs font-medium">
-                      {studentProfile.socialLinks.twitter}
-                    </span>
+                    <ExternalLink className="h-4 w-4" />
+                    <span className="text-xs font-medium">Portfolio</span>
                   </Badge>
                 </div>
               </CardContent>
@@ -822,26 +809,15 @@ export default function Profile() {
                     placeholder="john-doe-dev"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label className="text-sm font-medium flex items-center gap-2">
-                    <Instagram className="h-4 w-4" />
-                    Instagram Username
+                    <ExternalLink className="h-4 w-4" />
+                    Portfolio Website URL
                   </Label>
                   <Input
-                    defaultValue={studentProfile.socialLinks.instagram}
+                    defaultValue={studentProfile.socialLinks.portfolio}
                     disabled={!isEditing}
-                    placeholder="john_codes"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <Twitter className="h-4 w-4" />
-                    Twitter/X Username
-                  </Label>
-                  <Input
-                    defaultValue={studentProfile.socialLinks.twitter}
-                    disabled={!isEditing}
-                    placeholder="johndev2003"
+                    placeholder="https://johndoe.dev"
                   />
                 </div>
               </div>

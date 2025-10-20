@@ -39,7 +39,7 @@ export interface Notice {
 export interface TimetableSlot {
     subject: string;
     room: string;
-    type: "Lecture" | "Lab" | "Seminar";
+    type: "Lecture" | "Lab" | "Seminar" | "Break";
     faculty?: string;
 }
 
@@ -210,6 +210,56 @@ const mockNotices: Notice[] = [
         publishedAt: "2024-01-10T13:20:00Z",
         isRead: true,
     },
+    {
+        id: "7",
+        title: "New WiFi Network Deployment Campus-wide",
+        content: "We are excited to announce the deployment of our new high-speed WiFi network 'CampusNet-5G' across all academic buildings and dormitories. The new network offers speeds up to 500 Mbps and better coverage. Students can connect using their student ID and password. The old network will be phased out by January 31st. Technical support is available at the IT helpdesk.",
+        createdBy: "IT Services",
+        type: "general",
+        scope: "GLOBAL",
+        publishedAt: new Date().toISOString(), // Today
+        isRead: false,
+    },
+    {
+        id: "8",
+        title: "Internship Fair 2025 - Fortune 500 Companies Participating",
+        content: "Mark your calendars! The Annual Internship Fair will be held on February 5th-6th in the Main Exhibition Hall. Over 50 Fortune 500 companies including Google, Microsoft, Apple, Tesla, and Amazon will be recruiting interns for summer 2025. Bring multiple copies of your resume and dress professionally. Pre-registration is mandatory through the career services portal.",
+        createdBy: "Career Services",
+        type: "important",
+        scope: "GLOBAL",
+        publishedAt: "2024-01-15T09:30:00Z",
+        isRead: false,
+    },
+    {
+        id: "9",
+        title: "Campus Safety Alert: Increased Security Measures",
+        content: "Following recent security assessments, we are implementing enhanced safety measures across campus. New security checkpoints will be active at all main entrances from January 20th. Students must carry their ID cards at all times. Emergency blue light stations have been installed throughout campus. Report any suspicious activities to campus security at ext. 911.",
+        createdBy: "Campus Security",
+        type: "urgent",
+        scope: "GLOBAL",
+        publishedAt: "2024-01-16T07:45:00Z",
+        isRead: false,
+    },
+    {
+        id: "10",
+        title: "Mental Health Awareness Week - Free Counseling Services",
+        content: "As part of Mental Health Awareness Week (January 22-26), the Student Counseling Center is offering free individual and group counseling sessions. Professional therapists will be available for stress management, anxiety, and academic pressure support. Workshop topics include mindfulness, time management, and healthy study habits. Book your session online or walk-in during office hours.",
+        createdBy: "Student Wellness Center",
+        type: "important",
+        scope: "GLOBAL",
+        publishedAt: "2024-01-13T15:20:00Z",
+        isRead: true,
+    },
+    {
+        id: "11",
+        title: "Research Symposium Call for Papers - Undergraduate Division",
+        content: "Calling all undergraduate researchers! Submit your research papers for the Annual Undergraduate Research Symposium scheduled for March 15th. Categories include Engineering, Sciences, Humanities, and Social Sciences. Cash prizes up to $5,000 for winners in each category. Submission deadline: February 10th. Mentorship support available through faculty advisors.",
+        createdBy: "Research Office",
+        type: "general",
+        scope: "GLOBAL",
+        publishedAt: "2024-01-09T12:15:00Z",
+        isRead: true,
+    },
 ];
 
 // Mock Notifications Data
@@ -249,28 +299,53 @@ const mockNotifications: Notification[] = [
 ];
 
 // Mock Timetable Data
+// Schedule: 9:15 AM - 4:15 PM
+// Short Break: 11:15 AM - 11:30 AM
+// Long Break (Lunch): 1:30 PM - 2:15 PM
+// Lectures: 1 hour, Labs: 2 hours (but shown as single entry at start time)
 const mockTimetable: Timetable = {
     "Monday": {
-        "9:00 AM": { subject: "Data Structures", room: "Room 205", type: "Lecture", faculty: "Dr. Smith" },
-        "11:00 AM": { subject: "Operating Systems", room: "Lab 301", type: "Lab", faculty: "Prof. Johnson" },
-        "2:00 PM": { subject: "Database Management", room: "Room 104", type: "Lecture", faculty: "Dr. Brown" },
+        "9:15 AM": { subject: "Data Structures", room: "Room 205", type: "Lecture", faculty: "Dr. Smith" },
+        "10:15 AM": { subject: "Operating Systems", room: "Room 302", type: "Lecture", faculty: "Prof. Johnson" },
+        "11:15 AM": { subject: "Short", room: "-", type: "Break" },
+        "11:30 AM": { subject: "Database Management", room: "Lab 301", type: "Lab", faculty: "Dr. Brown" },
+        "1:30 PM": { subject: "Lunch", room: "-", type: "Break" },
+        "2:15 PM": { subject: "Computer Networks", room: "Room 104", type: "Lecture", faculty: "Dr. Wilson" },
+        "3:15 PM": { subject: "Software Engineering", room: "Room 201", type: "Lecture", faculty: "Prof. Davis" },
     },
     "Tuesday": {
-        "10:00 AM": { subject: "Computer Networks", room: "Room 302", type: "Lecture", faculty: "Dr. Wilson" },
-        "1:00 PM": { subject: "Software Engineering", room: "Room 201", type: "Lecture", faculty: "Prof. Davis" },
-        "3:00 PM": { subject: "Data Structures", room: "Lab 301", type: "Lab", faculty: "Dr. Smith" },
+        "9:15 AM": { subject: "Computer Architecture", room: "Room 105", type: "Lecture", faculty: "Dr. Taylor" },
+        "10:15 AM": { subject: "Database Management", room: "Room 203", type: "Lecture", faculty: "Dr. Brown" },
+        "11:15 AM": { subject: "Short", room: "-", type: "Break" },
+        "11:30 AM": { subject: "Data Structures", room: "Lab 301", type: "Lab", faculty: "Dr. Smith" },
+        "1:30 PM": { subject: "Lunch", room: "-", type: "Break" },
+        "2:15 PM": { subject: "Operating Systems", room: "Lab 303", type: "Lab", faculty: "Prof. Johnson" },
     },
     "Wednesday": {
-        "9:00 AM": { subject: "Database Management", room: "Lab 205", type: "Lab", faculty: "Dr. Brown" },
-        "12:00 PM": { subject: "Computer Architecture", room: "Room 105", type: "Lecture", faculty: "Dr. Taylor" },
+        "9:15 AM": { subject: "Software Engineering", room: "Lab 401", type: "Lab", faculty: "Prof. Davis" },
+        "11:15 AM": { subject: "Short", room: "-", type: "Break" },
+        "11:30 AM": { subject: "Computer Networks", room: "Room 302", type: "Lecture", faculty: "Dr. Wilson" },
+        "12:30 PM": { subject: "Computer Architecture", room: "Room 105", type: "Lecture", faculty: "Dr. Taylor" },
+        "1:30 PM": { subject: "Lunch", room: "-", type: "Break" },
+        "2:15 PM": { subject: "Mathematics", room: "Room 202", type: "Lecture", faculty: "Dr. Anderson" },
+        "3:15 PM": { subject: "Technical Seminar", room: "Auditorium", type: "Seminar", faculty: "Various Speakers" },
     },
     "Thursday": {
-        "10:00 AM": { subject: "Operating Systems", room: "Room 302", type: "Lecture", faculty: "Prof. Johnson" },
-        "2:00 PM": { subject: "Software Engineering", room: "Lab 401", type: "Lab", faculty: "Prof. Davis" },
+        "9:15 AM": { subject: "Operating Systems", room: "Room 302", type: "Lecture", faculty: "Prof. Johnson" },
+        "10:15 AM": { subject: "Data Structures", room: "Room 205", type: "Lecture", faculty: "Dr. Smith" },
+        "11:15 AM": { subject: "Short ", room: "-", type: "Break" },
+        "11:30 AM": { subject: "Computer Networks ", room: "Lab 303", type: "Lab", faculty: "Dr. Wilson" },
+        "1:30 PM": { subject: "Lunch ", room: "-", type: "Break" },
+        "2:15 PM": { subject: "Database Management", room: "Room 104", type: "Lecture", faculty: "Dr. Brown" },
+        "3:15 PM": { subject: "Software Engineering", room: "Room 201", type: "Lecture", faculty: "Prof. Davis" },
     },
     "Friday": {
-        "9:00 AM": { subject: "Computer Networks", room: "Lab 303", type: "Lab", faculty: "Dr. Wilson" },
-        "11:00 AM": { subject: "Seminar", room: "Auditorium", type: "Seminar", faculty: "Various Speakers" },
+        "9:15 AM": { subject: "Mathematics", room: "Room 202", type: "Lecture", faculty: "Dr. Anderson" },
+        "10:15 AM": { subject: "Computer Architecture", room: "Room 105", type: "Lecture", faculty: "Dr. Taylor" },
+        "11:15 AM": { subject: "Short ", room: "-", type: "Break" },
+        "11:30 AM": { subject: "Software Engineering ", room: "Lab 401", type: "Lab", faculty: "Prof. Davis" },
+        "1:30 PM": { subject: "Lunch ", room: "-", type: "Break" },
+        "2:15 PM": { subject: "Project Work ", room: "Lab 302", type: "Lab", faculty: "Multiple Faculty" },
     },
 };
 
@@ -1011,7 +1086,7 @@ class DataService {
         const allUsers = await this.getUsers();
 
         return {
-            classesToday: todaySchedule.length,
+            classesToday: todaySchedule.filter(slot => slot.type !== "Break").length,
             totalNotices: allNotices.length,
             unreadNotices: unreadNotices.length,
             pendingApplications: pendingApps.length,

@@ -38,15 +38,14 @@ export default function Timetable() {
     user?.role && ["FACULTY", "HOD", "DEAN", "ADMIN"].includes(user.role);
 
   const timeSlots = [
-    "9:00 AM",
-    "10:00 AM",
-    "11:00 AM",
-    "12:00 PM",
-    "1:00 PM",
-    "2:00 PM",
-    "3:00 PM",
-    "4:00 PM",
-    "5:00 PM",
+    "9:15 AM",
+    "10:15 AM",
+    "11:15 AM",
+    "11:30 AM",
+    "12:30 PM",
+    "1:30 PM",
+    "2:15 PM",
+    "3:15 PM",
   ];
 
   const days = [
@@ -127,6 +126,31 @@ export default function Timetable() {
     }
   };
 
+  // Helper function to calculate end time based on class type
+  const getEndTime = (startTime: string, classType: string) => {
+    const isLab = classType === "Lab";
+    const hoursToAdd = isLab ? 2 : 1;
+
+    // Parse start time
+    const [time, period] = startTime.split(" ");
+    const [hours, minutes] = time.split(":").map(Number);
+
+    // Convert to 24-hour format
+    let hour24 = hours;
+    if (period === "PM" && hours !== 12) hour24 += 12;
+    if (period === "AM" && hours === 12) hour24 = 0;
+
+    // Add duration
+    hour24 += hoursToAdd;
+
+    // Convert back to 12-hour format
+    const endPeriod = hour24 >= 12 ? "PM" : "AM";
+    let endHour = hour24 > 12 ? hour24 - 12 : hour24;
+    if (endHour === 0) endHour = 12;
+
+    return `${endHour}:${minutes.toString().padStart(2, "0")} ${endPeriod}`;
+  };
+
   if (isLoading) {
     return (
       <div className="flex-1 space-y-6 p-4 md:p-8">
@@ -195,86 +219,6 @@ export default function Timetable() {
         )}
       </div>
 
-      {/* Today's Schedule Card */}
-      {todaySchedule.length > 0 && (
-        <Card className="border-2 border-blue-200/50 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20 dark:border-blue-800/30">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
-              <Clock className="h-5 w-5" />
-              Today's Classes ({getCurrentDay()})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {todaySchedule.map((classItem, index) => {
-                const Icon = getClassTypeIcon(classItem.type);
-                return (
-                  <div
-                    key={index}
-                    className={`p-4 rounded-xl border-2 transition-all hover:shadow-md ${getClassTypeColor(
-                      classItem.type
-                    )}`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4" />
-                        <span className="text-xs font-medium">
-                          {classItem.time}
-                        </span>
-                      </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {classItem.type}
-                      </Badge>
-                    </div>
-                    <h4 className="font-semibold text-sm mb-1">
-                      {classItem.subject}
-                    </h4>
-                    <div className="flex items-center gap-1 text-xs opacity-75">
-                      <MapPin className="h-3 w-3" />
-                      <span>{classItem.room}</span>
-                    </div>
-                    {classItem.faculty && (
-                      <div className="flex items-center gap-1 text-xs opacity-75 mt-1">
-                        <User className="h-3 w-3" />
-                        <span>{classItem.faculty}</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Day Selector for Mobile */}
-      <div className="block md:hidden">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Select Day</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {days.map((day) => (
-                <Button
-                  key={day}
-                  variant={selectedDay === day ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedDay(day)}
-                  className={
-                    selectedDay === day
-                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-                      : ""
-                  }
-                >
-                  {day.slice(0, 3)}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Weekly Timetable Grid */}
       <Card className="overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900">
@@ -283,14 +227,36 @@ export default function Timetable() {
             Weekly Schedule
           </CardTitle>
         </CardHeader>
+        {/* Day Selector for Mobile */}
+        <div className="block md:hidden border-b border-border/50">
+          <div className="px-4 py-3">
+            <div className="flex flex-wrap gap-2 justify-center">
+              {days.map((day) => (
+                <Button
+                  key={day}
+                  variant={selectedDay === day ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedDay(day)}
+                  className={`
+                    min-w-[30px] flex-1 max-w-[80px] text-xs font-medium transition-all duration-200
+                    ${
+                      selectedDay === day
+                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md hover:shadow-lg"
+                        : "hover:bg-secondary/80"
+                    }
+                  `}
+                >
+                  {day.slice(0, 3)}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
         <CardContent className="p-0">
           {/* Desktop View */}
           <div className="hidden md:block overflow-x-auto">
-            <div className="min-w-[800px]">
+            <div className="min-w-[700px]">
               <div className="grid grid-cols-6">
-                <div className="sticky left-0 bg-muted/50 font-semibold p-4 text-sm border-b border-r">
-                  Time
-                </div>
                 {days.map((day) => (
                   <div
                     key={day}
@@ -300,57 +266,119 @@ export default function Timetable() {
                   </div>
                 ))}
 
-                {timeSlots.map((time) => (
-                  <>
-                    <div
-                      key={time}
-                      className="sticky left-0 bg-muted/30 p-4 text-sm text-muted-foreground border-r border-b"
-                    >
-                      {time}
-                    </div>
-                    {days.map((day) => {
-                      const slot = timetable[day]?.[time];
-                      return (
-                        <div
-                          key={`${day}-${time}`}
-                          className="p-3 border-b border-r min-h-[100px] hover:bg-muted/20 transition-colors"
-                          data-testid={`slot-${day}-${time}`}
-                        >
-                          {slot ? (
+                {timeSlots.map((time, timeIndex) => {
+                  // Helper function to check if next slot should be skipped for this day
+                  const getNextTimeSlot = (currentIndex: number) => {
+                    return currentIndex + 1 < timeSlots.length
+                      ? timeSlots[currentIndex + 1]
+                      : null;
+                  };
+
+                  // Helper function to check if current slot is continuation of a lab
+                  const isLabContinuation = (
+                    day: string,
+                    currentTime: string,
+                    timeIdx: number
+                  ) => {
+                    if (timeIdx === 0) return false;
+                    const prevTime = timeSlots[timeIdx - 1];
+                    const prevSlot = timetable[day]?.[prevTime];
+                    const currentSlot = timetable[day]?.[currentTime];
+
+                    return (
+                      prevSlot?.type === "Lab" &&
+                      (!currentSlot || currentSlot.type !== "Lab") &&
+                      prevSlot?.subject &&
+                      (currentSlot?.subject === prevSlot.subject ||
+                        !currentSlot)
+                    );
+                  };
+
+                  return (
+                    <>
+                      {days.map((day) => {
+                        const slot = timetable[day]?.[time];
+                        const nextTime = getNextTimeSlot(timeIndex);
+                        const nextSlot = nextTime
+                          ? timetable[day]?.[nextTime]
+                          : null;
+
+                        // Check if this is a lab continuation slot
+                        if (isLabContinuation(day, time, timeIndex)) {
+                          return (
                             <div
-                              className={`p-3 rounded-lg border-2 h-full transition-all hover:shadow-sm ${getClassTypeColor(
-                                slot.type
-                              )}`}
+                              key={`${day}-${time}`}
+                              className="p-3 border-b border-r min-h-[100px] bg-muted/10"
+                              data-testid={`slot-${day}-${time}`}
                             >
-                              <h4 className="font-semibold text-sm mb-1 line-clamp-2">
-                                {slot.subject}
-                              </h4>
-                              <div className="flex items-center gap-1 text-xs opacity-75 mb-2">
-                                <MapPin className="h-3 w-3" />
-                                <span>{slot.room}</span>
+                              <div className="h-full flex items-center justify-center opacity-50">
+                                <span className="text-xs text-muted-foreground">
+                                  Lab continues...
+                                </span>
                               </div>
-                              {slot.faculty && (
+                            </div>
+                          );
+                        }
+
+                        // Determine if this lab spans to next slot
+                        const isLabSpanning =
+                          slot?.type === "Lab" &&
+                          nextTime &&
+                          (!nextSlot ||
+                            nextSlot.type !== "Lab" ||
+                            nextSlot.subject === slot.subject);
+
+                        return (
+                          <div
+                            key={`${day}-${time}`}
+                            className={`p-3 border-b border-r min-h-[100px] hover:bg-muted/20 transition-colors ${
+                              isLabSpanning ? "relative" : ""
+                            }`}
+                            data-testid={`slot-${day}-${time}`}
+                          >
+                            {slot ? (
+                              <div
+                                className={`p-3 rounded-lg border-2 h-full transition-all hover:shadow-sm ${getClassTypeColor(
+                                  slot.type
+                                )} ${isLabSpanning ? "relative z-10" : ""}`}
+                              >
+                                <h4 className="font-semibold text-sm mb-1 line-clamp-2">
+                                  {slot.subject}
+                                </h4>
                                 <div className="flex items-center gap-1 text-xs opacity-75 mb-2">
-                                  <User className="h-3 w-3" />
-                                  <span className="line-clamp-1">
-                                    {slot.faculty}
+                                  <Clock className="h-3 w-3" />
+                                  <span>
+                                    {time} - {getEndTime(time, slot.type)}
                                   </span>
                                 </div>
-                              )}
-                              <Badge variant="secondary" className="text-xs">
-                                {slot.type}
-                              </Badge>
-                            </div>
-                          ) : (
-                            <div className="h-full flex items-center justify-center opacity-30">
-                              <span className="text-xs">Free</span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </>
-                ))}
+                                <div className="flex items-center gap-1 text-xs opacity-75 mb-2">
+                                  <MapPin className="h-3 w-3" />
+                                  <span>{slot.room}</span>
+                                </div>
+                                {slot.faculty && (
+                                  <div className="flex items-center gap-1 text-xs opacity-75 mb-2">
+                                    <User className="h-3 w-3" />
+                                    <span className="line-clamp-1">
+                                      {slot.faculty}
+                                    </span>
+                                  </div>
+                                )}
+                                {/* Visual indicator for lab spanning */}
+                                {isLabSpanning && (
+                                  <div className="absolute -bottom-3 left-3 right-3 h-2 bg-gradient-to-b from-current/20 to-transparent rounded-b-lg pointer-events-none" />
+                                )}
+                              </div>
+                            ) : (
+                              <div className="h-full flex items-center justify-center opacity-30">
+                                <span className="text-xs">Free</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -360,16 +388,27 @@ export default function Timetable() {
             {selectedDay && (
               <div className="space-y-3">
                 <h3 className="font-semibold text-lg mb-4">{selectedDay}</h3>
-                {timeSlots.map((time) => {
+                {timeSlots.map((time, timeIndex) => {
                   const slot = timetable[selectedDay]?.[time];
+
+                  // Check if this is a lab continuation slot
+                  const isLabContinuation =
+                    timeIndex > 0 &&
+                    timeSlots[timeIndex - 1] &&
+                    timetable[selectedDay]?.[timeSlots[timeIndex - 1]]?.type ===
+                      "Lab" &&
+                    (!slot || slot.type !== "Lab");
+
+                  // Skip rendering lab continuation slots in mobile view
+                  if (isLabContinuation) {
+                    return null;
+                  }
+
                   return (
                     <div
                       key={time}
-                      className="flex gap-4 p-3 border rounded-lg"
+                      className="flex gap-4 p-0 border rounded-lg"
                     >
-                      <div className="text-sm text-muted-foreground min-w-[70px]">
-                        {time}
-                      </div>
                       <div className="flex-1">
                         {slot ? (
                           <div
@@ -377,22 +416,30 @@ export default function Timetable() {
                               slot.type
                             )}`}
                           >
-                            <h4 className="font-semibold text-sm mb-1">
-                              {slot.subject}
-                            </h4>
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold text-sm">
+                                {slot.subject}
+                              </h4>
+                              <Badge variant="secondary" className="text-xs">
+                                {slot.type}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs opacity-75 mb-1">
+                              <Clock className="h-3 w-3" />
+                              <span>
+                                {time} - {getEndTime(time, slot.type)}
+                              </span>
+                            </div>
                             <div className="flex items-center gap-1 text-xs opacity-75 mb-1">
                               <MapPin className="h-3 w-3" />
                               <span>{slot.room}</span>
                             </div>
                             {slot.faculty && (
-                              <div className="flex items-center gap-1 text-xs opacity-75 mb-2">
+                              <div className="flex items-center gap-1 text-xs opacity-75">
                                 <User className="h-3 w-3" />
                                 <span>{slot.faculty}</span>
                               </div>
                             )}
-                            <Badge variant="secondary" className="text-xs">
-                              {slot.type}
-                            </Badge>
                           </div>
                         ) : (
                           <div className="text-sm text-muted-foreground italic">
