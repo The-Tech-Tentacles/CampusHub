@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
+import { Footer } from "@/components/footer";
 import {
   Bell,
   FileText,
@@ -893,6 +894,8 @@ export default function Dashboard() {
           </Card>
         </div>
       )}
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

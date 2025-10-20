@@ -241,85 +241,83 @@ export default function Profile() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          {/* Academic Information Grid */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {/* Personal Bio */}
+          {/* Personal Bio - Full Width */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-blue-600" />
+                About Me
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground leading-relaxed">
+                {studentProfile.bio}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Academic Information Grid - Better Desktop Layout */}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2">
+            {/* Skills Preview */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-blue-600" />
-                  About Me
+                  <Code className="h-5 w-5 text-blue-600" />
+                  Technical Skills
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground leading-relaxed">
-                  {studentProfile.bio}
-                </p>
+                <div className="flex flex-wrap gap-2">
+                  {studentProfile.skills.slice(0, 6).map((skill, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                    >
+                      {skill}
+                    </Badge>
+                  ))}
+                  {studentProfile.skills.length > 6 && (
+                    <Badge variant="outline" className="text-muted-foreground">
+                      +{studentProfile.skills.length - 6} more
+                    </Badge>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
-            {/* Skills Preview */}
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Code className="h-5 w-5 text-blue-600" />
-                    Technical Skills
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {studentProfile.skills.slice(0, 6).map((skill, index) => (
-                      <Badge
+            {/* Recent Achievements */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-yellow-600" />
+                  Recent Achievements
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {studentProfile.achievements
+                    .slice(0, 3)
+                    .map((achievement, index) => (
+                      <div
                         key={index}
-                        variant="secondary"
-                        className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                        className="flex items-center gap-2 text-sm"
                       >
-                        {skill}
-                      </Badge>
-                    ))}
-                    {studentProfile.skills.length > 6 && (
-                      <Badge
-                        variant="outline"
-                        className="text-muted-foreground"
-                      >
-                        +{studentProfile.skills.length - 6} more
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-yellow-600" />
-                    Recent Achievements
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {studentProfile.achievements
-                      .slice(0, 3)
-                      .map((achievement, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <Award className="h-4 w-4 text-yellow-600 flex-shrink-0" />
-                          <span>{achievement}</span>
-                        </div>
-                      ))}
-                    {studentProfile.achievements.length > 3 && (
-                      <div className="text-sm text-muted-foreground mt-2">
-                        +{studentProfile.achievements.length - 3} more
-                        achievements
+                        <Award className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+                        <span>{achievement}</span>
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                    ))}
+                  {studentProfile.achievements.length > 3 && (
+                    <div className="text-sm text-muted-foreground mt-2">
+                      +{studentProfile.achievements.length - 3} more
+                      achievements
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* </div> */}
             {/* Academic Progress */}
             <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
               <CardHeader className="pb-3">
@@ -335,7 +333,7 @@ export default function Profile() {
                   </span>
                   <Badge
                     variant="secondary"
-                    className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                    className="bg-blue-200 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
                   >
                     {studentProfile.department}
                   </Badge>
@@ -372,7 +370,7 @@ export default function Profile() {
                   </span>
                   <Badge
                     variant="secondary"
-                    className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                    className="bg-green-200 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                   >
                     {studentProfile.cgpa}
                   </Badge>
@@ -406,11 +404,12 @@ export default function Profile() {
                 <div className="grid grid-cols-2 gap-2">
                   <Badge
                     variant="outline"
-                    className="flex items-center gap-2 justify-center py-2 px-3 border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 cursor-pointer"
+                    className="flex items-center gap-2 justify-center py-2 px-3 border-black-400 text-black-700 hover:bg-black-50 dark:border-white-800 dark:text-white-300 cursor-pointer"
                   >
                     <Github className="h-4 w-4" />
                     <span className="text-xs font-medium">
-                      {studentProfile.socialLinks.github}
+                      {/* {studentProfile.socialLinks.github} */}
+                      GitHub
                     </span>
                   </Badge>
                   <Badge
@@ -419,7 +418,8 @@ export default function Profile() {
                   >
                     <Linkedin className="h-4 w-4" />
                     <span className="text-xs font-medium">
-                      {studentProfile.socialLinks.linkedin}
+                      {/* {studentProfile.socialLinks.linkedin} */}
+                      LinkedIn
                     </span>
                   </Badge>
                   <Badge
@@ -437,95 +437,89 @@ export default function Profile() {
 
         {/* Academic Tab */}
         <TabsContent value="academic" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <GraduationCap className="h-5 w-5 text-blue-600" />
-                  Academic Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Enrollment Number
-                    </Label>
-                    <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      <GraduationCap className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-mono">
-                        {studentProfile.enrollmentNo}
-                      </span>
-                    </div>
+          <Card className="max-w-4xl mx-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5 text-blue-600" />
+                Academic Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Enrollment Number
+                  </Label>
+                  <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <GraduationCap className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-mono">
+                      {studentProfile.enrollmentNo}
+                    </span>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Roll Number</Label>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Roll Number</Label>
+                  <Input
+                    defaultValue={studentProfile.rollNumber}
+                    disabled={!isEditing}
+                    className="font-mono"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Department</Label>
+                  <Input
+                    defaultValue={studentProfile.department}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Year & Section</Label>
+                  <div className="flex gap-2">
                     <Input
-                      defaultValue={studentProfile.rollNumber}
+                      defaultValue={studentProfile.year}
                       disabled={!isEditing}
-                      className="font-mono"
+                      className="flex-1"
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Department</Label>
                     <Input
-                      defaultValue={studentProfile.department}
+                      defaultValue={studentProfile.section}
                       disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Year & Section
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        defaultValue={studentProfile.year}
-                        disabled={!isEditing}
-                        className="flex-1"
-                      />
-                      <Input
-                        defaultValue={studentProfile.section}
-                        disabled={!isEditing}
-                        className="w-20"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Current Semester
-                    </Label>
-                    <Input
-                      defaultValue={studentProfile.semester}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">CGPA</Label>
-                    <Input
-                      defaultValue={studentProfile.cgpa}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Specialization
-                    </Label>
-                    <Input
-                      defaultValue={studentProfile.specialization}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Batch</Label>
-                    <Input
-                      defaultValue={studentProfile.batch}
-                      disabled={!isEditing}
+                      className="w-20"
                     />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Current Semester
+                  </Label>
+                  <Input
+                    defaultValue={studentProfile.semester}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">CGPA</Label>
+                  <Input
+                    defaultValue={studentProfile.cgpa}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Specialization</Label>
+                  <Input
+                    defaultValue={studentProfile.specialization}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Batch</Label>
+                  <Input
+                    defaultValue={studentProfile.batch}
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Mentor Tab */}

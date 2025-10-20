@@ -317,12 +317,12 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      {/* <SidebarFooter className="p-4 border-t border-border/40">
+      <SidebarFooter className="p-4 border-t border-border/40">
         <div
           className="space-y-4"
           onClick={() => (navigate("/profile"), handleMobileNavigation())}
         >
-
+          {/* User Profile Section */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 border border-border/20 text-white dark:text-gray-100">
             <Avatar className="h-10 w-10 ring-2 ring-white/20">
               <AvatarImage src={user?.avatar} />
@@ -340,8 +340,8 @@ export function AppSidebar() {
             </div>
           </div>
 
-
-          <Button
+          {/* Logout Button */}
+          {/* <Button
             variant="outline"
             className="w-full justify-start gap-3 h-11 rounded-lg border-border/40 hover:border-border hover:bg-accent/50 transition-all duration-200 group"
             onClick={logout}
@@ -351,9 +351,9 @@ export function AppSidebar() {
               <LogOut className="h-4 w-4 text-red-600 dark:text-red-400" />
             </div>
             <span className="font-medium">Logout</span>
-          </Button>
+          </Button> */}
         </div>
-      </SidebarFooter> */}
+      </SidebarFooter>
     </Sidebar>
   );
 }

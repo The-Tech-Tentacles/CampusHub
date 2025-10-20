@@ -48,11 +48,10 @@ export function ProfileDropdown() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          className="relative hover:bg-primary/10 transition-all duration-200"
+          className="relative h-10 w-10 rounded-full hover:bg-primary/10 transition-all duration-200 p-0"
         >
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-primary/10 text-primary font-medium text-sm">
+          <Avatar className="h-10 w-10">
+            <AvatarFallback className="bg-primary/10 text-primary font-medium text-base">
               {user?.name ? getInitials(user.name) : "U"}
             </AvatarFallback>
           </Avatar>
@@ -61,11 +60,11 @@ export function ProfileDropdown() {
 
       <DropdownMenuContent
         align="end"
-        className="w-72 mr-2 sm:mr-0 border shadow-lg bg-background/95 backdrop-blur-sm"
+        className="w-72 mr-2 sm:mr-0 border shadow-lg bg-background/95 backdrop-blur-sm rounded-2xl"
       >
         {/* Enhanced User Info Header */}
         <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10 rounded-2xl" />
           <DropdownMenuLabel className="relative p-5">
             <div className="flex items-center gap-4">
               <div className="relative">
@@ -81,7 +80,10 @@ export function ProfileDropdown() {
                   {user?.name?.split(" ")[0] || "User"}!
                 </p>
                 <p className="text-xs text-muted-foreground/80 truncate font-medium">
-                  {user?.email || "user@campushub.com"}
+                  {user?.department || "user@campushub.com"}
+                  {/* draw dot sperater*/}
+                  <span className="mx-1 text-muted-foreground"> • </span>
+                  {user?.year || "40xx"}
                 </p>
               </div>
             </div>

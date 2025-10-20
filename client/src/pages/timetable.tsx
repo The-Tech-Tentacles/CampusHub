@@ -387,7 +387,6 @@ export default function Timetable() {
           <div className="block md:hidden p-4">
             {selectedDay && (
               <div className="space-y-3">
-                <h3 className="font-semibold text-lg mb-4">{selectedDay}</h3>
                 {timeSlots.map((time, timeIndex) => {
                   const slot = timetable[selectedDay]?.[time];
 

@@ -78,30 +78,26 @@ export function NotificationsDropdown() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          className="relative hover:bg-primary/10 transition-all duration-200 border-1 border-red-100"
+          className="relative h-10 w-10 rounded-full bg-primary/10 hover:bg-primary/15 transition-all duration-200 p-0 border-0"
           data-testid="button-notifications"
         >
-          {/* <Bell
-            className={`h-6 w-6 transition-colors duration-200 ${
-              unreadCount > 0 ? "text-primary" : ""
+          <Bell
+            className={`h-5 w-5 transition-colors duration-200 ${
+              unreadCount > 0 ? "text-primary" : "text-muted-foreground"
             }`}
-          /> */}
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Bell className="h-4 w-4 text-primary" />
-          </div>
+          />
           {unreadCount > 0 && (
-            <div className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full border-2 border-background transform -translate-x-1/2 translate-y-1" />
+            <div className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full border-2 border-background transform translate-x-1/2 -translate-y-1/2" />
           )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-80 sm:w-96 border shadow-lg bg-background/95 backdrop-blur-sm mr-2 sm:mr-0"
+        className="w-80 sm:w-96 border shadow-lg bg-background/95 backdrop-blur-sm mr-2 sm:mr-0 rounded-2xl"
       >
         {/* Header with gradient background */}
         <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/5 to-accent/10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/5 to-accent/10 rounded-2xl" />
           <div className="relative flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
@@ -134,7 +130,7 @@ export function NotificationsDropdown() {
               </p>
             </div>
           ) : (
-            <div className="space-y-2 p-2">
+            <div className="space-y-2">
               {notifications.map((notification) => {
                 const style = getNotificationStyle(notification.type);
                 const IconComponent = style.icon;
@@ -147,10 +143,10 @@ export function NotificationsDropdown() {
                     data-testid={`notification-${notification.id}`}
                   >
                     <div
-                      className={`group w-full rounded-lg p-4 transition-all duration-200 hover:bg-muted/50 ${
+                      className={`group w-full rounded-xl p-4 transition-all duration-200 hover:bg-muted/50 border ${
                         !notification.readAt
-                          ? "bg-primary/5 border-l-4 border-primary"
-                          : "bg-muted/20"
+                          ? "bg-primary/5 border-l-4 border-primary border-primary/20"
+                          : "bg-muted/20 border-border/30"
                       }`}
                     >
                       <div className="flex items-start gap-3">
