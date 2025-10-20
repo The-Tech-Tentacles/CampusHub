@@ -187,7 +187,7 @@ CREATE TABLE forms (
     description TEXT NOT NULL,
     created_by UUID NOT NULL REFERENCES users(id),
     department_id UUID REFERENCES departments(id),
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'
+    status VARCHAR(20) NOT NULL DEFAULT 'DRAFT'
         CHECK (status IN ('ACTIVE', 'INACTIVE', 'DRAFT')),
     deadline TIMESTAMP WITH TIME ZONE NOT NULL,
     max_submissions INTEGER,
@@ -632,5 +632,3 @@ ORDER BY f.deadline ASC;
 4. **Data Retention**: Implement policies for data retention and cleanup
 
 ---
-
-This schema provides a solid foundation for the CampusHub application with room for future enhancements and scalability.
