@@ -8,6 +8,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
+import { ProfileDropdown } from "@/components/profile-dropdown";
 import { useAuthStore } from "@/stores/auth-store";
 import { useNotificationsStore } from "@/stores/notifications-store";
 import { dataService } from "@/services/dataService";
@@ -172,7 +173,8 @@ function MainLayout() {
             </div>
             <div className="flex items-center gap-2">
               <NotificationsDropdown />
-              <ThemeToggle />
+              {/* Profile dropdown */}
+              <ProfileDropdown />
             </div>
           </header>
           <main className="flex-1 overflow-auto">

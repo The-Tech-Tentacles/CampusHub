@@ -1,4 +1,12 @@
-import { Bell, Check } from "lucide-react";
+import {
+  Bell,
+  Check,
+  Sparkles,
+  AlertCircle,
+  FileText,
+  Calendar,
+  Settings,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,80 +23,206 @@ export function NotificationsDropdown() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } =
     useNotificationsStore();
 
+  // Helper function to get notification icon and color based on type
+  const getNotificationStyle = (type: string) => {
+    switch (type) {
+      case "NOTICE":
+        return {
+          icon: AlertCircle,
+          color: "text-blue-600",
+          bgColor: "bg-blue-50 dark:bg-blue-950/30",
+        };
+      case "FORM":
+        return {
+          icon: FileText,
+          color: "text-green-600",
+          bgColor: "bg-green-50 dark:bg-green-950/30",
+        };
+      case "APPLICATION":
+        return {
+          icon: Check,
+          color: "text-purple-600",
+          bgColor: "bg-purple-50 dark:bg-purple-950/30",
+        };
+      case "SYSTEM":
+        return {
+          icon: Settings,
+          color: "text-orange-600",
+          bgColor: "bg-orange-50 dark:bg-orange-950/30",
+        };
+      default:
+        return {
+          icon: Bell,
+          color: "text-gray-600",
+          bgColor: "bg-gray-50 dark:bg-gray-950/30",
+        };
+    }
+  };
+
+  // Helper function to format relative time elegantly
+  const getTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
+
+    if (diffInHours < 1) return "Just now";
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 48) return "Yesterday";
+    return `${Math.floor(diffInHours / 24)}d ago`;
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
-          className="relative"
+          className="relative hover:bg-primary/10 transition-all duration-200 border-1 border-red-100"
           data-testid="button-notifications"
         >
-          <Bell className="h-7 w-7" />
+          {/* <Bell
+            className={`h-6 w-6 transition-colors duration-200 ${
+              unreadCount > 0 ? "text-primary" : ""
+            }`}
+          /> */}
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Bell className="h-4 w-4 text-primary" />
+          </div>
           {unreadCount > 0 && (
-            <span
-              className={`absolute -top-1 -right-1 text-xs font-bold ${
-                unreadCount > 5
-                  ? "text-red-500"
-                  : unreadCount > 2
-                  ? "text-orange-500"
-                  : "text-blue-500"
-              }`}
-            >
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
+            <div className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full border-2 border-background transform -translate-x-1/2 translate-y-1" />
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
-        <div className="flex items-center justify-between px-4 py-2">
-          <h3 className="font-semibold">Notifications</h3>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={markAllAsRead}
-              className="h-auto p-0 text-xs"
-              data-testid="button-mark-all-read"
-            >
-              Mark all read
-            </Button>
-          )}
+      <DropdownMenuContent
+        align="end"
+        className="w-80 sm:w-96 border shadow-lg bg-background/95 backdrop-blur-sm mr-2 sm:mr-0"
+      >
+        {/* Header with gradient background */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/5 to-accent/10" />
+          <div className="relative flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Bell className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Notifications</h3>
+                <p className="text-xs text-muted-foreground">
+                  {unreadCount > 0
+                    ? `${unreadCount} new updates`
+                    : "All caught up"}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-        <DropdownMenuSeparator />
-        <ScrollArea className="h-[400px]">
+        <DropdownMenuSeparator className="border-primary/20" />
+        <ScrollArea
+          className="h-[420px]"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           {notifications.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">
-              No notifications yet
+            <div className="flex flex-col items-center justify-center p-12 text-center">
+              <div className="p-4 rounded-full bg-muted/30 mb-4">
+                <Bell className="h-8 w-8 text-muted-foreground/60" />
+              </div>
+              <h4 className="font-semibold text-lg mb-2">All clear</h4>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                You're up to date with all notifications
+              </p>
             </div>
           ) : (
-            notifications.map((notification) => (
-              <DropdownMenuItem
-                key={notification.id}
-                className="flex items-start gap-3 p-4 cursor-pointer"
-                onClick={() => markAsRead(notification.id)}
-                data-testid={`notification-${notification.id}`}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-medium text-sm">
-                      {notification.title}
-                    </h4>
-                    {!notification.readAt && (
-                      <div className="h-2 w-2 rounded-full bg-primary" />
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {notification.body}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {new Date(notification.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </DropdownMenuItem>
-            ))
+            <div className="space-y-2 p-2">
+              {notifications.map((notification) => {
+                const style = getNotificationStyle(notification.type);
+                const IconComponent = style.icon;
+
+                return (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    className="flex items-start gap-4 p-0 cursor-pointer border-0 focus:bg-transparent"
+                    onClick={() => markAsRead(notification.id)}
+                    data-testid={`notification-${notification.id}`}
+                  >
+                    <div
+                      className={`group w-full rounded-lg p-4 transition-all duration-200 hover:bg-muted/50 ${
+                        !notification.readAt
+                          ? "bg-primary/5 border-l-4 border-primary"
+                          : "bg-muted/20"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* Clean icon */}
+                        <div className="flex-shrink-0">
+                          <div
+                            className={`p-2 rounded-lg ${style.bgColor} transition-colors duration-200`}
+                          >
+                            <IconComponent
+                              className={`h-4 w-4 ${style.color}`}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-semibold text-sm leading-tight line-clamp-1 flex-1">
+                              {notification.title}
+                            </h4>
+                            {!notification.readAt && (
+                              <div className="flex-shrink-0">
+                                <div className="h-2 w-2 rounded-full bg-primary" />
+                              </div>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
+                            {notification.body}
+                          </p>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground/70">
+                              {getTimeAgo(notification.createdAt)}
+                            </span>
+
+                            {!notification.readAt && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] px-2 py-0.5 text-primary border-primary/30"
+                              >
+                                New
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                );
+              })}
+            </div>
           )}
         </ScrollArea>
+
+        {/* Mark all read button at the bottom */}
+        {unreadCount > 0 && notifications.length > 0 && (
+          <>
+            <DropdownMenuSeparator className="border-primary/20" />
+            <div className="p-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={markAllAsRead}
+                className="w-full text-xs font-medium hover:bg-primary/10 transition-colors duration-200"
+                data-testid="button-mark-all-read"
+              >
+                Mark all read
+              </Button>
+            </div>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
