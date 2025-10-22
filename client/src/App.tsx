@@ -15,15 +15,15 @@ import { dataService } from "@/services/dataService";
 import { useEffect } from "react";
 
 import Login from "@/pages/login";
-import Dashboard from "@/pages/dashboard";
-import Notices from "@/pages/notices";
-import Forms from "@/pages/forms";
-import Schedule from "@/pages/schedule";
-import Timetable from "@/pages/timetable";
-import Applications from "@/pages/applications";
-import Profile from "@/pages/profile";
-import AdminUsers from "@/pages/admin-users";
-import AdminConfig from "@/pages/admin-config";
+import Dashboard from "@/pages/student/dashboard";
+import Notices from "@/pages/student/notices";
+import Forms from "@/pages/student/forms";
+import Schedule from "@/pages/student/schedule";
+import Timetable from "@/pages/student/timetable";
+import Applications from "@/pages/student/applications";
+import Profile from "@/pages/student/profile";
+import AdminUsers from "@/pages/admin/admin-users";
+import AdminConfig from "@/pages/admin/admin-config";
 import ComingSoon from "@/pages/coming-soon";
 import NotFound from "@/pages/not-found";
 

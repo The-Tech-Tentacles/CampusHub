@@ -9,7 +9,6 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  Plus,
   MapPin,
   Clock,
   User,
@@ -19,12 +18,7 @@ import {
   Trophy,
   Music,
   FlaskConical,
-  ArrowLeft,
-  Edit,
-  Trash2,
   Users,
-  CalendarDays,
-  Loader2,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLocation } from "wouter";
@@ -44,11 +38,6 @@ export default function Schedule() {
   const [academicEvents, setAcademicEvents] = useState<AcademicEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("events");
-
-  const canCreateEvent =
-    user?.role && ["FACULTY", "HOD", "DEAN", "ADMIN"].includes(user.role);
-  const canEditAcademic =
-    user?.role && ["HOD", "DEAN", "ADMIN"].includes(user.role);
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -188,31 +177,6 @@ export default function Schedule() {
 
   return (
     <div className="flex-1 space-y-4 p-2 md:p-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          {canCreateEvent && (
-            <Button
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
-              data-testid="button-create-event"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Event
-            </Button>
-          )}
-          {canEditAcademic && (
-            <Button
-              variant="outline"
-              className="border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-950/20"
-              data-testid="button-manage-calendar"
-            >
-              <CalendarDays className="h-4 w-4 mr-2" />
-              Manage Calendar
-            </Button>
-          )}
-        </div>
-      </div>
-
       {/* Month Navigation */}
       <Card className="border-2 border-indigo-200/50 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 dark:border-indigo-800/30">
         <CardHeader>
@@ -272,15 +236,7 @@ export default function Schedule() {
           {events.length === 0 ? (
             <EmptyState
               title="No events this month"
-              description="There are no events scheduled for this month. Check back later or create a new event."
-              action={
-                canCreateEvent
-                  ? {
-                      label: "Create Event",
-                      onClick: () => console.log("Create event"),
-                    }
-                  : undefined
-              }
+              description="There are no events scheduled for this month. Check back later for upcoming events."
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -304,26 +260,6 @@ export default function Schedule() {
                             {event.type}
                           </Badge>
                         </div>
-                        {canCreateEvent && (
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              data-testid={`button-edit-event-${event.id}`}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
-                              data-testid={`button-delete-event-${event.id}`}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
                       </div>
 
                       <h3 className="font-semibold text-lg mb-2 line-clamp-2">
@@ -377,14 +313,6 @@ export default function Schedule() {
             <EmptyState
               title="No academic events this month"
               description="There are no academic calendar events for this month."
-              action={
-                canEditAcademic
-                  ? {
-                      label: "Add Academic Event",
-                      onClick: () => console.log("Add academic event"),
-                    }
-                  : undefined
-              }
             />
           ) : (
             <div className="space-y-4">
@@ -443,27 +371,6 @@ export default function Schedule() {
                             )}
                           </div>
                         </div>
-
-                        {canEditAcademic && event.canEdit && (
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              data-testid={`button-edit-academic-${event.id}`}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
-                              data-testid={`button-delete-academic-${event.id}`}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
                       </div>
                     </CardContent>
                   </Card>

@@ -12,17 +12,13 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Plus,
   FileText,
   Calendar,
   Search,
   User,
   Clock,
-  ArrowLeft,
   Send,
   Eye,
-  Edit3,
-  TrendingUp,
   CheckCircle2,
   Timer,
   AlertTriangle,
@@ -41,9 +37,6 @@ export default function Forms() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("available");
   const [sortByDueDate, setSortByDueDate] = useState(false);
-
-  const canCreateForm =
-    user?.role && ["FACULTY", "HOD", "DEAN", "ADMIN"].includes(user.role);
 
   useEffect(() => {
     const loadForms = async () => {
@@ -172,19 +165,6 @@ export default function Forms() {
 
   return (
     <div className="flex-1 space-y-2 p-4 md:p-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {canCreateForm && (
-          <Button
-            className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white shadow-lg"
-            data-testid="button-create-form"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Form
-          </Button>
-        )}
-      </div>
-
       {/* Search Bar */}
       <Card className="border-0 shadow-md bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20">
         <CardContent className="p-3">
@@ -223,11 +203,7 @@ export default function Forms() {
         onValueChange={setActiveTab}
         className="space-y-4"
       >
-        <TabsList
-          className={`grid w-full h-auto p-1 ${
-            canCreateForm ? "grid-cols-4" : "grid-cols-3"
-          }`}
-        >
+        <TabsList className="grid w-full grid-cols-3 h-auto p-1">
           <TabsTrigger
             value="available"
             className="flex flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3"
@@ -270,22 +246,6 @@ export default function Forms() {
               {getTabForms("missed").length}
             </Badge>
           </TabsTrigger>
-          {canCreateForm && (
-            <TabsTrigger
-              value="created"
-              className="flex flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3"
-              data-testid="tab-created"
-            >
-              <Edit3 className="h-4 w-4" />
-              <span className="text-xs sm:text-sm">Created</span>
-              <Badge
-                variant="outline"
-                className="text-xs px-1 py-0 h-4 min-w-[16px] ml-1"
-              >
-                {getTabForms("created").length}
-              </Badge>
-            </TabsTrigger>
-          )}
         </TabsList>
 
         {/* Available Forms Tab */}
@@ -502,85 +462,6 @@ export default function Forms() {
             </div>
           )}
         </TabsContent>
-
-        {/* Created Forms Tab (Faculty Only) */}
-        {canCreateForm && (
-          <TabsContent value="created" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {currentTabForms.map((form) => {
-                return (
-                  <Card
-                    key={form.id}
-                    className="group hover:shadow-lg transition-all duration-200 border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-800 h-80 flex flex-col"
-                    data-testid={`form-card-created-${form.id}`}
-                  >
-                    <CardHeader className="pb-3 flex-shrink-0">
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-950/30 dark:to-indigo-950/30 p-3">
-                          <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
-                            {form.title}
-                          </CardTitle>
-                          <CardDescription className="mt-1 text-sm leading-relaxed line-clamp-2">
-                            {form.description}
-                          </CardDescription>
-                          <div className="flex items-center gap-2 mt-2 text-xs">
-                            <User className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-muted-foreground">
-                              Created by you
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-4 flex-1">
-                      {/* Statistics */}
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <TrendingUp className="h-4 w-4 text-blue-500" />
-                          <span className="text-blue-600 dark:text-blue-400">
-                            Managing Form
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-4 w-4 text-green-500" />
-                          <span className="text-muted-foreground">
-                            Due {new Date(form.deadline).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/30"
-                          data-testid="button-view-responses"
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Responses
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-950/30"
-                          data-testid="button-edit-form"
-                        >
-                          <Edit3 className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </TabsContent>
-        )}
       </Tabs>
     </div>
   );

@@ -12,9 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search,
-  Plus,
   Clock,
-  AlertTriangle,
   AlarmClock,
   Info,
   Calendar,
@@ -26,7 +24,6 @@ import { useAuthStore } from "@/stores/auth-store";
 import {
   dataService,
   Notice,
-  NoticeType,
   getTypeIcon,
   getTypeColor,
   formatDate,
@@ -36,32 +33,17 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export default function Notices() {
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
   const [activeTab, setActiveTab] = useState("All");
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const canCreateNotice =
-    user?.role && ["FACULTY", "HOD", "DEAN", "ADMIN"].includes(user.role);
 
   // Load notices from centralized service
   useEffect(() => {
@@ -109,11 +91,6 @@ export default function Notices() {
 
   const currentTabNotices = getTabNotices(activeTab);
 
-  const handleCreateNotice = () => {
-    console.log("Creating notice");
-    setIsCreateOpen(false);
-  };
-
   if (loading) {
     return (
       <div className="space-y-2 p-3 md:p-6">
@@ -136,82 +113,6 @@ export default function Notices() {
 
   return (
     <div className="space-y-2 p-3 md:p-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {canCreateNotice && (
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Notice
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-[600px] !left-4 !right-4 !translate-x-0 sm:!left-1/2 sm:!right-auto sm:!translate-x-[-50%]">
-              <DialogHeader>
-                <DialogTitle>Create New Notice</DialogTitle>
-                <DialogDescription>
-                  Share important information with students and faculty
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input id="title" placeholder="Notice title" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="content">Content</Label>
-                  <Textarea
-                    id="content"
-                    placeholder="Notice content"
-                    rows={5}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Priority</Label>
-                    <Select defaultValue="general">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="urgent">🚨 Urgent</SelectItem>
-                        <SelectItem value="important">⚠️ Important</SelectItem>
-                        <SelectItem value="general">ℹ️ General</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="scope">Scope</Label>
-                    <Select defaultValue="GLOBAL">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select scope" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="GLOBAL">🌍 Global</SelectItem>
-                        <SelectItem value="DEPARTMENT">
-                          🏢 Department
-                        </SelectItem>
-                        <SelectItem value="YEAR">📚 Year</SelectItem>
-                        <SelectItem value="CLASS">👥 Class</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsCreateOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateNotice}>Publish Notice</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-      </div>
-
       {/* Search Bar */}
       <Card className="border-0 shadow-md bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
         <CardContent className="p-3">
@@ -405,14 +306,6 @@ export default function Notices() {
               <DialogDescription className="text-base leading-relaxed whitespace-pre-wrap">
                 {selectedNotice.content}
               </DialogDescription>
-              <DialogFooter>
-                {/* <Button
-                  variant="outline"
-                  onClick={() => setSelectedNotice(null)}
-                >
-                  Close
-                </Button> */}
-              </DialogFooter>
             </>
           )}
         </DialogContent>

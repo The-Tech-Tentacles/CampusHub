@@ -5,23 +5,27 @@ import { useLocation } from "wouter";
 
 export default function ComingSoon() {
   const [location] = useLocation();
-  
+
   const featureMap: Record<string, { title: string; description: string }> = {
     "/lms": {
       title: "Learning Management System",
-      description: "Access course materials, submit assignments, take quizzes, and participate in discussion forums.",
+      description:
+        "Access course materials, submit assignments, take quizzes, and participate in discussion forums.",
     },
     "/chat": {
       title: "Real-time Chat",
-      description: "Connect with students and faculty through instant messaging and group chats.",
+      description:
+        "Connect with students and faculty through instant messaging and group chats.",
     },
     "/attendance": {
       title: "QR Attendance",
-      description: "Mark your attendance using QR code scanning for a seamless check-in experience.",
+      description:
+        "Mark your attendance using QR code scanning for a seamless check-in experience.",
     },
     "/analytics": {
       title: "Advanced Analytics",
-      description: "View detailed analytics and insights about academic performance and trends.",
+      description:
+        "View detailed analytics and insights about academic performance and trends.",
     },
   };
 
@@ -31,7 +35,7 @@ export default function ComingSoon() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="flex items-center justify-center min-h-[60vh] m-2">
       <Card className="max-w-2xl w-full">
         <CardContent className="pt-12 pb-12">
           <div className="text-center space-y-6">
@@ -41,7 +45,9 @@ export default function ComingSoon() {
               </div>
             </div>
             <div className="space-y-2">
-              <Badge variant="secondary" className="mb-2">Coming Soon</Badge>
+              <Badge variant="secondary" className="mb-2">
+                Coming Soon
+              </Badge>
               <h1 className="text-3xl font-serif font-bold">{feature.title}</h1>
               <p className="text-lg text-muted-foreground max-w-md mx-auto">
                 {feature.description}
@@ -49,7 +55,8 @@ export default function ComingSoon() {
             </div>
             <div className="pt-4">
               <p className="text-sm text-muted-foreground">
-                We're working hard to bring this feature to you. Stay tuned for updates!
+                We're working hard to bring this feature to you. Stay tuned for
+                updates!
               </p>
             </div>
           </div>

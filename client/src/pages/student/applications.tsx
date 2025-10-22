@@ -16,14 +16,12 @@ import {
   FileText,
   Calendar,
   Search,
-  User,
   Clock,
   CheckCircle2,
   XCircle,
   HourglassIcon,
   Send,
   Eye,
-  TrendingUp,
   Upload,
   Paperclip,
   UserCheck,
@@ -70,9 +68,6 @@ export default function Applications() {
     description: "",
     proofFile: null as File | null,
   });
-
-  const canReview =
-    user?.role && ["FACULTY", "HOD", "DEAN", "ADMIN"].includes(user.role);
 
   useEffect(() => {
     const loadApplications = async () => {

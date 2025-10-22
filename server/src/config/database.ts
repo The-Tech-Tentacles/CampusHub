@@ -1,59 +1,35 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
-import * as schema from "../../../shared/schema";
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
 
-neonConfig.webSocketConstructor = ws;
+// Initialize database connection - should be called after environment variables are loaded
+export function initializeDatabase() {
+    if (!process.env.DATABASE_URL) {
+        throw new Error('DATABASE_URL is not set');
+    }
 
-// Database configuration
-export const databaseConfig = {
-    url: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production',
-    connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '60000'),
-    idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000'),
-    max: parseInt(process.env.DB_POOL_MAX || '10'),
-    min: parseInt(process.env.DB_POOL_MIN || '2'),
-};
-
-// Validate required environment variables
-if (!process.env.DATABASE_URL) {
-    throw new Error(
-        "DATABASE_URL must be set. Did you forget to provision a database?",
-    );
+    const sql = neon(process.env.DATABASE_URL);
+    // @ts-ignore - Type compatibility issue between Drizzle and Neon, functionality works fine
+    return { db: drizzle(sql), sql };
 }
 
-// Create connection pool
-export const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    max: databaseConfig.max,
-    min: databaseConfig.min,
-    connectionTimeoutMillis: databaseConfig.connectionTimeoutMillis,
-    idleTimeoutMillis: databaseConfig.idleTimeoutMillis,
-});
+let dbConnection: ReturnType<typeof initializeDatabase> | null = null;
 
-// Initialize Drizzle ORM
-export const db = drizzle({ client: pool, schema });
+export function getDatabase() {
+    if (!dbConnection) {
+        dbConnection = initializeDatabase();
+    }
+    return dbConnection;
+}
 
-// Database health check
-export async function checkDatabaseConnection(): Promise<boolean> {
+// Test connection function
+export async function testConnection() {
     try {
-        const client = await pool.connect();
-        await client.query('SELECT 1');
-        client.release();
-        console.log('✅ Database connection established');
+        const { sql } = getDatabase();
+        const result = await sql`SELECT 1 as test`;
+        console.log('✅ Database connection successful');
         return true;
     } catch (error) {
         console.error('❌ Database connection failed:', error);
         return false;
-    }
-}
-
-// Graceful database shutdown
-export async function closeDatabaseConnection(): Promise<void> {
-    try {
-        await pool.end();
-        console.log('✅ Database connection closed');
-    } catch (error) {
-        console.error('❌ Error closing database connection:', error);
     }
 }

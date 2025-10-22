@@ -100,7 +100,7 @@ export function AppSidebar() {
       title: "Manage Users",
       url: "/admin/users",
       icon: Users,
-      roles: ["ADMIN", "DEAN"],
+      roles: ["ADMIN", "DEAN", "HOD"],
       emoji: "👥",
     },
     {
@@ -217,7 +217,7 @@ export function AppSidebar() {
 
         {filteredAdminItems.length > 0 && (
           <>
-            <Separator className="my-4 mx-3" />
+            <Separator className="my-4" />
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2">
                 <div className="flex items-center gap-2">

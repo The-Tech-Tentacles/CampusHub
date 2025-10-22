@@ -95,7 +95,7 @@ export function ProfileDropdown() {
         {/* Elegant Menu Items */}
         <div className="p-2 space-y-1">
           <DropdownMenuItem
-            className="group rounded-lg px-3 py-3 cursor-pointer hover:bg-primary/5 transition-all duration-200"
+            className="group rounded-lg px-3 py-3 cursor-pointer hover:bg-primary/5 focus:bg-blue-100 dark:focus:bg-blue-950/30 transition-all duration-200"
             onClick={() => setLocation("/profile")}
           >
             <div className="flex items-center gap-3 w-full">
@@ -112,7 +112,7 @@ export function ProfileDropdown() {
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            className="group rounded-lg px-3 py-3 cursor-pointer hover:bg-primary/5 transition-all duration-200"
+            className="group rounded-lg px-3 py-3 cursor-pointer hover:bg-primary/5 focus:bg-blue-100 dark:focus:bg-blue-950/30 transition-all duration-200"
             onClick={toggleTheme}
           >
             <div className="flex items-center gap-3 w-full">
@@ -134,7 +134,7 @@ export function ProfileDropdown() {
             </div>
           </DropdownMenuItem>
 
-          <DropdownMenuItem className="group rounded-lg px-3 py-3 cursor-pointer hover:bg-primary/5 transition-all duration-200">
+          <DropdownMenuItem className="group rounded-lg px-3 py-3 cursor-pointer hover:bg-primary/5 focus:bg-blue-100 dark:focus:bg-blue-950/30 transition-all duration-200">
             <div className="flex items-center gap-3 w-full">
               <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-950/30 group-hover:bg-gray-100 dark:group-hover:bg-gray-900/50 transition-colors">
                 <Settings className="h-4 w-4 text-gray-600 dark:text-gray-400" />
@@ -154,7 +154,7 @@ export function ProfileDropdown() {
         {/* Logout Section */}
         <div className="p-2">
           <DropdownMenuItem
-            className="group rounded-lg px-3 py-3 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-200 text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+            className="group rounded-lg px-3 py-3 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/30 focus:bg-red-50 dark:focus:bg-red-950/30 transition-all duration-200 text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
             onClick={handleLogout}
           >
             <div className="flex items-center gap-3 w-full">

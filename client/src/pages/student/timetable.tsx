@@ -3,14 +3,12 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
-  ArrowRight,
   Plus,
   Clock,
   MapPin,
   User,
   Calendar,
   BookOpen,
-  Loader2,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +19,6 @@ import {
 } from "@/services/dataService";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/empty-state";
 
 export default function Timetable() {
   const { user } = useAuthStore();
@@ -33,9 +30,6 @@ export default function Timetable() {
   const [currentWeek, setCurrentWeek] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-
-  const canManageTimetable =
-    user?.role && ["FACULTY", "HOD", "DEAN", "ADMIN"].includes(user.role);
 
   const timeSlots = [
     "9:15 AM",
@@ -207,16 +201,6 @@ export default function Timetable() {
             Back to Dashboard
           </Button>
         </div>
-
-        {canManageTimetable && (
-          <Button
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
-            data-testid="button-manage-timetable"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Manage Timetable
-          </Button>
-        )}
       </div>
 
       {/* Weekly Timetable Grid */}

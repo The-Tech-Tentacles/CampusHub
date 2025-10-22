@@ -13,10 +13,7 @@ import {
   Clock,
   BookOpen,
   Code,
-  Calculator,
   Users,
-  AlertTriangle,
-  Info,
   Eye,
   ArrowRight,
 } from "lucide-react";
@@ -826,74 +823,6 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {user?.role !== "STUDENT" && (
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Approvals</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div>
-                    <h4 className="font-medium text-sm">
-                      Student Leave Application
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      Submitted 2 hours ago
-                    </p>
-                  </div>
-                  <Button size="sm" data-testid="button-review">
-                    Review
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div>
-                    <h4 className="font-medium text-sm">
-                      Notice Approval Request
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      Submitted yesterday
-                    </p>
-                  </div>
-                  <Button size="sm" data-testid="button-review">
-                    Review
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Stats</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Total Students</span>
-                </div>
-                <span className="font-bold">1,234</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Active Forms</span>
-                </div>
-                <span className="font-bold">12</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Pending Reviews</span>
-                </div>
-                <span className="font-bold">8</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
       {/* Footer */}
       <Footer />
     </div>

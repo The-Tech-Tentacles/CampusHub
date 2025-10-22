@@ -9,27 +9,20 @@ This backend follows a clean, modular architecture with proper separation of con
 ```
 server/
 ├── src/
-│   ├── config/          # Configuration files
-│   │   ├── index.ts     # Main config and environment validation
-│   │   └── database.ts  # Database connection and setup
-│   ├── controllers/     # Request handlers and business logic
-│   │   ├── authController.ts
-│   │   ├── userController.ts
-│   │   └── noticeController.ts
-│   ├── middleware/      # Express middleware
-│   │   ├── auth.ts      # Authentication and authorization
-│   │   ├── validation.ts # Input validation
-│   │   └── errorHandler.ts # Error handling
-│   ├── services/        # Business logic and data access
-│   │   ├── userService.ts
-│   │   ├── noticeService.ts
-│   │   ├── applicationService.ts
-│   │   └── notificationService.ts
-│   ├── routes/          # Route definitions
-│   │   └── index.ts     # Main routes setup
-│   ├── utils/           # Utility functions
-│   └── app.ts           # Express app setup
-├── migrations/          # Database migration files
+│   ├── config/               # Configuration files
+│   │   ├── index.ts          # Main config and environment validation
+│   │   └── database.ts       # Database connection and setup
+│   ├── controllers/          # Request handlers and business logic
+│   ├── middleware/           # Express middleware
+│   │   ├── auth.ts           # Authentication and authorization
+│   │   ├── validation.ts     # Input validation
+│   │   └── errorHandler.ts   # Error handling
+│   ├── services/             # Business logic and data access
+│   ├── routes/               # Route definitions
+│   ├── utils/                # Utility functions
+│   └── index.ts              # Express app setup
+├── migrations/               # Database migration files
+├── Docs/                     # Backend documentation
 ├── package.json
 ├── tsconfig.json
 └── .env.example
@@ -143,34 +136,34 @@ npm start
 
 ### Authentication
 
-- `POST /api/v1/auth/register` - User registration
-- `POST /api/v1/auth/login` - User login
-- `GET /api/v1/auth/profile` - Get current user profile
-- `PUT /api/v1/auth/profile` - Update user profile
-- `POST /api/v1/auth/change-password` - Change password
-- `POST /api/v1/auth/logout` - Logout
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `GET /api/auth/profile` - Get current user profile
+- `PUT /api/auth/profile` - Update user profile
+- `POST /api/auth/change-password` - Change password
+- `POST /api/auth/logout` - Logout
 
 ### Users (Admin/Faculty Access)
 
-- `GET /api/v1/users` - List all users
-- `GET /api/v1/users/search` - Search users
-- `GET /api/v1/users/role/:role` - Get users by role
-- `GET /api/v1/users/department/:department` - Get users by department
-- `GET /api/v1/users/:id` - Get user by ID
-- `PUT /api/v1/users/:id` - Update user
-- `POST /api/v1/users/:id/activate` - Activate user
-- `POST /api/v1/users/:id/deactivate` - Deactivate user
+- `GET /api/users` - List all users
+- `GET /api/users/search` - Search users
+- `GET /api/users/role/:role` - Get users by role
+- `GET /api/users/department/:department` - Get users by department
+- `GET /api/users/:id` - Get user by ID
+- `PUT /api/users/:id` - Update user
+- `POST /api/users/:id/activate` - Activate user
+- `POST /api/users/:id/deactivate` - Deactivate user
 
 ### Notices
 
-- `GET /api/v1/notices` - Get notices (with pagination)
-- `GET /api/v1/notices/unread` - Get unread notices
-- `GET /api/v1/notices/:id` - Get notice by ID
-- `GET /api/v1/notices/:id/stats` - Get notice read statistics
-- `POST /api/v1/notices` - Create notice (Faculty+)
-- `PUT /api/v1/notices/:id` - Update notice
-- `DELETE /api/v1/notices/:id` - Delete notice
-- `POST /api/v1/notices/:id/read` - Mark notice as read
+- `GET /api/notices` - Get notices (with pagination)
+- `GET /api/notices/unread` - Get unread notices
+- `GET /api/notices/:id` - Get notice by ID
+- `GET /api/notices/:id/stats` - Get notice read statistics
+- `POST /api/notices` - Create notice (Faculty+)
+- `PUT /api/notices/:id` - Update notice
+- `DELETE /api/notices/:id` - Delete notice
+- `POST /api/notices/:id/read` - Mark notice as read
 
 ## 🔒 Authentication
 
