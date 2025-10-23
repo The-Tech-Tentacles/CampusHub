@@ -17,7 +17,7 @@ import {
   type Timetable,
   type TimetableSlot,
 } from "@/services/dataService";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Timetable() {
@@ -31,16 +31,27 @@ export default function Timetable() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-  const timeSlots = [
-    "9:15 AM",
-    "10:15 AM",
-    "11:15 AM",
-    "11:30 AM",
-    "12:30 PM",
-    "1:30 PM",
-    "2:15 PM",
-    "3:15 PM",
-  ];
+  // Dynamically generate time slots from timetable data
+  const timeSlots = useMemo(() => {
+    const allTimes = new Set<string>();
+    Object.values(timetable).forEach((daySchedule) => {
+      Object.keys(daySchedule).forEach((time) => {
+        allTimes.add(time);
+      });
+    });
+    return Array.from(allTimes).sort((a, b) => {
+      // Convert time strings to comparable format for sorting
+      const parseTime = (timeStr: string) => {
+        const [time, period] = timeStr.split(" ");
+        const [hours, minutes] = time.split(":").map(Number);
+        let totalMinutes = hours * 60 + minutes;
+        if (period === "PM" && hours !== 12) totalMinutes += 12 * 60;
+        if (period === "AM" && hours === 12) totalMinutes -= 12 * 60;
+        return totalMinutes;
+      };
+      return parseTime(a) - parseTime(b);
+    });
+  }, [timetable]);
 
   const days = [
     "Monday",
@@ -120,29 +131,69 @@ export default function Timetable() {
     }
   };
 
-  // Helper function to calculate end time based on class type
-  const getEndTime = (startTime: string, classType: string) => {
+  // Helper function to calculate end time based on class type and next slot
+  const getEndTime = (
+    startTime: string,
+    classType: string,
+    day?: string,
+    timeIndex?: number
+  ) => {
+    // For breaks, calculate based on next time slot
+    if (classType === "Break" && day && timeIndex !== undefined) {
+      const nextIndex = timeIndex + 1;
+      if (nextIndex < timeSlots.length) {
+        return timeSlots[nextIndex];
+      }
+      // If no next slot, assume 15 minutes for short breaks, 45 minutes for lunch
+      const isLunch = timetable[day]?.[startTime]?.subject
+        ?.toLowerCase()
+        .includes("lunch");
+      const minutesToAdd = isLunch ? 45 : 15;
+      return addMinutesToTime(startTime, minutesToAdd);
+    }
+
+    // For regular classes, use fixed durations
     const isLab = classType === "Lab";
     const hoursToAdd = isLab ? 2 : 1;
+    return addHoursToTime(startTime, hoursToAdd);
+  };
 
-    // Parse start time
-    const [time, period] = startTime.split(" ");
-    const [hours, minutes] = time.split(":").map(Number);
+  // Helper function to add hours to a time string
+  const addHoursToTime = (timeStr: string, hours: number) => {
+    const [time, period] = timeStr.split(" ");
+    const [hour, minute] = time.split(":").map(Number);
 
-    // Convert to 24-hour format
-    let hour24 = hours;
-    if (period === "PM" && hours !== 12) hour24 += 12;
-    if (period === "AM" && hours === 12) hour24 = 0;
+    let hour24 = hour;
+    if (period === "PM" && hour !== 12) hour24 += 12;
+    if (period === "AM" && hour === 12) hour24 = 0;
 
-    // Add duration
-    hour24 += hoursToAdd;
+    hour24 += hours;
 
-    // Convert back to 12-hour format
-    const endPeriod = hour24 >= 12 ? "PM" : "AM";
-    let endHour = hour24 > 12 ? hour24 - 12 : hour24;
-    if (endHour === 0) endHour = 12;
+    const newPeriod = hour24 >= 12 ? "PM" : "AM";
+    let newHour = hour24 > 12 ? hour24 - 12 : hour24;
+    if (newHour === 0) newHour = 12;
 
-    return `${endHour}:${minutes.toString().padStart(2, "0")} ${endPeriod}`;
+    return `${newHour}:${minute.toString().padStart(2, "0")} ${newPeriod}`;
+  };
+
+  // Helper function to add minutes to a time string
+  const addMinutesToTime = (timeStr: string, minutes: number) => {
+    const [time, period] = timeStr.split(" ");
+    const [hour, minute] = time.split(":").map(Number);
+
+    let hour24 = hour;
+    if (period === "PM" && hour !== 12) hour24 += 12;
+    if (period === "AM" && hour === 12) hour24 = 0;
+
+    let totalMinutes = hour24 * 60 + minute + minutes;
+    hour24 = Math.floor(totalMinutes / 60);
+    const newMinute = totalMinutes % 60;
+
+    const newPeriod = hour24 >= 12 ? "PM" : "AM";
+    let newHour = hour24 > 12 ? hour24 - 12 : hour24;
+    if (newHour === 0) newHour = 12;
+
+    return `${newHour}:${newMinute.toString().padStart(2, "0")} ${newPeriod}`;
   };
 
   if (isLoading) {
@@ -332,7 +383,13 @@ export default function Timetable() {
                                 <div className="flex items-center gap-1 text-xs opacity-75 mb-2">
                                   <Clock className="h-3 w-3" />
                                   <span>
-                                    {time} - {getEndTime(time, slot.type)}
+                                    {time} -{" "}
+                                    {getEndTime(
+                                      time,
+                                      slot.type,
+                                      day,
+                                      timeIndex
+                                    )}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1 text-xs opacity-75 mb-2">
@@ -410,7 +467,13 @@ export default function Timetable() {
                             <div className="flex items-center gap-1 text-xs opacity-75 mb-1">
                               <Clock className="h-3 w-3" />
                               <span>
-                                {time} - {getEndTime(time, slot.type)}
+                                {time} -{" "}
+                                {getEndTime(
+                                  time,
+                                  slot.type,
+                                  selectedDay,
+                                  timeIndex
+                                )}
                               </span>
                             </div>
                             <div className="flex items-center gap-1 text-xs opacity-75 mb-1">

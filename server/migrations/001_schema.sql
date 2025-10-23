@@ -1,7 +1,6 @@
 -- CampusHub Database Schema - Production Ready
--- Updated: 2025-10-21
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Updated: 2025-10-23
+-- Note: Using gen_random_uuid() instead of uuid-ossp for modern PostgreSQL compatibility
 -- Create custom types
 CREATE TYPE user_role AS ENUM ('STUDENT', 'FACULTY', 'HOD', 'DEAN', 'ADMIN');
 CREATE TYPE notice_type AS ENUM ('urgent', 'important', 'general');
@@ -44,15 +43,23 @@ CREATE TYPE academic_event_type AS ENUM (
     'OTHER'
 );
 CREATE TYPE slot_type AS ENUM ('Lecture', 'Lab', 'Seminar', 'Break', 'Other');
+CREATE TYPE academic_level AS ENUM (
+    'UNDERGRADUATE',
+    'POSTGRADUATE',
+    'DIPLOMA',
+    'CERTIFICATE'
+);
 -- Users table (core authentication and basic info)
 CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role user_role NOT NULL DEFAULT 'STUDENT',
     department VARCHAR(100),
     year VARCHAR(20),
+    department_id UUID,
+    academic_year_id UUID,
     enrollment_number VARCHAR(50) UNIQUE,
     employee_id VARCHAR(50) UNIQUE,
     phone VARCHAR(20),
@@ -63,7 +70,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 -- Departments table
 CREATE TABLE IF NOT EXISTS departments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(200) NOT NULL UNIQUE,
     code VARCHAR(20) NOT NULL UNIQUE,
     hod_id UUID REFERENCES users(id) ON DELETE
@@ -73,9 +80,19 @@ CREATE TABLE IF NOT EXISTS departments (
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+-- Academic years table
+CREATE TABLE IF NOT EXISTS academic_years (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(50) NOT NULL,
+    code VARCHAR(10) NOT NULL UNIQUE,
+    level academic_level NOT NULL,
+    sequence_order INTEGER NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 -- Student profiles table (detailed student information)
 CREATE TABLE IF NOT EXISTS student_profiles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     -- Academic Info
     section VARCHAR(10),
@@ -118,7 +135,7 @@ CREATE TABLE IF NOT EXISTS student_profiles (
 );
 -- Notices table
 CREATE TABLE IF NOT EXISTS notices (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(500) NOT NULL,
     content TEXT NOT NULL,
     type notice_type NOT NULL DEFAULT 'general',
@@ -141,7 +158,7 @@ CREATE TABLE IF NOT EXISTS notices (
 );
 -- Notice reads tracking
 CREATE TABLE IF NOT EXISTS notice_reads (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     notice_id UUID NOT NULL REFERENCES notices(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     read_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -149,7 +166,7 @@ CREATE TABLE IF NOT EXISTS notice_reads (
 );
 -- Forms table
 CREATE TABLE IF NOT EXISTS forms (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(500) NOT NULL,
     description TEXT NOT NULL,
     created_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -169,7 +186,7 @@ CREATE TABLE IF NOT EXISTS forms (
 );
 -- Applications table
 CREATE TABLE IF NOT EXISTS applications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(500) NOT NULL,
     type VARCHAR(100) NOT NULL,
     description TEXT NOT NULL,
@@ -209,7 +226,7 @@ CREATE TABLE IF NOT EXISTS applications (
 );
 -- Form submissions table
 CREATE TABLE IF NOT EXISTS form_submissions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     form_id UUID NOT NULL REFERENCES forms(id) ON DELETE CASCADE,
     submitted_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     submission_data JSONB NOT NULL,
@@ -220,7 +237,7 @@ CREATE TABLE IF NOT EXISTS form_submissions (
 );
 -- Subjects/Courses table
 CREATE TABLE IF NOT EXISTS subjects (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     code VARCHAR(20) NOT NULL UNIQUE,
     department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
@@ -234,7 +251,7 @@ CREATE TABLE IF NOT EXISTS subjects (
 );
 -- Rooms table
 CREATE TABLE IF NOT EXISTS rooms (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL,
     code VARCHAR(20) NOT NULL UNIQUE,
     type VARCHAR(50) NOT NULL DEFAULT 'CLASSROOM',
@@ -249,11 +266,10 @@ CREATE TABLE IF NOT EXISTS rooms (
 );
 -- Timetable slots table
 CREATE TABLE IF NOT EXISTS timetable_slots (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     subject_id UUID REFERENCES subjects(id) ON DELETE
     SET NULL,
-        room VARCHAR(100) NOT NULL,
-        -- Room name/code
+        room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE RESTRICT,
         faculty_id UUID REFERENCES users(id) ON DELETE
     SET NULL,
         day_of_week VARCHAR(10) NOT NULL,
@@ -264,9 +280,8 @@ CREATE TABLE IF NOT EXISTS timetable_slots (
         -- For class/year specific schedules
         department_id UUID REFERENCES departments(id) ON DELETE
     SET NULL,
-        year VARCHAR(20),
+        academic_year_id UUID NOT NULL REFERENCES academic_years(id) ON DELETE RESTRICT,
         section VARCHAR(10),
-        academic_year VARCHAR(20) NOT NULL DEFAULT '2024-25',
         semester INTEGER CHECK (semester IN (1, 2)) DEFAULT 1,
         is_active BOOLEAN DEFAULT true,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -274,7 +289,7 @@ CREATE TABLE IF NOT EXISTS timetable_slots (
 );
 -- Events table (campus events)
 CREATE TABLE IF NOT EXISTS events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(500) NOT NULL,
     description TEXT,
     type event_type NOT NULL DEFAULT 'GENERIC',
@@ -299,7 +314,7 @@ CREATE TABLE IF NOT EXISTS events (
 );
 -- Academic events table (semester dates, holidays, etc.)
 CREATE TABLE IF NOT EXISTS academic_events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(500) NOT NULL,
     description TEXT,
     type academic_event_type NOT NULL,
@@ -324,7 +339,7 @@ CREATE TABLE IF NOT EXISTS academic_events (
 );
 -- Notification templates (scalable notification system - store once, reference many times)
 CREATE TABLE IF NOT EXISTS notification_templates (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(500) NOT NULL,
     body TEXT NOT NULL,
     type notification_type NOT NULL DEFAULT 'SYSTEM',
@@ -358,7 +373,7 @@ CREATE TABLE IF NOT EXISTS notification_templates (
 );
 -- User notification status (lightweight per-user tracking)
 CREATE TABLE IF NOT EXISTS user_notifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     template_id UUID NOT NULL REFERENCES notification_templates(id) ON DELETE CASCADE,
     -- User-specific interaction state
@@ -376,7 +391,7 @@ CREATE TABLE IF NOT EXISTS user_notifications (
 );
 -- User sessions table (for authentication)
 CREATE TABLE IF NOT EXISTS user_sessions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     session_token VARCHAR(255) NOT NULL UNIQUE,
     refresh_token VARCHAR(255) NOT NULL UNIQUE,
@@ -386,11 +401,23 @@ CREATE TABLE IF NOT EXISTS user_sessions (
     ip_address INET,
     user_agent TEXT
 );
+-- Add foreign key constraints for enhanced normalization
+ALTER TABLE users
+ADD CONSTRAINT fk_users_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE
+SET NULL;
+ALTER TABLE users
+ADD CONSTRAINT fk_users_academic_year FOREIGN KEY (academic_year_id) REFERENCES academic_years(id) ON DELETE
+SET NULL;
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_enrollment ON users(enrollment_number);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_department ON users(department);
+CREATE INDEX IF NOT EXISTS idx_users_department_id ON users(department_id);
+CREATE INDEX IF NOT EXISTS idx_users_academic_year_id ON users(academic_year_id);
+CREATE INDEX IF NOT EXISTS idx_academic_years_code ON academic_years(code);
+CREATE INDEX IF NOT EXISTS idx_academic_years_level ON academic_years(level);
+CREATE INDEX IF NOT EXISTS idx_academic_years_sequence ON academic_years(sequence_order);
 CREATE INDEX IF NOT EXISTS idx_student_profiles_user ON student_profiles(user_id);
 CREATE INDEX IF NOT EXISTS idx_student_profiles_mentor ON student_profiles(mentor_id);
 CREATE INDEX IF NOT EXISTS idx_departments_code ON departments(code);
@@ -424,7 +451,9 @@ CREATE INDEX IF NOT EXISTS idx_rooms_department ON rooms(department_id);
 CREATE INDEX IF NOT EXISTS idx_timetable_day_time ON timetable_slots(day_of_week, time_slot);
 CREATE INDEX IF NOT EXISTS idx_timetable_subject ON timetable_slots(subject_id);
 CREATE INDEX IF NOT EXISTS idx_timetable_faculty ON timetable_slots(faculty_id);
-CREATE INDEX IF NOT EXISTS idx_timetable_department_year ON timetable_slots(department_id, year);
+CREATE INDEX IF NOT EXISTS idx_timetable_room ON timetable_slots(room_id);
+CREATE INDEX IF NOT EXISTS idx_timetable_department_academic_year ON timetable_slots(department_id, academic_year_id);
+CREATE INDEX IF NOT EXISTS idx_timetable_academic_year ON timetable_slots(academic_year_id);
 CREATE INDEX IF NOT EXISTS idx_events_date ON events(date);
 CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
 CREATE INDEX IF NOT EXISTS idx_events_target_years ON events USING GIN(target_years);
@@ -465,6 +494,8 @@ CREATE TRIGGER update_student_profiles_updated_at BEFORE
 UPDATE ON student_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_departments_updated_at BEFORE
 UPDATE ON departments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_academic_years_updated_at BEFORE
+UPDATE ON academic_years FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_notices_updated_at BEFORE
 UPDATE ON notices FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_forms_updated_at BEFORE
@@ -483,171 +514,7 @@ CREATE TRIGGER update_events_updated_at BEFORE
 UPDATE ON events FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_academic_events_updated_at BEFORE
 UPDATE ON academic_events FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
--- Insert default users (password: password123 for all)
-INSERT INTO users (
-        name,
-        email,
-        password_hash,
-        role,
-        department,
-        year,
-        enrollment_number,
-        employee_id,
-        is_active
-    )
-VALUES (
-        'Student',
-        'student@adcet.ac.in',
-        '$2a$12$rQv8W6gxfJ.TzeLG8QY8v.tq6h1QZH3K8QZ5J8QY8v.tq6h1QZH3K8',
-        'STUDENT',
-        'AI & DS',
-        'B. Tech',
-        '10220910xx',
-        NULL,
-        true
-    ),
-    (
-        'Faculty',
-        'faculty@adcet.ac.in',
-        '$2a$12$rQv8W6gxfJ.TzeLG8QY8v.tq6h1QZH3K8QZ5J8QY8v.tq6h1QZH3K8',
-        'FACULTY',
-        'AI & DS',
-        NULL,
-        NULL,
-        'FAC001',
-        true
-    ),
-    (
-        'Hod',
-        'hod@adcet.ac.in',
-        '$2a$12$rQv8W6gxfJ.TzeLG8QY8v.tq6h1QZH3K8QZ5J8QY8v.tq6h1QZH3K8',
-        'HOD',
-        'AI & DS',
-        NULL,
-        NULL,
-        'HOD001',
-        true
-    ),
-    (
-        'Dean',
-        'dean@adcet.ac.in',
-        '$2a$12$rQv8W6gxfJ.TzeLG8QY8v.tq6h1QZH3K8QZ5J8QY8v.tq6h1QZH3K8',
-        'DEAN',
-        'Engineering',
-        NULL,
-        NULL,
-        'DEAN001',
-        true
-    ),
-    (
-        'Admin',
-        'admin@adcet.ac.in',
-        '$2a$12$rQv8W6gxfJ.TzeLG8QY8v.tq6h1QZH3K8QZ5J8QY8v.tq6h1QZH3K8',
-        'ADMIN',
-        NULL,
-        NULL,
-        NULL,
-        'ADM001',
-        true
-    ) ON CONFLICT (email) DO NOTHING;
--- Insert sample departments
-INSERT INTO departments (name, code, description)
-VALUES (
-        'Computer Science & Engineering',
-        'CSE',
-        'Department of Computer Science & Engineering'
-    ),
-    (
-        'Artificial Intelligence and Data Science',
-        'AI&DS',
-        'Department of Artificial Intelligence and Data Science'
-    ),
-    (
-        'IOT and Cyber Security(CSE)',
-        'IOT-CS',
-        'Department of IOT and Cyber Security(CSE)'
-    ),
-    (
-        'Electrical Engineering',
-        'EE',
-        'Department of Electrical Engineering'
-    ),
-    (
-        'Mechanical Engineering',
-        'ME',
-        'Department of Mechanical Engineering'
-    ),
-    (
-        'Civil Engineering',
-        'CE',
-        'Department of Civil Engineering'
-    ) ON CONFLICT (code) DO NOTHING;
--- Insert sample student profile (for John Doe)
-INSERT INTO student_profiles (
-        user_id,
-        section,
-        semester,
-        cgpa,
-        batch,
-        roll_number,
-        specialization,
-        date_of_birth,
-        blood_group,
-        alt_email,
-        address,
-        permanent_address,
-        guardian_name,
-        guardian_contact,
-        guardian_email,
-        guardian_relation,
-        guardian_occupation,
-        previous_education,
-        admission_date,
-        expected_graduation,
-        social_links,
-        skills,
-        achievements,
-        hobbies,
-        bio
-    )
-SELECT u.id,
-    'A',
-    '7',
-    8.5,
-    '2022-2026',
-    '40xx',
-    'Full Stack Development',
-    '2003-05-15'::DATE,
-    'O+',
-    'student@gmail.com',
-    'College Hostel',
-    'Home',
-    'Father',
-    '+91 1111111111',
-    'father@email.com',
-    'Father',
-    'Software Engineer',
-    '12th',
-    '2022-11-02'::DATE,
-    '2026-06-30'::DATE,
-    '{"github": "git", "linkedin": "linkedin", "portfolio": "https://my.dev"}'::JSONB,
-    ARRAY ['React', 'Node.js', 'Python', 'Machine Learning', 'UI/UX Design'],
-    ARRAY ['Best Project Award 2023', 'Hackathon Winner - TechFest 2024'],
-    ARRAY ['Coding', 'Photography', 'Music', 'Gaming'],
-    'Passionate computer science student with a love for full-stack development and AI. Always eager to learn new technologies and contribute to open-source projects.'
-FROM users u
-WHERE u.email = 'student@adcet.ac.in' ON CONFLICT (user_id) DO NOTHING;
--- Set mentor for the student profile
-UPDATE student_profiles
-SET mentor_id = (
-        SELECT id
-        FROM users
-        WHERE role = 'FACULTY'
-            AND department = 'AI & DS'
-        LIMIT 1
-    )
-WHERE user_id = (
-        SELECT id
-        FROM users
-        WHERE email = 'student@adcet.ac.in'
-    );
+CREATE TRIGGER update_notification_templates_updated_at BEFORE
+UPDATE ON notification_templates FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_user_notifications_updated_at BEFORE
+UPDATE ON user_notifications FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

@@ -10,21 +10,10 @@ import rateLimit from 'express-rate-limit';
 dotenv.config();
 
 // Simple environment configuration
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const isDevelopment = NODE_ENV === 'development';
-const CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:5173';
-
-// Basic environment validation
-if (!process.env.DATABASE_URL) {
-    console.error('❌ DATABASE_URL is required');
-    process.exit(1);
-}
-
-if (!process.env.JWT_SECRET) {
-    console.error('❌ JWT_SECRET is required');
-    process.exit(1);
-}
+const CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://localhost:5174';
 
 import { testConnection, initializeDatabase } from './config/database';
 
@@ -47,8 +36,26 @@ app.use('/api/', limiter);
 // CORS configuration
 const corsOrigins = CORS_ORIGINS.split(',').map((origin: string) => origin.trim());
 app.use(cors({
-    origin: corsOrigins,
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or Postman)
+        if (!origin) return callback(null, true);
+
+        if (corsOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        // Allow localhost in development
+        if (isDevelopment && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+            return callback(null, true);
+        }
+
+        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+        return callback(new Error(msg), false);
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }));
 
 // Body parsing middleware
@@ -86,7 +93,16 @@ app.get('/health', async (req, res) => {
     }
 });
 
-// API routes will be added here
+// API routes
+import authRoutes from './routes/auth.js';
+import departmentRoutes from './routes/departments.js';
+import academicYearRoutes from './routes/academic-years.js';
+
+app.use('/api/auth', authRoutes);
+app.use('/api/departments', departmentRoutes);
+app.use('/api/academic-years', academicYearRoutes);
+
+// Catch-all for undefined API routes
 app.use('/api', (req, res) => {
     res.status(404).json({
         error: 'API endpoint not found',

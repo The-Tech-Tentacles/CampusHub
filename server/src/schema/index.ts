@@ -1,12 +1,4 @@
-// Basic schema export - will be expanded as we add tables
-// This file exports all database schema definitions for Drizzle ORM
+// CampusHub Database Schema - Complete Drizzle ORM Schema
+// Single file approach to avoid circular dependencies
 
-export * from './users';
-
-// Export all schemas as a combined object
-import { users, userRoleEnum } from './users';
-
-export const schemas = {
-    users,
-    userRoleEnum,
-};
+export * from './complete';

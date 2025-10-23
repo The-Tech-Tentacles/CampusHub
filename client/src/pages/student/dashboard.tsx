@@ -448,7 +448,7 @@ export default function Dashboard() {
       {/* Recent Notices - Today's Notices Only */}
       {todayNotices.length > 0 && (
         <Card className="hover:shadow-lg transition-all duration-300">
-          <CardHeader className="p-3 sm:p-6">
+          <CardHeader className="p-3 sm:p-6 sm:pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900 flex-shrink-0">
@@ -476,7 +476,7 @@ export default function Dashboard() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="p-3 sm:p-6 relative">
+          <CardContent className="p-3 sm:p-6 sm:pt-3 relative">
             <div
               className="max-h-80 overflow-y-auto space-y-3 sm:space-y-4"
               style={{
@@ -618,8 +618,8 @@ export default function Dashboard() {
         <Card className="hover:shadow-lg transition-all duration-300">
           <CardContent className="p-3 sm:p-6 relative">
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
-              <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6">
+              <div className="flex items-center space-x-3 min-w-0 flex-1">
                 <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900 flex-shrink-0">
                   <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
                 </div>
@@ -669,18 +669,18 @@ export default function Dashboard() {
                     )}
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="self-start sm:self-auto text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2"
-                  data-testid="button-view-schedule"
-                  onClick={() => setLocation("/timetable")}
-                >
-                  View All Days
-                </Button>
               </div>
-            </div>
-
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 flex-shrink-0"
+                onClick={() => setLocation("/timetable")}
+                data-testid="button-view-schedule"
+              >
+                <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                View All
+              </Button>
+            </div>{" "}
             {/* Schedule Items */}
             <div
               className="max-h-80 overflow-y-auto"

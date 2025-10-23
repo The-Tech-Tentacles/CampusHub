@@ -130,7 +130,7 @@ export default function Profile() {
           <div className="flex items-center gap-6">
             <div className="relative">
               <Avatar className="h-20 w-20 border-2 border-white/20 shadow-lg">
-                <AvatarImage src={user?.avatar} className="object-cover" />
+                <AvatarImage src={user?.avatarUrl} className="object-cover" />
                 <AvatarFallback className="bg-white/10 text-white text-xl font-bold">
                   {user?.name?.charAt(0) || "JD"}
                 </AvatarFallback>

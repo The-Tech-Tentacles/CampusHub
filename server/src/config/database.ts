@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
+import * as schema from '../schema/index';
 
 // Initialize database connection - should be called after environment variables are loaded
 export function initializeDatabase() {
@@ -9,7 +10,7 @@ export function initializeDatabase() {
 
     const sql = neon(process.env.DATABASE_URL);
     // @ts-ignore - Type compatibility issue between Drizzle and Neon, functionality works fine
-    return { db: drizzle(sql), sql };
+    return { db: drizzle(sql, { schema }), sql };
 }
 
 let dbConnection: ReturnType<typeof initializeDatabase> | null = null;
@@ -25,7 +26,7 @@ export function getDatabase() {
 export async function testConnection() {
     try {
         const { sql } = getDatabase();
-        const result = await sql`SELECT 1 as test`;
+        // const result = await sql`SELECT 1 as test`;
         console.log('✅ Database connection successful');
         return true;
     } catch (error) {

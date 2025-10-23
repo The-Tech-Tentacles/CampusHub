@@ -1,6 +1,6 @@
 export default {
     schema: './src/schema/index.ts',
-    out: './migrations',
+    out: './src/drizzle',
     driver: 'pg',
     dbCredentials: {
         connectionString: process.env.DATABASE_URL || '',

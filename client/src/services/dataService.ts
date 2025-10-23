@@ -37,10 +37,18 @@ export interface Notice {
 }
 
 export interface TimetableSlot {
+    id?: string;
     subject: string;
+    subject_id?: string;
     room: string;
+    room_id?: string;
     type: "Lecture" | "Lab" | "Seminar" | "Break";
     faculty?: string;
+    faculty_id?: string;
+    department_id?: string;
+    academic_year_id?: string;
+    section?: string;
+    semester?: number;
 }
 
 export interface Timetable {

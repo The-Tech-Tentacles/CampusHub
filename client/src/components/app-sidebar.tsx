@@ -325,7 +325,7 @@ export function AppSidebar() {
           {/* User Profile Section */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 border border-border/20 text-white dark:text-gray-100">
             <Avatar className="h-10 w-10 ring-2 ring-white/20">
-              <AvatarImage src={user?.avatar} />
+              <AvatarImage src={user?.avatarUrl} />
               <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold text-sm">
                 {user?.name?.charAt(0) || "U"}
               </AvatarFallback>

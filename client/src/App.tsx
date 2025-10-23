@@ -9,12 +9,16 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { ProfileDropdown } from "@/components/profile-dropdown";
-import { useAuthStore } from "@/stores/auth-store";
+import { useAuthStore, UserRole } from "@/stores/auth-store";
 import { useNotificationsStore } from "@/stores/notifications-store";
 import { dataService } from "@/services/dataService";
 import { useEffect } from "react";
 
+// Auth Pages
 import Login from "@/pages/login";
+import Register from "@/pages/register";
+
+// Student Pages
 import Dashboard from "@/pages/student/dashboard";
 import Notices from "@/pages/student/notices";
 import Forms from "@/pages/student/forms";
@@ -22,56 +26,182 @@ import Schedule from "@/pages/student/schedule";
 import Timetable from "@/pages/student/timetable";
 import Applications from "@/pages/student/applications";
 import Profile from "@/pages/student/profile";
+
+// Role-based Dashboard Pages
+import FacultyDashboard from "@/pages/faculty";
+import DeanDashboard from "@/pages/dean";
+import AdminDashboard from "@/pages/admin";
+
+// Existing Admin Pages
 import AdminUsers from "@/pages/admin/admin-users";
 import AdminConfig from "@/pages/admin/admin-config";
+
 import ComingSoon from "@/pages/coming-soon";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({
   component: Component,
+  allowedRoles,
 }: {
   component: React.ComponentType;
+  allowedRoles?: UserRole[];
 }) {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isInitializing, user } = useAuthStore();
+
+  // Wait for auth initialization to complete before checking authentication
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Redirect to="/login" />;
   }
 
+  // Check role-based access if roles are specified
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return <Redirect to="/unauthorized" />;
+  }
+
   return <Component />;
 }
 
+function RoleBasedRedirect() {
+  const { user, isInitializing, getRoleDashboardPath } = useAuthStore();
+
+  // Wait for auth initialization to complete
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Redirect to="/login" />;
+  }
+
+  return <Redirect to={getRoleDashboardPath()} />;
+}
+
 function Router() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isInitializing } = useAuthStore();
 
   return (
     <Switch>
+      {/* Auth Routes - Public */}
       <Route path="/login" component={Login} />
-      <Route path="/dashboard">
-        {() => <ProtectedRoute component={Dashboard} />}
+      <Route path="/register" component={Register} />
+
+      {/* Student Routes */}
+      <Route path="/student/dashboard">
+        {() => (
+          <ProtectedRoute component={Dashboard} allowedRoles={["STUDENT"]} />
+        )}
       </Route>
-      <Route path="/notices">
-        {() => <ProtectedRoute component={Notices} />}
+      <Route path="/student/notices">
+        {() => (
+          <ProtectedRoute component={Notices} allowedRoles={["STUDENT"]} />
+        )}
       </Route>
-      <Route path="/forms">{() => <ProtectedRoute component={Forms} />}</Route>
-      <Route path="/schedule">
-        {() => <ProtectedRoute component={Schedule} />}
+      <Route path="/student/forms">
+        {() => <ProtectedRoute component={Forms} allowedRoles={["STUDENT"]} />}
       </Route>
-      <Route path="/timetable">
-        {() => <ProtectedRoute component={Timetable} />}
+      <Route path="/student/schedule">
+        {() => (
+          <ProtectedRoute component={Schedule} allowedRoles={["STUDENT"]} />
+        )}
       </Route>
-      <Route path="/applications">
-        {() => <ProtectedRoute component={Applications} />}
+      <Route path="/student/timetable">
+        {() => (
+          <ProtectedRoute component={Timetable} allowedRoles={["STUDENT"]} />
+        )}
       </Route>
-      <Route path="/profile">
-        {() => <ProtectedRoute component={Profile} />}
+      <Route path="/student/applications">
+        {() => (
+          <ProtectedRoute component={Applications} allowedRoles={["STUDENT"]} />
+        )}
+      </Route>
+      <Route path="/student/profile">
+        {() => (
+          <ProtectedRoute component={Profile} allowedRoles={["STUDENT"]} />
+        )}
+      </Route>
+
+      {/* Faculty Routes (includes HOD) */}
+      <Route path="/faculty">
+        {() => (
+          <ProtectedRoute
+            component={FacultyDashboard}
+            allowedRoles={["FACULTY", "HOD"]}
+          />
+        )}
+      </Route>
+
+      {/* Dean Routes */}
+      <Route path="/dean">
+        {() => (
+          <ProtectedRoute component={DeanDashboard} allowedRoles={["DEAN"]} />
+        )}
+      </Route>
+
+      {/* Admin Routes */}
+      <Route path="/admin">
+        {() => (
+          <ProtectedRoute component={AdminDashboard} allowedRoles={["ADMIN"]} />
+        )}
       </Route>
       <Route path="/admin/users">
-        {() => <ProtectedRoute component={AdminUsers} />}
+        {() => (
+          <ProtectedRoute component={AdminUsers} allowedRoles={["ADMIN"]} />
+        )}
       </Route>
       <Route path="/admin/config">
-        {() => <ProtectedRoute component={AdminConfig} />}
+        {() => (
+          <ProtectedRoute component={AdminConfig} allowedRoles={["ADMIN"]} />
+        )}
       </Route>
+
+      {/* Backward Compatibility Routes */}
+      <Route path="/dashboard">
+        {() => (
+          <ProtectedRoute component={Dashboard} allowedRoles={["STUDENT"]} />
+        )}
+      </Route>
+      <Route path="/notices">
+        {() => (
+          <ProtectedRoute component={Notices} allowedRoles={["STUDENT"]} />
+        )}
+      </Route>
+      <Route path="/forms">
+        {() => <ProtectedRoute component={Forms} allowedRoles={["STUDENT"]} />}
+      </Route>
+      <Route path="/schedule">
+        {() => (
+          <ProtectedRoute component={Schedule} allowedRoles={["STUDENT"]} />
+        )}
+      </Route>
+      <Route path="/timetable">
+        {() => (
+          <ProtectedRoute component={Timetable} allowedRoles={["STUDENT"]} />
+        )}
+      </Route>
+      <Route path="/applications">
+        {() => (
+          <ProtectedRoute component={Applications} allowedRoles={["STUDENT"]} />
+        )}
+      </Route>
+      <Route path="/profile">
+        {() => (
+          <ProtectedRoute component={Profile} allowedRoles={["STUDENT"]} />
+        )}
+      </Route>
+
+      {/* Coming Soon Routes */}
       <Route path="/lms">
         {() => <ProtectedRoute component={ComingSoon} />}
       </Route>
@@ -84,15 +214,48 @@ function Router() {
       <Route path="/analytics">
         {() => <ProtectedRoute component={ComingSoon} />}
       </Route>
+
+      {/* Unauthorized Access */}
+      <Route path="/unauthorized">
+        {() => (
+          <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-50">
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-red-600 mb-4">
+                Access Denied
+              </h1>
+              <p className="text-lg text-slate-600 mb-6">
+                You don't have permission to access this page.
+              </p>
+              <button
+                onClick={() => window.history.back()}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        )}
+      </Route>
+
+      {/* Root Route - Role-based redirect */}
       <Route path="/">
-        {() =>
-          isAuthenticated ? (
-            <Redirect to="/dashboard" />
+        {() => {
+          if (isInitializing) {
+            return (
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            );
+          }
+          return isAuthenticated ? (
+            <RoleBasedRedirect />
           ) : (
             <Redirect to="/login" />
-          )
-        }
+          );
+        }}
       </Route>
+
+      {/* 404 - Not Found */}
       <Route component={NotFound} />
     </Switch>
   );
@@ -106,17 +269,41 @@ function MainLayout() {
   // Function to get the current tab name based on the route
   const getCurrentTabName = (path: string): string => {
     const routeMap: Record<string, string> = {
-      "/dashboard": "🏠 CampusHub",
+      // Student routes
+      "/student/dashboard": "🏠 Dashboard",
+      "/student/notices": "📢 Notices",
+      "/student/forms": "📝 Forms",
+      "/student/schedule": "📅 Schedule",
+      "/student/timetable": "🗓️ Timetable",
+      "/student/applications": "📋 Applications",
+      "/student/profile": "👤 Profile",
+
+      // Faculty routes
+      "/faculty": "👨‍🏫 Faculty Dashboard",
+
+      // Dean routes
+      "/dean": "🎓 Dean Dashboard",
+
+      // Admin routes
+      "/admin": "⚙️ Admin Dashboard",
+      "/admin/users": "👥 User Management",
+      "/admin/config": "🔧 System Config",
+
+      // Backward compatibility
+      "/dashboard": "🏠 Dashboard",
       "/notices": "📢 Notices",
       "/forms": "📝 Forms",
       "/schedule": "📅 Schedule",
       "/timetable": "🗓️ Timetable",
       "/applications": "📋 Applications",
       "/profile": "👤 Profile",
-      "/admin-users": "👥 Users",
-      "/admin-config": "⚙️ Configuration",
+
+      // Common routes
       "/settings": "🔧 Settings",
       "/analytics": "📈 Analytics",
+      "/lms": "📚 Learning Management",
+      "/chat": "💬 Chat",
+      "/attendance": "✅ Attendance",
     };
 
     // Handle exact matches first
@@ -189,7 +376,24 @@ function MainLayout() {
 }
 
 export default function App() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isInitializing, initializeAuth } = useAuthStore();
+
+  // Initialize auth on app start
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  // Show loading spinner during auth initialization
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-lg text-slate-600">Loading CampusHub...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
