@@ -65,7 +65,7 @@ router.get('/:id', async (req, res) => {
             });
         }
 
-        res.json({
+        return res.json({
             success: true,
             message: 'Academic year retrieved successfully',
             data: academicYear
@@ -73,7 +73,7 @@ router.get('/:id', async (req, res) => {
 
     } catch (error) {
         console.error('Get academic year error:', error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: 'Internal server error while fetching academic year',
             code: 'ACADEMIC_YEAR_FETCH_ERROR'

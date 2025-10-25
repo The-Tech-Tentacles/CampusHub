@@ -66,7 +66,7 @@ router.get('/:id', async (req, res) => {
             });
         }
 
-        res.json({
+        return res.json({
             success: true,
             message: 'Department retrieved successfully',
             data: department
@@ -74,7 +74,7 @@ router.get('/:id', async (req, res) => {
 
     } catch (error) {
         console.error('Get department error:', error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: 'Internal server error while fetching department',
             code: 'DEPARTMENT_FETCH_ERROR'
