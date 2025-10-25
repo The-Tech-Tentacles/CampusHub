@@ -15,7 +15,7 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 const isDevelopment = NODE_ENV === 'development';
 const CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://localhost:5174';
 
-import { testConnection, initializeDatabase } from './config/database';
+import { testConnection, initializeDatabase } from './config/database.js';
 
 // Initialize database connection after environment variables are loaded
 initializeDatabase();
