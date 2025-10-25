@@ -27,6 +27,7 @@ export const academicLevelEnum = pgEnum('academic_level', ['UNDERGRADUATE', 'POS
 export const eventTypeEnum = pgEnum('event_type', ['LECTURE', 'LAB', 'EXAM', 'SEMINAR', 'WORKSHOP', 'SPORTS', 'CULTURAL', 'GENERIC']);
 export const academicEventTypeEnum = pgEnum('academic_event_type', ['SEMESTER_START', 'SEMESTER_END', 'EXAM_WEEK', 'HOLIDAY', 'REGISTRATION', 'ORIENTATION', 'BREAK', 'OTHER']);
 export const slotTypeEnum = pgEnum('slot_type', ['Lecture', 'Lab', 'Seminar', 'Break', 'Other']);
+export const genderEnum = pgEnum('gender', ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']);
 
 // =================== CORE TABLES ===================
 
@@ -86,55 +87,61 @@ export const users = pgTable('users', {
     deptYearIdx: index('idx_users_dept_year').on(table.departmentId, table.academicYearId),
 }));
 
-// Student profiles table (detailed student information)
-export const studentProfiles = pgTable('student_profiles', {
+// Profiles table (detailed information for all user types)
+export const profiles = pgTable('profiles', {
     id: uuid('id').primaryKey().defaultRandom(),
     userId: uuid('user_id').notNull().unique().references(() => users.id, { onDelete: 'cascade' }),
 
-    // Academic Info
+    // Personal Info (All users)
+    prefix: varchar('prefix', { length: 10 }), // Dr., Prof., Mr., Ms., etc.
+    dateOfBirth: date('date_of_birth'),
+    gender: genderEnum('gender'),
+    bloodGroup: varchar('blood_group', { length: 5 }),
+    altEmail: varchar('alt_email', { length: 255 }),
+    address: text('address'),
+    permanentAddress: text('permanent_address'),
+    bio: text('bio'),
+
+    // Academic Info (Students)
     section: varchar('section', { length: 10 }),
     semester: varchar('semester', { length: 10 }),
     cgpa: decimal('cgpa', { precision: 3, scale: 2 }),
     batch: varchar('batch', { length: 20 }),
     rollNumber: varchar('roll_number', { length: 50 }),
     specialization: varchar('specialization', { length: 200 }),
+    admissionDate: date('admission_date'),
+    expectedGraduation: date('expected_graduation'),
+    previousEducation: varchar('previous_education', { length: 255 }),
 
-    // Personal Info
-    dateOfBirth: date('date_of_birth'),
-    bloodGroup: varchar('blood_group', { length: 5 }),
-    altEmail: varchar('alt_email', { length: 255 }),
-    address: text('address'),
-    permanentAddress: text('permanent_address'),
+    // Faculty/Staff Info
+    cabinLocationId: uuid('cabin_location_id').references(() => rooms.id, { onDelete: 'set null' }),
+    officeHours: varchar('office_hours', { length: 200 }),
+    researchInterests: text('research_interests').array(),
+    qualifications: text('qualifications').array(),
+    experienceYears: integer('experience_years'),
 
-    // Guardian Info
+    // Guardian Info (Students)
     guardianName: varchar('guardian_name', { length: 255 }),
     guardianContact: varchar('guardian_contact', { length: 20 }),
     guardianEmail: varchar('guardian_email', { length: 255 }),
     guardianRelation: varchar('guardian_relation', { length: 50 }),
     guardianOccupation: varchar('guardian_occupation', { length: 200 }),
 
-    // Academic Details
-    previousEducation: varchar('previous_education', { length: 255 }),
-    admissionDate: date('admission_date'),
-    expectedGraduation: date('expected_graduation'),
-
-    // Mentor Info
+    // Mentor Info (Students)
     mentorId: uuid('mentor_id').references(() => users.id, { onDelete: 'set null' }),
 
     // Social Links (JSON)
     socialLinks: jsonb('social_links').default('{}'),
 
-    // Skills and Interests
+    // Skills and Interests (All users)
     skills: text('skills').array(),
-    achievements: text('achievements').array(),
-    hobbies: text('hobbies').array(),
-    bio: text('bio'),
 
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
-    userIdx: index('idx_student_profiles_user').on(table.userId),
-    mentorIdx: index('idx_student_profiles_mentor').on(table.mentorId),
+    userIdx: index('idx_profiles_user').on(table.userId),
+    mentorIdx: index('idx_profiles_mentor').on(table.mentorId),
+    cabinLocationIdx: index('idx_profiles_cabin_location').on(table.cabinLocationId),
 }));
 
 // =================== ACADEMIC TABLES ===================
@@ -187,6 +194,7 @@ export const timetableSlots = pgTable('timetable_slots', {
     departmentId: uuid('department_id').references(() => departments.id, { onDelete: 'set null' }),
     academicYearId: uuid('academic_year_id').notNull().references(() => academicYears.id, { onDelete: 'restrict' }),
     section: varchar('section', { length: 10 }),
+    batch: varchar('batch', { length: 20 }), // Batch number (1, 2, 3, 4, etc.) 
     semester: integer('semester').default(1), // CHECK constraint: semester IN (1, 2)
 
     isActive: boolean('is_active').default(true),
@@ -198,6 +206,8 @@ export const timetableSlots = pgTable('timetable_slots', {
     facultyIdx: index('idx_timetable_faculty').on(table.facultyId),
     roomIdx: index('idx_timetable_room').on(table.roomId),
     departmentAcademicYearIdx: index('idx_timetable_department_academic_year').on(table.departmentId, table.academicYearId),
+    batchIdx: index('idx_timetable_batch').on(table.batch),
+    sectionBatchIdx: index('idx_timetable_section_batch').on(table.section, table.batch),
     academicYearIdx: index('idx_timetable_academic_year').on(table.academicYearId),
 }));
 

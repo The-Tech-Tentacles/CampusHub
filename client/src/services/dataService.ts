@@ -13,6 +13,61 @@ export type NotificationType = "NOTICE" | "FORM" | "APPLICATION" | "SYSTEM" | "A
 export type EventType = "LECTURE" | "LAB" | "EXAM" | "SEMINAR" | "WORKSHOP" | "SPORTS" | "CULTURAL" | "GENERIC";
 export type EventStatus = "SCHEDULED" | "ONGOING" | "COMPLETED" | "CANCELLED";
 export type AcademicEventType = "SEMESTER_START" | "SEMESTER_END" | "EXAM_WEEK" | "HOLIDAY" | "REGISTRATION" | "ORIENTATION" | "BREAK";
+export type Gender = "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY";
+
+export interface Profile {
+    id?: string;
+    userId: string;
+
+    // Personal Info (All users)
+    prefix?: string; // Dr., Prof., Mr., Ms., etc.
+    dateOfBirth?: string;
+    gender?: Gender;
+    bloodGroup?: string;
+    altEmail?: string;
+    address?: string;
+    permanentAddress?: string;
+    bio?: string;
+
+    // Academic Info (Students)
+    section?: string;
+    semester?: string;
+    cgpa?: number;
+    batch?: string;
+    rollNumber?: string;
+    specialization?: string;
+    admissionDate?: string;
+    expectedGraduation?: string;
+    previousEducation?: string;
+
+    // Faculty/Staff Info
+    cabinLocationId?: string;
+    cabinLocation?: string; // For display
+    officeHours?: string;
+    researchInterests?: string[];
+    qualifications?: string[];
+    experienceYears?: number;
+
+    // Guardian Info (Students)
+    guardianName?: string;
+    guardianContact?: string;
+    guardianEmail?: string;
+    guardianRelation?: string;
+    guardianOccupation?: string;
+
+    // Mentor Info (Students)
+    mentorId?: string;
+    mentorName?: string; // For display
+
+    // Social Links
+    socialLinks?: Record<string, string>;
+
+    // Skills (All users)
+    skills?: string[];
+
+    createdAt?: string;
+    updatedAt?: string;
+}
 
 export interface Notification {
     id: string;
@@ -48,6 +103,7 @@ export interface TimetableSlot {
     department_id?: string;
     academic_year_id?: string;
     section?: string;
+    batch?: string; // Batch number (1, 2, 3, 4, etc.)
     semester?: number;
 }
 
@@ -316,7 +372,7 @@ const mockTimetable: Timetable = {
         "9:15 AM": { subject: "Data Structures", room: "Room 205", type: "Lecture", faculty: "Dr. Smith" },
         "10:15 AM": { subject: "Operating Systems", room: "Room 302", type: "Lecture", faculty: "Prof. Johnson" },
         "11:15 AM": { subject: "Short", room: "-", type: "Break" },
-        "11:30 AM": { subject: "Database Management", room: "Lab 301", type: "Lab", faculty: "Dr. Brown" },
+        "11:30 AM": { subject: "Database Management", room: "Lab 301", type: "Lab", faculty: "Dr. Brown", batch: "1" },
         "1:30 PM": { subject: "Lunch", room: "-", type: "Break" },
         "2:15 PM": { subject: "Computer Networks", room: "Room 104", type: "Lecture", faculty: "Dr. Wilson" },
         "3:15 PM": { subject: "Software Engineering", room: "Room 201", type: "Lecture", faculty: "Prof. Davis" },
@@ -325,12 +381,12 @@ const mockTimetable: Timetable = {
         "9:15 AM": { subject: "Computer Architecture", room: "Room 105", type: "Lecture", faculty: "Dr. Taylor" },
         "10:15 AM": { subject: "Database Management", room: "Room 203", type: "Lecture", faculty: "Dr. Brown" },
         "11:15 AM": { subject: "Short", room: "-", type: "Break" },
-        "11:30 AM": { subject: "Data Structures", room: "Lab 301", type: "Lab", faculty: "Dr. Smith" },
+        "11:30 AM": { subject: "Database Management", room: "Lab 302", type: "Lab", faculty: "Dr. Brown", batch: "2" },
         "1:30 PM": { subject: "Lunch", room: "-", type: "Break" },
-        "2:15 PM": { subject: "Operating Systems", room: "Lab 303", type: "Lab", faculty: "Prof. Johnson" },
+        "2:15 PM": { subject: "Operating Systems", room: "Lab 303", type: "Lab", faculty: "Prof. Johnson", batch: "1" },
     },
     "Wednesday": {
-        "9:15 AM": { subject: "Software Engineering", room: "Lab 401", type: "Lab", faculty: "Prof. Davis" },
+        "9:15 AM": { subject: "Software Engineering", room: "Lab 401", type: "Lab", faculty: "Prof. Davis", batch: "1" },
         "11:15 AM": { subject: "Short", room: "-", type: "Break" },
         "11:30 AM": { subject: "Computer Networks", room: "Room 302", type: "Lecture", faculty: "Dr. Wilson" },
         "12:30 PM": { subject: "Computer Architecture", room: "Room 105", type: "Lecture", faculty: "Dr. Taylor" },

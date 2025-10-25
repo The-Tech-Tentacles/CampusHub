@@ -27,7 +27,7 @@ END;
 $$ LANGUAGE plpgsql;
 -- Drop existing triggers
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
-DROP TRIGGER IF EXISTS update_student_profiles_updated_at ON student_profiles;
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
 DROP TRIGGER IF EXISTS update_departments_updated_at ON departments;
 DROP TRIGGER IF EXISTS update_academic_years_updated_at ON academic_years;
 DROP TRIGGER IF EXISTS update_notices_updated_at ON notices;
@@ -44,8 +44,8 @@ DROP TRIGGER IF EXISTS update_user_notifications_updated_at ON user_notification
 -- Create triggers
 CREATE TRIGGER update_users_updated_at BEFORE
 UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_student_profiles_updated_at BEFORE
-UPDATE ON student_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_profiles_updated_at BEFORE
+UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_departments_updated_at BEFORE
 UPDATE ON departments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_academic_years_updated_at BEFORE

@@ -60,7 +60,7 @@ export default function Profile() {
     section: "A",
     cgpa: "8.5",
     semester: "7",
-    batch: "2022-2026",
+    batch: "B1",
     rollNumber: "40xx",
 
     // Contact Info

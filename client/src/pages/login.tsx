@@ -22,7 +22,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import heroImage from "@assets/generated_images/Campus_students_collaborating_together_274bcd12.png";
+import heroImage from "@assets/image.png";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -164,7 +164,7 @@ export default function Login() {
           </div>
 
           {/* Enhanced Main Content */}
-          <div className="space-y-8 max-w-xl">
+          <div className="space-y-8 max-w-2xl">
             <div className="space-y-4">
               <h2 className="text-5xl font-bold leading-tight drop-shadow-lg">
                 Your campus,
@@ -297,7 +297,7 @@ export default function Login() {
                       placeholder="your.email@campus.edu"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-12 border-2 border-slate-200 focus:border-indigo-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-indigo-500/10 focus:outline-none pl-4"
+                      className="h-12 border-2 border-slate-200 focus:border-indigo-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-indigo-500/10 focus:outline-none pl-4 text-black"
                       data-testid="input-email"
                       required
                     />
@@ -320,7 +320,7 @@ export default function Login() {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="h-12 border-2 border-slate-200 focus:border-indigo-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-indigo-500/10 focus:outline-none pl-4 pr-12"
+                      className="h-12 border-2 border-slate-200 focus:border-indigo-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-indigo-500/10 focus:outline-none pl-4 pr-12 text-black"
                       data-testid="input-password"
                       required
                     />

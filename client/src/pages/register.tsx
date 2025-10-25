@@ -40,7 +40,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import heroImage from "@assets/generated_images/Campus_students_collaborating_together_274bcd12.png";
+import heroImage from "@assets/image.png";
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -102,7 +102,7 @@ export default function Register() {
         toast({
           title: "Loading error",
           description:
-            "Failed to load departments and academic years. You can still register without selecting them.",
+            "Failed to load departments and academic years. Try checking your internet connection and try refreshing page..",
           variant: "destructive",
         });
       } finally {
@@ -324,7 +324,7 @@ export default function Register() {
           </div>
 
           {/* Enhanced Main Content */}
-          <div className="space-y-8 max-w-xl">
+          <div className="space-y-8 max-w-2xl">
             <div className="space-y-4">
               <h2 className="text-5xl font-bold leading-tight drop-shadow-lg">
                 Ready to level up
@@ -474,7 +474,7 @@ export default function Register() {
                       onChange={(e) =>
                         handleInputChange("name", e.target.value)
                       }
-                      className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4"
+                      className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-black"
                       required
                     />
                   </div>
@@ -498,7 +498,7 @@ export default function Register() {
                       onChange={(e) =>
                         handleInputChange("email", e.target.value)
                       }
-                      className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4"
+                      className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-black"
                       required
                     />
                   </div>
@@ -524,7 +524,7 @@ export default function Register() {
                         onChange={(e) =>
                           handleInputChange("password", e.target.value)
                         }
-                        className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 pr-12"
+                        className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-black pr-12"
                         required
                       />
                       <button
@@ -559,7 +559,7 @@ export default function Register() {
                         onChange={(e) =>
                           handleInputChange("confirmPassword", e.target.value)
                         }
-                        className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 pr-12"
+                        className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-black pr-12"
                         required
                       />
                       <button
@@ -616,7 +616,7 @@ export default function Register() {
                               <SelectItem
                                 key={dept.id}
                                 value={dept.id}
-                                className="rounded-lg hover:bg-emerald-50 focus:bg-emerald-50"
+                                className="rounded-lg hover:bg-emerald-50 focus:bg-emerald-50 text-black focus:text-black"
                               >
                                 <div className="flex items-center gap-2">
                                   <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
@@ -669,11 +669,11 @@ export default function Register() {
                               <SelectItem
                                 key={year.id}
                                 value={year.id}
-                                className="rounded-lg hover:bg-emerald-50 focus:bg-emerald-50"
+                                className="rounded-lg hover:bg-emerald-50 focus:bg-emerald-50 text-black focus:text-black"
                               >
                                 <div className="flex items-center gap-2">
                                   <div className="w-2 h-2 rounded-full bg-teal-500"></div>
-                                  {year.name} ({year.level})
+                                  {year.name}
                                 </div>
                               </SelectItem>
                             ))
@@ -708,7 +708,7 @@ export default function Register() {
                         onChange={(e) =>
                           handleInputChange("phone", e.target.value)
                         }
-                        className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4"
+                        className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-black"
                         required
                       />
                     </div>
@@ -732,7 +732,7 @@ export default function Register() {
                         onChange={(e) =>
                           handleInputChange("enrollmentNumber", e.target.value)
                         }
-                        className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4"
+                        className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-black"
                         required
                       />
                     </div>

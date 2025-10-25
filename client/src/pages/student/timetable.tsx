@@ -404,6 +404,16 @@ export default function Timetable() {
                                     </span>
                                   </div>
                                 )}
+                                {slot.batch && (
+                                  <div className="flex items-center gap-1 text-xs mb-2">
+                                    <Badge
+                                      variant="secondary"
+                                      className="px-1.5 py-0.5 text-xs"
+                                    >
+                                      Batch {slot.batch}
+                                    </Badge>
+                                  </div>
+                                )}
                                 {/* Visual indicator for lab spanning */}
                                 {isLabSpanning && (
                                   <div className="absolute -bottom-3 left-3 right-3 h-2 bg-gradient-to-b from-current/20 to-transparent rounded-b-lg pointer-events-none" />
@@ -481,9 +491,19 @@ export default function Timetable() {
                               <span>{slot.room}</span>
                             </div>
                             {slot.faculty && (
-                              <div className="flex items-center gap-1 text-xs opacity-75">
+                              <div className="flex items-center gap-1 text-xs opacity-75 mb-1">
                                 <User className="h-3 w-3" />
                                 <span>{slot.faculty}</span>
+                              </div>
+                            )}
+                            {slot.batch && (
+                              <div className="flex items-center gap-1 text-xs">
+                                <Badge
+                                  variant="secondary"
+                                  className="px-1.5 py-0.5 text-xs"
+                                >
+                                  Batch {slot.batch}
+                                </Badge>
                               </div>
                             )}
                           </div>

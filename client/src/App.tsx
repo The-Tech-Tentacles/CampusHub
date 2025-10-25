@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { ProfileDropdown } from "@/components/profile-dropdown";
 import { useAuthStore, UserRole } from "@/stores/auth-store";
@@ -25,7 +24,7 @@ import Forms from "@/pages/student/forms";
 import Schedule from "@/pages/student/schedule";
 import Timetable from "@/pages/student/timetable";
 import Applications from "@/pages/student/applications";
-import Profile from "@/pages/student/profile";
+import Profile from "@/pages/profile";
 
 // Role-based Dashboard Pages
 import FacultyDashboard from "@/pages/faculty";
@@ -51,7 +50,7 @@ function ProtectedRoute({
   // Wait for auth initialization to complete before checking authentication
   if (isInitializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -75,7 +74,7 @@ function RoleBasedRedirect() {
   // Wait for auth initialization to complete
   if (isInitializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );

@@ -50,48 +50,61 @@ export function AppSidebar() {
     }
   };
 
-  const mainItems = [
+  const studentsItems = [
     {
       title: "Home",
       url: "/dashboard",
       icon: LayoutDashboard,
-      roles: ["STUDENT", "FACULTY", "HOD", "DEAN", "ADMIN"],
+      roles: ["STUDENT"],
       emoji: "🏠",
     },
     {
       title: "Notices",
       url: "/notices",
       icon: BellIcon,
-      roles: ["STUDENT", "FACULTY", "HOD", "DEAN", "ADMIN"],
+      roles: ["STUDENT"],
       emoji: "📢",
     },
     {
       title: "Calendar",
       url: "/schedule",
       icon: Calendar,
-      roles: ["STUDENT", "FACULTY", "HOD", "DEAN", "ADMIN"],
+      roles: ["STUDENT"],
       emoji: "📅",
     },
     {
       title: "Forms",
       url: "/forms",
       icon: FileText,
-      roles: ["STUDENT", "FACULTY", "HOD", "DEAN", "ADMIN"],
+      roles: ["STUDENT"],
       emoji: "📝",
-    },
-    {
-      title: "Timetable",
-      url: "/timetable",
-      icon: ClipboardList,
-      roles: ["FACULTY", "HOD", "DEAN", "ADMIN"],
-      emoji: "🗓️",
     },
     {
       title: "Applications",
       url: "/applications",
       icon: FileText,
-      roles: ["STUDENT", "FACULTY", "HOD", "DEAN", "ADMIN"],
+      roles: ["STUDENT"],
       emoji: "📋",
+    },
+  ];
+
+  const facultyItems = [
+    {
+      title: "Timetable",
+      url: "/faculty/timetable",
+      icon: ClipboardList,
+      roles: ["FACULTY"],
+      emoji: "🗓️",
+    },
+  ];
+
+  const deanItems = [
+    {
+      title: "Department Management",
+      url: "/dean/departments",
+      icon: User,
+      roles: ["DEAN"],
+      emoji: "🏛️",
     },
   ];
 
@@ -143,7 +156,15 @@ export function AppSidebar() {
     },
   ];
 
-  const filteredMainItems = mainItems.filter((item) =>
+  const filteredStudentsItems = studentsItems.filter((item) =>
+    user?.role ? item.roles.includes(user.role) : false
+  );
+
+  const filteredFacultyItems = facultyItems.filter((item) =>
+    user?.role ? item.roles.includes(user.role) : false
+  );
+
+  const filteredDeanItems = deanItems.filter((item) =>
     user?.role ? item.roles.includes(user.role) : false
   );
 
@@ -179,41 +200,129 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent className="px-3 py-2">
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2">
-            Main Menu
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
-              {filteredMainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === item.url}
-                    className="relative group overflow-hidden rounded-lg hover:bg-accent/50 transition-all duration-200 h-11"
-                  >
-                    <Link
-                      href={item.url}
-                      onClick={handleMobileNavigation}
-                      data-testid={`link-${item.title
-                        .toLowerCase()
-                        .replace(" ", "-")}`}
-                      className="flex items-center gap-3 px-3"
-                    >
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent/20 group-hover:bg-accent/40 transition-colors">
-                        <span className="text-sm">{item.emoji}</span>
-                      </div>
-                      <span className="font-medium">{item.title}</span>
-                      {location === item.url && (
-                        <div className="ml-auto h-2 w-2 rounded-full bg-primary animate-pulse" />
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {filteredStudentsItems.length > 0 && (
+          <>
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2">
+                Main Menu
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu className="space-y-1">
+                  {filteredStudentsItems.map((item) => (
+                    <>
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={location === item.url}
+                          className="relative group overflow-hidden rounded-lg hover:bg-accent/50 transition-all duration-200 h-11"
+                        >
+                          <Link
+                            href={item.url}
+                            onClick={handleMobileNavigation}
+                            data-testid={`link-${item.title
+                              .toLowerCase()
+                              .replace(" ", "-")}`}
+                            className="flex items-center gap-3 px-3"
+                          >
+                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent/20 group-hover:bg-accent/40 transition-colors">
+                              <span className="text-sm">{item.emoji}</span>
+                            </div>
+                            <span className="font-medium">{item.title}</span>
+                            {location === item.url && (
+                              <div className="ml-auto h-2 w-2 rounded-full bg-primary animate-pulse" />
+                            )}
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
+
+        {filteredFacultyItems.length > 0 && (
+          <>
+            <Separator className="my-4" />
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2">
+                Faculty Menu
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu className="space-y-1">
+                  {filteredFacultyItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === item.url}
+                        className="relative group overflow-hidden rounded-lg hover:bg-accent/50 transition-all duration-200 h-11"
+                      >
+                        <Link
+                          href={item.url}
+                          onClick={handleMobileNavigation}
+                          data-testid={`link-${item.title
+                            .toLowerCase()
+                            .replace(" ", "-")}`}
+                          className="flex items-center gap-3 px-3"
+                        >
+                          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent/20 group-hover:bg-accent/40 transition-colors">
+                            <span className="text-sm">{item.emoji}</span>
+                          </div>
+                          <span className="font-medium">{item.title}</span>
+                          {location === item.url && (
+                            <div className="ml-auto h-2 w-2 rounded-full bg-primary animate-pulse" />
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
+
+        {filteredDeanItems.length > 0 && (
+          <>
+            <Separator className="my-4" />
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2">
+                Dean Menu
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu className="space-y-1">
+                  {filteredDeanItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === item.url}
+                        className="relative group overflow-hidden rounded-lg hover:bg-accent/50 transition-all duration-200 h-11"
+                      >
+                        <Link
+                          href={item.url}
+                          onClick={handleMobileNavigation}
+                          data-testid={`link-${item.title
+                            .toLowerCase()
+                            .replace(" ", "-")}`}
+                          className="flex items-center gap-3 px-3"
+                        >
+                          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent/20 group-hover:bg-accent/40 transition-colors">
+                            <span className="text-sm">{item.emoji}</span>
+                          </div>
+                          <span className="font-medium">{item.title}</span>
+                          {location === item.url && (
+                            <div className="ml-auto h-2 w-2 rounded-full bg-primary animate-pulse" />
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
 
         {filteredAdminItems.length > 0 && (
           <>
@@ -323,7 +432,7 @@ export function AppSidebar() {
           onClick={() => (navigate("/profile"), handleMobileNavigation())}
         >
           {/* User Profile Section */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 border border-border/20 text-white dark:text-gray-100">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 border border-border/20 text-white dark:text-gray-100 cursor-pointer hover:shadow-lg transition-shadow">
             <Avatar className="h-10 w-10 ring-2 ring-white/20">
               <AvatarImage src={user?.avatarUrl} />
               <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold text-sm">

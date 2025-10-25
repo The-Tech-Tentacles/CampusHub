@@ -49,6 +49,7 @@ CREATE TYPE academic_level AS ENUM (
     'DIPLOMA',
     'CERTIFICATE'
 );
+CREATE TYPE gender AS ENUM ('MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY');
 -- Users table (core authentication and basic info)
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -90,46 +91,51 @@ CREATE TABLE IF NOT EXISTS academic_years (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
--- Student profiles table (detailed student information)
-CREATE TABLE IF NOT EXISTS student_profiles (
+-- Profiles table (detailed information for all user types)
+CREATE TABLE IF NOT EXISTS profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-    -- Academic Info
+    -- Personal Info (All users)
+    prefix VARCHAR(10),
+    -- Dr., Prof., Mr., Ms., etc.
+    date_of_birth DATE,
+    gender gender,
+    blood_group VARCHAR(5),
+    alt_email VARCHAR(255),
+    address TEXT,
+    permanent_address TEXT,
+    bio TEXT,
+    -- Academic Info (Students)
     section VARCHAR(10),
     semester VARCHAR(10),
     cgpa DECIMAL(3, 2),
     batch VARCHAR(20),
     roll_number VARCHAR(50),
     specialization VARCHAR(200),
-    -- Personal Info
-    date_of_birth DATE,
-    blood_group VARCHAR(5),
-    alt_email VARCHAR(255),
-    address TEXT,
-    permanent_address TEXT,
-    -- Guardian Info
-    guardian_name VARCHAR(255),
-    guardian_contact VARCHAR(20),
-    guardian_email VARCHAR(255),
-    guardian_relation VARCHAR(50),
-    guardian_occupation VARCHAR(200),
-    -- Academic Details
-    previous_education VARCHAR(255),
     admission_date DATE,
     expected_graduation DATE,
-    -- Mentor Info
-    mentor_id UUID REFERENCES users(id) ON DELETE
+    previous_education VARCHAR(255),
+    -- Faculty/Staff Info
+    cabin_location_id UUID REFERENCES rooms(id) ON DELETE
+    SET NULL,
+        office_hours VARCHAR(200),
+        research_interests TEXT [],
+        qualifications TEXT [],
+        experience_years INTEGER,
+        -- Guardian Info (Students)
+        guardian_name VARCHAR(255),
+        guardian_contact VARCHAR(20),
+        guardian_email VARCHAR(255),
+        guardian_relation VARCHAR(50),
+        guardian_occupation VARCHAR(200),
+        -- Mentor Info (Students)
+        mentor_id UUID REFERENCES users(id) ON DELETE
     SET NULL,
         -- Social Links (JSON)
         social_links JSONB DEFAULT '{}',
-        -- Skills and Interests
+        -- Skills and Interests (All users)
         skills TEXT [],
         -- Array of skills
-        achievements TEXT [],
-        -- Array of achievements
-        hobbies TEXT [],
-        -- Array of hobbies
-        bio TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -282,6 +288,7 @@ CREATE TABLE IF NOT EXISTS timetable_slots (
     SET NULL,
         academic_year_id UUID NOT NULL REFERENCES academic_years(id) ON DELETE RESTRICT,
         section VARCHAR(10),
+        batch VARCHAR(20),
         semester INTEGER CHECK (semester IN (1, 2)) DEFAULT 1,
         is_active BOOLEAN DEFAULT true,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -418,8 +425,9 @@ CREATE INDEX IF NOT EXISTS idx_users_academic_year_id ON users(academic_year_id)
 CREATE INDEX IF NOT EXISTS idx_academic_years_code ON academic_years(code);
 CREATE INDEX IF NOT EXISTS idx_academic_years_level ON academic_years(level);
 CREATE INDEX IF NOT EXISTS idx_academic_years_sequence ON academic_years(sequence_order);
-CREATE INDEX IF NOT EXISTS idx_student_profiles_user ON student_profiles(user_id);
-CREATE INDEX IF NOT EXISTS idx_student_profiles_mentor ON student_profiles(mentor_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_user ON profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_mentor ON profiles(mentor_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_cabin_location ON profiles(cabin_location_id);
 CREATE INDEX IF NOT EXISTS idx_departments_code ON departments(code);
 CREATE INDEX IF NOT EXISTS idx_departments_hod ON departments(hod_id);
 CREATE INDEX IF NOT EXISTS idx_notices_type ON notices(type);
@@ -454,6 +462,8 @@ CREATE INDEX IF NOT EXISTS idx_timetable_faculty ON timetable_slots(faculty_id);
 CREATE INDEX IF NOT EXISTS idx_timetable_room ON timetable_slots(room_id);
 CREATE INDEX IF NOT EXISTS idx_timetable_department_academic_year ON timetable_slots(department_id, academic_year_id);
 CREATE INDEX IF NOT EXISTS idx_timetable_academic_year ON timetable_slots(academic_year_id);
+CREATE INDEX IF NOT EXISTS idx_timetable_batch ON timetable_slots(batch);
+CREATE INDEX IF NOT EXISTS idx_timetable_section_batch ON timetable_slots(section, batch);
 CREATE INDEX IF NOT EXISTS idx_events_date ON events(date);
 CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
 CREATE INDEX IF NOT EXISTS idx_events_target_years ON events USING GIN(target_years);
@@ -490,8 +500,8 @@ $$ LANGUAGE plpgsql;
 -- Add triggers for updated_at
 CREATE TRIGGER update_users_updated_at BEFORE
 UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_student_profiles_updated_at BEFORE
-UPDATE ON student_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_profiles_updated_at BEFORE
+UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_departments_updated_at BEFORE
 UPDATE ON departments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_academic_years_updated_at BEFORE
