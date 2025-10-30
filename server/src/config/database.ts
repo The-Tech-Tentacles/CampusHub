@@ -1,6 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import * as schema from '../schema/index';
+import * as schema from '../schema/index.js';
 
 // Initialize database connection - should be called after environment variables are loaded
 export function initializeDatabase() {
