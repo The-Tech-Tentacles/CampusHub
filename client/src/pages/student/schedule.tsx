@@ -49,21 +49,33 @@ export default function Schedule() {
   const loadScheduleData = async () => {
     try {
       setIsLoading(true);
+      console.log("[STUDENT SCHEDULE] Loading data for:", {
+        month: currentMonth + 1,
+        year: currentYear,
+        user: user?.id,
+        role: user?.role,
+      });
+
       const [eventsData, academicData] = await Promise.all([
         dataService.getEvents({
-          month: currentMonth,
+          month: currentMonth + 1, // JavaScript months are 0-indexed, API expects 1-indexed
           year: currentYear,
         }),
         dataService.getAcademicEvents({
-          month: currentMonth,
+          month: currentMonth + 1,
           year: currentYear,
         }),
       ]);
 
+      console.log("[STUDENT SCHEDULE] Data loaded:", {
+        events: eventsData.length,
+        academicEvents: academicData.length,
+      });
+
       setEvents(eventsData);
       setAcademicEvents(academicData);
     } catch (error) {
-      console.error("Failed to load schedule data:", error);
+      console.error("[STUDENT SCHEDULE] Failed to load schedule data:", error);
     } finally {
       setIsLoading(false);
     }

@@ -101,6 +101,7 @@ import noticeRoutes from './routes/notices.js';
 import scheduleRoutes from './routes/schedule.js';
 import applicationRoutes from './routes/applications.js';
 import formRoutes from './routes/forms.js';
+import eventRoutes from './routes/events.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/departments', departmentRoutes);
@@ -109,6 +110,7 @@ app.use('/api/notices', noticeRoutes);
 app.use('/api/schedule', scheduleRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/forms', formRoutes);
+app.use('/api/events', eventRoutes);
 
 // Catch-all for undefined API routes
 app.use('/api', (req, res) => {

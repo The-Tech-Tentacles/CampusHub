@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { getDatabase } from '../config/database.js';
-import { users, userRoleEnum, departments, academicYears, profiles } from '../schema/complete.js';
-import { eq } from 'drizzle-orm';
+import { users, userRoleEnum, departments, academicYears, profiles, applications, events } from '../schema/complete.js';
+import { eq, and, or } from 'drizzle-orm';
 import { hashPassword, comparePassword, validatePassword } from '../services/password.js';
 import { generateTokenPair, verifyToken } from '../services/jwt.js';
 
@@ -888,6 +888,116 @@ export async function getFacultyList(req: Request, res: Response): Promise<void>
             success: false,
             message: 'Internal server error fetching faculty list',
             code: 'FACULTY_LIST_ERROR'
+        });
+    }
+}
+
+/**
+ * Get faculty dashboard statistics
+ */
+export async function getFacultyStats(req: Request, res: Response): Promise<void> {
+    try {
+        const { db } = getDatabase();
+        const user = (req as any).user;
+
+        // Count mentees (students who have selected this faculty as mentor)
+        const menteeCount = await db
+            .select({ count: profiles.id })
+            .from(profiles)
+            .where(eq(profiles.mentorId, user.userId));
+
+        // Count pending applications for this faculty/HOD
+        let pendingReviews = 0;
+        try {
+            const pendingApps = await db
+                .select()
+                .from(applications)
+                .where(
+                    user.role === 'HOD'
+                        ? and(
+                            eq(applications.departmentId, user.departmentId),
+                            eq(applications.currentLevel, 'HOD'),
+                            eq(applications.status, 'UNDER_REVIEW')
+                        )
+                        : and(
+                            eq(applications.mentorId, user.userId),
+                            eq(applications.currentLevel, 'MENTOR'),
+                            eq(applications.status, 'PENDING')
+                        )
+                );
+            pendingReviews = pendingApps.length || 0;
+        } catch (err) {
+            // Applications table might not exist or not accessible
+            console.log('Applications count skipped:', err);
+        }
+
+        // For HOD, get additional department stats
+        let departmentStudents = 0;
+        let departmentFaculty = 0;
+        let activeCourses = 0;
+
+        if (user.role === 'HOD' && user.departmentId) {
+            // Count students in department
+            const studentCount = await db
+                .select({ count: users.id })
+                .from(users)
+                .where(
+                    and(
+                        eq(users.departmentId, user.departmentId),
+                        eq(users.role, 'STUDENT')
+                    )
+                );
+            departmentStudents = studentCount.length || 0;
+
+            // Count faculty in department
+            const facultyCount = await db
+                .select({ count: users.id })
+                .from(users)
+                .where(
+                    and(
+                        eq(users.departmentId, user.departmentId),
+                        or(
+                            eq(users.role, 'FACULTY'),
+                            eq(users.role, 'HOD')
+                        )
+                    )
+                );
+            departmentFaculty = facultyCount.length || 0;
+
+            // Count active courses/events for department
+            try {
+                const courseCount = await db
+                    .select()
+                    .from(events)
+                    .where(
+                        and(
+                            eq(events.departmentId, user.departmentId),
+                            eq(events.isActive, true)
+                        )
+                    );
+                activeCourses = courseCount.length || 0;
+            } catch (err) {
+                console.log('Events count skipped:', err);
+            }
+        }
+
+        res.json({
+            success: true,
+            data: {
+                mentees: menteeCount.length || 0,
+                pendingReviews: pendingReviews,
+                departmentStudents: departmentStudents,
+                departmentFaculty: departmentFaculty,
+                activeCourses: activeCourses,
+            }
+        });
+
+    } catch (error) {
+        console.error('Get faculty stats error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error fetching faculty stats',
+            code: 'FACULTY_STATS_ERROR'
         });
     }
 }

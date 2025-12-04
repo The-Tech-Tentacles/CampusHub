@@ -28,6 +28,11 @@ import Profile from "@/pages/profile";
 
 // Role-based Dashboard Pages
 import FacultyDashboard from "@/pages/faculty";
+import FacultyNotices from "@/pages/faculty/notices";
+import FacultySchedule from "@/pages/faculty/schedule";
+import FacultyForms from "@/pages/faculty/forms";
+import FacultyApplications from "@/pages/faculty/applications";
+import HODDashboard from "@/pages/hod";
 import DeanDashboard from "@/pages/dean";
 import AdminDashboard from "@/pages/admin";
 
@@ -96,38 +101,61 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
 
-      {/* Student Routes */}
+      {/* Student Routes - Also accessible by Faculty/HOD */}
       <Route path="/student/dashboard">
         {() => (
-          <ProtectedRoute component={Dashboard} allowedRoles={["STUDENT"]} />
+          <ProtectedRoute
+            component={Dashboard}
+            allowedRoles={["STUDENT", "FACULTY", "HOD"]}
+          />
         )}
       </Route>
       <Route path="/student/notices">
         {() => (
-          <ProtectedRoute component={Notices} allowedRoles={["STUDENT"]} />
+          <ProtectedRoute
+            component={Notices}
+            allowedRoles={["STUDENT", "FACULTY", "HOD"]}
+          />
         )}
       </Route>
       <Route path="/student/forms">
-        {() => <ProtectedRoute component={Forms} allowedRoles={["STUDENT"]} />}
+        {() => (
+          <ProtectedRoute
+            component={Forms}
+            allowedRoles={["STUDENT", "FACULTY", "HOD"]}
+          />
+        )}
       </Route>
       <Route path="/student/schedule">
         {() => (
-          <ProtectedRoute component={Schedule} allowedRoles={["STUDENT"]} />
+          <ProtectedRoute
+            component={Schedule}
+            allowedRoles={["STUDENT", "FACULTY", "HOD"]}
+          />
         )}
       </Route>
       <Route path="/student/timetable">
         {() => (
-          <ProtectedRoute component={Timetable} allowedRoles={["STUDENT"]} />
+          <ProtectedRoute
+            component={Timetable}
+            allowedRoles={["STUDENT", "FACULTY", "HOD"]}
+          />
         )}
       </Route>
       <Route path="/student/applications">
         {() => (
-          <ProtectedRoute component={Applications} allowedRoles={["STUDENT"]} />
+          <ProtectedRoute
+            component={Applications}
+            allowedRoles={["STUDENT", "FACULTY", "HOD"]}
+          />
         )}
       </Route>
       <Route path="/student/profile">
         {() => (
-          <ProtectedRoute component={Profile} allowedRoles={["STUDENT"]} />
+          <ProtectedRoute
+            component={Profile}
+            allowedRoles={["STUDENT", "FACULTY", "HOD"]}
+          />
         )}
       </Route>
 
@@ -140,6 +168,71 @@ function Router() {
           />
         )}
       </Route>
+      <Route path="/faculty/notices">
+        {() => (
+          <ProtectedRoute
+            component={FacultyNotices}
+            allowedRoles={["FACULTY", "HOD"]}
+          />
+        )}
+      </Route>
+      <Route path="/faculty/schedule">
+        {() => (
+          <ProtectedRoute
+            component={FacultySchedule}
+            allowedRoles={["FACULTY", "HOD"]}
+          />
+        )}
+      </Route>
+      <Route path="/faculty/forms">
+        {() => (
+          <ProtectedRoute
+            component={FacultyForms}
+            allowedRoles={["FACULTY", "HOD", "DEAN", "ADMIN"]}
+          />
+        )}
+      </Route>
+      <Route path="/faculty/applications">
+        {() => (
+          <ProtectedRoute
+            component={FacultyApplications}
+            allowedRoles={["FACULTY", "HOD", "DEAN", "ADMIN"]}
+          />
+        )}
+      </Route>
+
+      {/* HOD Routes */}
+      <Route path="/hod">
+        {() => (
+          <ProtectedRoute component={HODDashboard} allowedRoles={["HOD"]} />
+        )}
+      </Route>
+      <Route path="/hod/notices">
+        {() => (
+          <ProtectedRoute component={FacultyNotices} allowedRoles={["HOD"]} />
+        )}
+      </Route>
+      <Route path="/hod/schedule">
+        {() => (
+          <ProtectedRoute component={FacultySchedule} allowedRoles={["HOD"]} />
+        )}
+      </Route>
+      <Route path="/hod/forms">
+        {() => (
+          <ProtectedRoute
+            component={FacultyForms}
+            allowedRoles={["HOD", "DEAN", "ADMIN"]}
+          />
+        )}
+      </Route>
+      <Route path="/hod/applications">
+        {() => (
+          <ProtectedRoute
+            component={FacultyApplications}
+            allowedRoles={["HOD", "DEAN", "ADMIN"]}
+          />
+        )}
+      </Route>
 
       {/* Dean Routes */}
       <Route path="/dean">
@@ -147,8 +240,13 @@ function Router() {
           <ProtectedRoute component={DeanDashboard} allowedRoles={["DEAN"]} />
         )}
       </Route>
+      <Route path="/dean/schedule">
+        {() => (
+          <ProtectedRoute component={FacultySchedule} allowedRoles={["DEAN"]} />
+        )}
+      </Route>
 
-      {/* Admin Routes */}
+      {/* Admin Routes (Separate from Student Routes) */}
       <Route path="/admin">
         {() => (
           <ProtectedRoute component={AdminDashboard} allowedRoles={["ADMIN"]} />
@@ -156,7 +254,10 @@ function Router() {
       </Route>
       <Route path="/admin/users">
         {() => (
-          <ProtectedRoute component={AdminUsers} allowedRoles={["ADMIN"]} />
+          <ProtectedRoute
+            component={AdminUsers}
+            allowedRoles={["ADMIN", "DEAN", "HOD"]}
+          />
         )}
       </Route>
       <Route path="/admin/config">
@@ -164,39 +265,70 @@ function Router() {
           <ProtectedRoute component={AdminConfig} allowedRoles={["ADMIN"]} />
         )}
       </Route>
+      <Route path="/admin/schedule">
+        {() => (
+          <ProtectedRoute
+            component={FacultySchedule}
+            allowedRoles={["ADMIN"]}
+          />
+        )}
+      </Route>
 
-      {/* Backward Compatibility Routes */}
+      {/* Backward Compatibility Routes - Also accessible by Faculty/HOD */}
       <Route path="/dashboard">
         {() => (
-          <ProtectedRoute component={Dashboard} allowedRoles={["STUDENT"]} />
+          <ProtectedRoute
+            component={Dashboard}
+            allowedRoles={["STUDENT", "FACULTY", "HOD"]}
+          />
         )}
       </Route>
       <Route path="/notices">
         {() => (
-          <ProtectedRoute component={Notices} allowedRoles={["STUDENT"]} />
+          <ProtectedRoute
+            component={Notices}
+            allowedRoles={["STUDENT", "FACULTY", "HOD"]}
+          />
         )}
       </Route>
       <Route path="/forms">
-        {() => <ProtectedRoute component={Forms} allowedRoles={["STUDENT"]} />}
+        {() => (
+          <ProtectedRoute
+            component={Forms}
+            allowedRoles={["STUDENT", "FACULTY", "HOD"]}
+          />
+        )}
       </Route>
       <Route path="/schedule">
         {() => (
-          <ProtectedRoute component={Schedule} allowedRoles={["STUDENT"]} />
+          <ProtectedRoute
+            component={Schedule}
+            allowedRoles={["STUDENT", "FACULTY", "HOD", "DEAN", "ADMIN"]}
+          />
         )}
       </Route>
       <Route path="/timetable">
         {() => (
-          <ProtectedRoute component={Timetable} allowedRoles={["STUDENT"]} />
+          <ProtectedRoute
+            component={Timetable}
+            allowedRoles={["STUDENT", "FACULTY", "HOD"]}
+          />
         )}
       </Route>
       <Route path="/applications">
         {() => (
-          <ProtectedRoute component={Applications} allowedRoles={["STUDENT"]} />
+          <ProtectedRoute
+            component={Applications}
+            allowedRoles={["STUDENT", "FACULTY", "HOD"]}
+          />
         )}
       </Route>
       <Route path="/profile">
         {() => (
-          <ProtectedRoute component={Profile} allowedRoles={["STUDENT"]} />
+          <ProtectedRoute
+            component={Profile}
+            allowedRoles={["STUDENT", "FACULTY", "HOD"]}
+          />
         )}
       </Route>
 

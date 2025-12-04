@@ -202,7 +202,7 @@ export const useAuthStore = create<AuthState>()(
         switch (user.role) {
           case 'STUDENT': return '/student/dashboard';
           case 'FACULTY': return '/faculty';
-          case 'HOD': return '/faculty'; // HOD uses faculty interface
+          case 'HOD': return '/hod';
           case 'DEAN': return '/dean';
           case 'ADMIN': return '/admin';
           default: return '/student/dashboard';
@@ -214,10 +214,10 @@ export const useAuthStore = create<AuthState>()(
        */
       initializeAuth: async () => {
         const accessToken = localStorage.getItem('accessToken');
+        const refreshToken = localStorage.getItem('refreshToken');
 
-
-        if (!accessToken) {
-
+        // If no tokens at all, just set unauthenticated state
+        if (!accessToken && !refreshToken) {
           set({
             user: null,
             isAuthenticated: false,
@@ -227,15 +227,25 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
+        // If we have refresh token but no access token, let API handle it
+        if (!accessToken && refreshToken) {
+          console.log('No access token, but refresh token exists - will authenticate on first request');
+          set({
+            user: null,
+            isAuthenticated: false,
+            isInitializing: false,
+            error: null
+          });
+          return;
+        }
 
         // Set initializing state while validating token
         set({ isInitializing: true });
 
         try {
-
-          // Add a timeout to prevent hanging
+          // Add a timeout to prevent hanging (15 seconds for slow networks)
           const timeoutPromise = new Promise<never>((_, reject) => {
-            setTimeout(() => reject(new Error('API call timeout')), 5000);
+            setTimeout(() => reject(new Error('API call timeout')), 15000);
           });
 
           const response = await Promise.race([
@@ -243,12 +253,9 @@ export const useAuthStore = create<AuthState>()(
             timeoutPromise
           ]);
 
-
-
           if (response.success && response.data) {
             // Handle nested user object structure from API response
             const userData = (response.data as any).user || response.data;
-
 
             set({
               user: userData as User,
@@ -257,7 +264,47 @@ export const useAuthStore = create<AuthState>()(
               error: null
             });
           } else {
-            // Token is invalid, clear everything
+            // Token is invalid, try refresh if available
+            if (refreshToken) {
+              console.log('Access token invalid, refresh token available - will retry on next request');
+              // Let the API client handle refresh automatically
+              // Just clear local state, don't clear tokens yet
+              set({
+                user: null,
+                isAuthenticated: false,
+                isInitializing: false,
+                error: null
+              });
+            } else {
+              // No refresh token, clear everything
+              console.log('No refresh token available, clearing auth');
+              localStorage.removeItem('accessToken');
+              localStorage.removeItem('refreshToken');
+              api.clearTokens();
+              set({
+                user: null,
+                isAuthenticated: false,
+                isInitializing: false,
+                error: null
+              });
+            }
+          }
+        } catch (error: any) {
+          console.error('Auth initialization error:', error);
+
+          // If we have a refresh token, preserve it for next request
+          // Don't immediately clear tokens on network errors or timeouts
+          if (refreshToken) {
+            console.log('Auth error but refresh token exists - preserving for next request');
+            set({
+              user: null,
+              isAuthenticated: false,
+              isInitializing: false,
+              error: null
+            });
+          } else {
+            // Clear tokens only if no refresh token
+            console.log('Auth failed and no refresh token, clearing tokens');
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
             api.clearTokens();
@@ -268,17 +315,6 @@ export const useAuthStore = create<AuthState>()(
               error: null
             });
           }
-        } catch (error) {
-          // API call failed, clear tokens
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          api.clearTokens();
-          set({
-            user: null,
-            isAuthenticated: false,
-            isInitializing: false,
-            error: null
-          });
         }
       },
     }),

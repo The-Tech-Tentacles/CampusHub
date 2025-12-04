@@ -7,7 +7,8 @@ import {
     getProfile,
     updateProfile,
     changePassword,
-    getFacultyList
+    getFacultyList,
+    getFacultyStats
 } from '../controllers/auth.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -68,5 +69,12 @@ router.put('/change-password', authenticateToken, changePassword);
  * @access  Private
  */
 router.get('/faculty', authenticateToken, getFacultyList);
+
+/**
+ * @route   GET /api/auth/faculty-stats
+ * @desc    Get faculty dashboard statistics (mentees, pending reviews)
+ * @access  Private (Faculty/HOD only)
+ */
+router.get('/faculty-stats', authenticateToken, getFacultyStats);
 
 export default router;

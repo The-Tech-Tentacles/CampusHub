@@ -36,6 +36,7 @@ import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSidebar } from "@/components/ui/sidebar";
 import { navigate } from "wouter/use-browser-location";
+import { title } from "process";
 
 export function AppSidebar() {
   const { user, logout } = useAuthStore();
@@ -90,11 +91,77 @@ export function AppSidebar() {
 
   const facultyItems = [
     {
-      title: "Timetable",
-      url: "/faculty/timetable",
-      icon: ClipboardList,
+      title: "Home",
+      url: "/faculty",
+      icon: LayoutDashboard,
       roles: ["FACULTY"],
-      emoji: "🗓️",
+      emoji: "🏠",
+    },
+    {
+      title: "Manage Notices",
+      url: "/faculty/notices",
+      icon: BellIcon,
+      roles: ["FACULTY"],
+      emoji: "📢",
+    },
+    {
+      title: "Manage Schedule",
+      url: "/faculty/schedule",
+      icon: Calendar,
+      roles: ["FACULTY"],
+      emoji: "📅",
+    },
+    {
+      title: "Manage Forms",
+      url: "/faculty/forms",
+      icon: FileText,
+      roles: ["FACULTY"],
+      emoji: "📝",
+    },
+    {
+      title: "Review Applications",
+      url: "/faculty/applications",
+      icon: FileText,
+      roles: ["FACULTY"],
+      emoji: "📋",
+    },
+  ];
+
+  const hodItems = [
+    {
+      title: "HOD Dashboard",
+      url: "/hod",
+      icon: LayoutDashboard,
+      roles: ["HOD"],
+      emoji: "🏛️",
+    },
+    {
+      title: "Department Notices",
+      url: "/hod/notices",
+      icon: BellIcon,
+      roles: ["HOD"],
+      emoji: "📢",
+    },
+    {
+      title: "Schedule",
+      url: "/hod/schedule",
+      icon: Calendar,
+      roles: ["HOD"],
+      emoji: "📅",
+    },
+    {
+      title: "Forms Management",
+      url: "/hod/forms",
+      icon: FileText,
+      roles: ["HOD"],
+      emoji: "📝",
+    },
+    {
+      title: "Review Applications",
+      url: "/hod/applications",
+      icon: FileText,
+      roles: ["HOD"],
+      emoji: "📋",
     },
   ];
 
@@ -161,6 +228,10 @@ export function AppSidebar() {
   );
 
   const filteredFacultyItems = facultyItems.filter((item) =>
+    user?.role ? item.roles.includes(user.role) : false
+  );
+
+  const filteredHODItems = hodItems.filter((item) =>
     user?.role ? item.roles.includes(user.role) : false
   );
 
@@ -244,7 +315,7 @@ export function AppSidebar() {
 
         {filteredFacultyItems.length > 0 && (
           <>
-            <Separator className="my-4" />
+            {/* <Separator className="my-4" /> */}
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2">
                 Faculty Menu
@@ -252,6 +323,47 @@ export function AppSidebar() {
               <SidebarGroupContent>
                 <SidebarMenu className="space-y-1">
                   {filteredFacultyItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === item.url}
+                        className="relative group overflow-hidden rounded-lg hover:bg-accent/50 transition-all duration-200 h-11"
+                      >
+                        <Link
+                          href={item.url}
+                          onClick={handleMobileNavigation}
+                          data-testid={`link-${item.title
+                            .toLowerCase()
+                            .replace(" ", "-")}`}
+                          className="flex items-center gap-3 px-3"
+                        >
+                          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent/20 group-hover:bg-accent/40 transition-colors">
+                            <span className="text-sm">{item.emoji}</span>
+                          </div>
+                          <span className="font-medium">{item.title}</span>
+                          {location === item.url && (
+                            <div className="ml-auto h-2 w-2 rounded-full bg-primary animate-pulse" />
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
+
+        {filteredHODItems.length > 0 && (
+          <>
+            {/* <Separator className="my-4" /> */}
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2">
+                <div className="flex items-center gap-2">HOD Menu</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu className="space-y-1">
+                  {filteredHODItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton
                         asChild

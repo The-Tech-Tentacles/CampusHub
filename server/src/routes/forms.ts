@@ -4,7 +4,9 @@ import {
     getFormById,
     createForm,
     submitForm,
-    deleteForm
+    deleteForm,
+    getMyForms,
+    getFormSubmissions
 } from '../controllers/forms.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -21,11 +23,25 @@ router.use(authenticateToken);
 router.get('/', getForms);
 
 /**
+ * @route   GET /api/forms/my
+ * @desc    Get forms created by current user
+ * @access  Private (Faculty+)
+ */
+router.get('/my', getMyForms);
+
+/**
  * @route   GET /api/forms/:id
  * @desc    Get a single form by ID
  * @access  Private
  */
 router.get('/:id', getFormById);
+
+/**
+ * @route   GET /api/forms/:id/submissions
+ * @desc    Get all submissions for a form
+ * @access  Private (Creator/Admin only)
+ */
+router.get('/:id/submissions', getFormSubmissions);
 
 /**
  * @route   POST /api/forms

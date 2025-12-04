@@ -202,10 +202,16 @@ export interface Form {
 export interface FormSubmission {
     id: string;
     formId: string;
-    submittedBy: string;
     submissionData: Record<string, any>;
     submittedAt: string;
-    updatedAt: string;
+    submittedBy: {
+        id: string;
+        name: string;
+        email: string;
+        enrollmentNumber?: string;
+        department?: string;
+        departmentCode?: string;
+    };
 }
 
 export interface CreateFormRequest {
@@ -289,8 +295,10 @@ class ApiClient {
 
             // Handle 401 - try to refresh token
             if (response.status === 401 && this.refreshToken) {
+                console.log('Received 401, attempting token refresh...');
                 const refreshed = await this.tryRefreshToken();
                 if (refreshed) {
+                    console.log('Token refreshed successfully, retrying request');
                     // Retry the original request with new token
                     const retryHeaders = {
                         ...headers,
@@ -300,24 +308,51 @@ class ApiClient {
                         ...options,
                         headers: retryHeaders,
                     });
+
+                    if (!retryResponse.ok) {
+                        let retryData;
+                        try {
+                            retryData = await retryResponse.json();
+                        } catch {
+                            throw new Error(`HTTP ${retryResponse.status}: ${retryResponse.statusText}`);
+                        }
+                        throw new Error(retryData.message || `HTTP ${retryResponse.status}`);
+                    }
+
                     return await retryResponse.json();
                 } else {
-                    // Refresh failed - redirect to login
+                    // Refresh failed - redirect to login only if not already on login page
+                    console.log('Token refresh failed, clearing auth');
                     this.clearTokens();
-                    window.location.href = '/login';
+                    if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+                        window.location.href = '/login';
+                    }
                     throw new Error('Session expired');
                 }
             }
 
-            const data: ApiResponse<T> = await response.json();
+            // Try to parse response as JSON
+            let data: ApiResponse<T>;
+            try {
+                data = await response.json();
+            } catch (e) {
+                // If not JSON, create error response
+                console.error('Failed to parse JSON response:', e);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
 
             if (!response.ok) {
                 throw new Error(data.message || `HTTP ${response.status}`);
             }
 
             return data;
-        } catch (error) {
-            console.error('API Request failed:', error);
+        } catch (error: any) {
+            console.error('API Request failed:', {
+                url,
+                method: options.method || 'GET',
+                error: error.message,
+                status: error.status
+            });
             throw error;
         }
     }
@@ -420,6 +455,13 @@ class ApiClient {
         return this.makeRequest('/auth/faculty');
     }
 
+    /**
+     * Get faculty statistics (mentees, pending reviews, etc.)
+     */
+    async getFacultyStats(): Promise<ApiResponse> {
+        return this.makeRequest('/auth/faculty-stats');
+    }
+
     // =================== DEPARTMENT ENDPOINTS ===================
     /**
      * Get all departments
@@ -491,7 +533,43 @@ class ApiClient {
         });
     }
 
-    // =================== SCHEDULE ENDPOINTS ===================
+    /**
+     * Create a new notice
+     */
+    async createNotice(noticeData: Partial<Notice>): Promise<ApiResponse<Notice>> {
+        return this.makeRequest('/notices', {
+            method: 'POST',
+            body: JSON.stringify(noticeData),
+        });
+    }
+
+    /**
+     * Get notices created by current user
+     */
+    async getMyNotices(): Promise<ApiResponse<Notice[]>> {
+        return this.makeRequest('/notices/my');
+    }
+
+    /**
+     * Update a notice
+     */
+    async updateNotice(id: string, noticeData: Partial<Notice>): Promise<ApiResponse<Notice>> {
+        return this.makeRequest(`/notices/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(noticeData),
+        });
+    }
+
+    /**
+     * Delete a notice
+     */
+    async deleteNotice(id: string): Promise<ApiResponse<void>> {
+        return this.makeRequest(`/notices/${id}`, {
+            method: 'DELETE',
+        });
+    }
+
+    // =================== EVENT ENDPOINTS ===================
     /**
      * Get all events with optional filters
      */
@@ -509,7 +587,7 @@ class ApiClient {
         if (filters?.department) queryParams.append('department', filters.department);
 
         const queryString = queryParams.toString();
-        const endpoint = queryString ? `/schedule/events?${queryString}` : '/schedule/events';
+        const endpoint = queryString ? `/events?${queryString}` : '/events';
 
         return this.makeRequest(endpoint);
     }
@@ -518,7 +596,43 @@ class ApiClient {
      * Get event by ID
      */
     async getEvent(id: string): Promise<ApiResponse<Event>> {
-        return this.makeRequest(`/schedule/events/${id}`);
+        return this.makeRequest(`/events/${id}`);
+    }
+
+    /**
+     * Create a new event
+     */
+    async createEvent(eventData: Partial<Event>): Promise<ApiResponse<Event>> {
+        return this.makeRequest('/events', {
+            method: 'POST',
+            body: JSON.stringify(eventData),
+        });
+    }
+
+    /**
+     * Get events created by current user
+     */
+    async getMyEvents(): Promise<ApiResponse<Event[]>> {
+        return this.makeRequest('/events/my');
+    }
+
+    /**
+     * Update an event
+     */
+    async updateEvent(id: string, eventData: Partial<Event>): Promise<ApiResponse<Event>> {
+        return this.makeRequest(`/events/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(eventData),
+        });
+    }
+
+    /**
+     * Delete an event
+     */
+    async deleteEvent(id: string): Promise<ApiResponse<void>> {
+        return this.makeRequest(`/events/${id}`, {
+            method: 'DELETE',
+        });
     }
 
     /**
@@ -538,7 +652,7 @@ class ApiClient {
         if (filters?.type) queryParams.append('type', filters.type);
 
         const queryString = queryParams.toString();
-        const endpoint = queryString ? `/schedule/academic-events?${queryString}` : '/schedule/academic-events';
+        const endpoint = queryString ? `/events/academic?${queryString}` : '/events/academic';
 
         return this.makeRequest(endpoint);
     }
@@ -547,7 +661,17 @@ class ApiClient {
      * Get academic event by ID
      */
     async getAcademicEvent(id: string): Promise<ApiResponse<AcademicEvent>> {
-        return this.makeRequest(`/schedule/academic-events/${id}`);
+        return this.makeRequest(`/events/academic/${id}`);
+    }
+
+    /**
+     * Create a new academic event
+     */
+    async createAcademicEvent(eventData: Partial<AcademicEvent>): Promise<ApiResponse<AcademicEvent>> {
+        return this.makeRequest('/events/academic', {
+            method: 'POST',
+            body: JSON.stringify(eventData),
+        });
     }
 
     // =================== APPLICATIONS ===================
@@ -638,6 +762,30 @@ class ApiClient {
         });
     }
 
+    /**
+     * Get forms created by current user
+     */
+    async getMyForms(): Promise<ApiResponse<Form[]>> {
+        return this.makeRequest('/forms/my');
+    }
+
+    /**
+     * Get all submissions for a form
+     */
+    async getFormSubmissions(id: string): Promise<ApiResponse<FormSubmission[]>> {
+        return this.makeRequest(`/forms/${id}/submissions`);
+    }
+
+    /**
+     * Update a form
+     */
+    async updateForm(id: string, data: Partial<CreateFormRequest>): Promise<ApiResponse<Form>> {
+        return this.makeRequest(`/forms/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
     // =================== UTILITY METHODS ===================
     /**
      * Check if user is authenticated
@@ -682,16 +830,25 @@ export const noticeAPI = {
     getAll: (filters?: Parameters<typeof api.getNotices>[0]) => api.getNotices(filters),
     getById: (id: string) => api.getNotice(id),
     markAsRead: (id: string) => api.markNoticeAsRead(id),
+    create: (noticeData: Partial<Notice>) => api.createNotice(noticeData),
+    getMy: () => api.getMyNotices(),
+    update: (id: string, noticeData: Partial<Notice>) => api.updateNotice(id, noticeData),
+    delete: (id: string) => api.deleteNotice(id),
 };
 
 export const eventAPI = {
     getAll: (filters?: Parameters<typeof api.getEvents>[0]) => api.getEvents(filters),
     getById: (id: string) => api.getEvent(id),
+    create: (eventData: Partial<Event>) => api.createEvent(eventData),
+    update: (id: string, eventData: Partial<Event>) => api.updateEvent(id, eventData),
+    delete: (id: string) => api.deleteEvent(id),
+    getMy: () => api.getMyEvents(),
 };
 
 export const academicEventAPI = {
     getAll: (filters?: Parameters<typeof api.getAcademicEvents>[0]) => api.getAcademicEvents(filters),
     getById: (id: string) => api.getAcademicEvent(id),
+    create: (eventData: Partial<AcademicEvent>) => api.createAcademicEvent(eventData),
 };
 
 export const applicationAPI = {
@@ -708,6 +865,9 @@ export const formAPI = {
     create: (data: CreateFormRequest) => api.createForm(data),
     submit: (id: string, submissionData: Record<string, any>) => api.submitForm(id, submissionData),
     delete: (id: string) => api.deleteForm(id),
+    getMy: () => api.getMyForms(),
+    getSubmissions: (id: string) => api.getFormSubmissions(id),
+    update: (id: string, data: Partial<CreateFormRequest>) => api.updateForm(id, data),
 };
 
 export default api;
