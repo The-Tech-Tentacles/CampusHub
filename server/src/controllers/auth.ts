@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { getDatabase } from '../config/database.js';
-import { users, userRoleEnum, departments, academicYears } from '../schema/complete.js';
+import { users, userRoleEnum, departments, academicYears, profiles } from '../schema/complete.js';
 import { eq } from 'drizzle-orm';
 import { hashPassword, comparePassword, validatePassword } from '../services/password.js';
 import { generateTokenPair, verifyToken } from '../services/jwt.js';
@@ -467,13 +467,73 @@ export async function getProfile(req: Request, res: Response): Promise<void> {
         const { db } = getDatabase();
         const user = (req as any).user;
 
-        const [currentUser] = await db
-            .select()
+        // Fetch user with profile data
+        const [userProfile] = await db
+            .select({
+                // User fields
+                id: users.id,
+                name: users.name,
+                email: users.email,
+                role: users.role,
+                departmentId: users.departmentId,
+                academicYearId: users.academicYearId,
+                enrollmentNumber: users.enrollmentNumber,
+                employeeId: users.employeeId,
+                phone: users.phone,
+                avatarUrl: users.avatarUrl,
+                isActive: users.isActive,
+                createdAt: users.createdAt,
+                updatedAt: users.updatedAt,
+
+                // Profile fields
+                profileId: profiles.id,
+                prefix: profiles.prefix,
+                dateOfBirth: profiles.dateOfBirth,
+                gender: profiles.gender,
+                bloodGroup: profiles.bloodGroup,
+                altEmail: profiles.altEmail,
+                address: profiles.address,
+                permanentAddress: profiles.permanentAddress,
+                bio: profiles.bio,
+
+                // Academic Info (Students)
+                section: profiles.section,
+                semester: profiles.semester,
+                cgpa: profiles.cgpa,
+                batch: profiles.batch,
+                rollNumber: profiles.rollNumber,
+                specialization: profiles.specialization,
+                admissionDate: profiles.admissionDate,
+                expectedGraduation: profiles.expectedGraduation,
+                previousEducation: profiles.previousEducation,
+
+                // Faculty/Staff Info
+                cabinLocationId: profiles.cabinLocationId,
+                officeHours: profiles.officeHours,
+                researchInterests: profiles.researchInterests,
+                qualifications: profiles.qualifications,
+                experienceYears: profiles.experienceYears,
+
+                // Guardian Info
+                guardianName: profiles.guardianName,
+                guardianContact: profiles.guardianContact,
+                guardianEmail: profiles.guardianEmail,
+                guardianRelation: profiles.guardianRelation,
+                guardianOccupation: profiles.guardianOccupation,
+
+                // Mentor Info
+                mentorId: profiles.mentorId,
+
+                // Social and Skills
+                socialLinks: profiles.socialLinks,
+                skills: profiles.skills,
+            })
             .from(users)
+            .leftJoin(profiles, eq(profiles.userId, users.id))
             .where(eq(users.id, user.userId))
             .limit(1);
 
-        if (!currentUser) {
+        if (!userProfile) {
             res.status(404).json({
                 success: false,
                 message: 'User not found',
@@ -482,12 +542,65 @@ export async function getProfile(req: Request, res: Response): Promise<void> {
             return;
         }
 
-        const { passwordHash, ...userWithoutPassword } = currentUser;
+        // Fetch mentor details if mentorId exists
+        let mentorInfo = null;
+        if (userProfile.mentorId) {
+            const [mentor] = await db
+                .select({
+                    id: users.id,
+                    name: users.name,
+                    email: users.email,
+                    phone: users.phone,
+                    departmentId: users.departmentId,
+                    officeHours: profiles.officeHours,
+                })
+                .from(users)
+                .leftJoin(profiles, eq(profiles.userId, users.id))
+                .where(eq(users.id, userProfile.mentorId))
+                .limit(1);
+
+            if (mentor) {
+                mentorInfo = {
+                    id: mentor.id,
+                    name: mentor.name,
+                    email: mentor.email,
+                    phone: mentor.phone,
+                    officeHours: mentor.officeHours,
+                };
+            }
+        }
+
+        // Fetch department and academic year names
+        let departmentName = null;
+        let academicYearName = null;
+
+        if (userProfile.departmentId) {
+            const [dept] = await db
+                .select({ name: departments.name, code: departments.code })
+                .from(departments)
+                .where(eq(departments.id, userProfile.departmentId))
+                .limit(1);
+            departmentName = dept?.name || null;
+        }
+
+        if (userProfile.academicYearId) {
+            const [year] = await db
+                .select({ name: academicYears.name, code: academicYears.code })
+                .from(academicYears)
+                .where(eq(academicYears.id, userProfile.academicYearId))
+                .limit(1);
+            academicYearName = year?.name || null;
+        }
 
         res.json({
             success: true,
             data: {
-                user: userWithoutPassword
+                profile: {
+                    ...userProfile,
+                    department: departmentName,
+                    year: academicYearName,
+                    mentor: mentorInfo,
+                }
             }
         });
 
@@ -508,26 +621,115 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
     try {
         const { db } = getDatabase();
         const user = (req as any).user;
-        const { name, phone } = req.body;
+        const profileData = req.body;
 
-        const updateData: any = {
+        // Prepare users table update
+        const userUpdateData: any = {
             updatedAt: new Date()
         };
 
-        if (name !== undefined) {
-            updateData.name = name.trim();
+        if (profileData.name !== undefined) {
+            userUpdateData.name = profileData.name.trim();
         }
-        if (phone !== undefined) {
-            updateData.phone = phone?.trim() || null;
+        if (profileData.phone !== undefined) {
+            userUpdateData.phone = profileData.phone?.trim() || null;
+        }
+        if (profileData.avatarUrl !== undefined) {
+            userUpdateData.avatarUrl = profileData.avatarUrl?.trim() || null;
         }
 
-        const [updatedUser] = await db
-            .update(users)
-            .set(updateData)
+        // Update users table if there are changes
+        if (Object.keys(userUpdateData).length > 1) { // More than just updatedAt
+            await db
+                .update(users)
+                .set(userUpdateData)
+                .where(eq(users.id, user.userId));
+        }
+
+        // Prepare profiles table update
+        const profileUpdateData: any = {
+            updatedAt: new Date()
+        };
+
+        // Personal Info
+        if (profileData.prefix !== undefined) profileUpdateData.prefix = profileData.prefix?.trim() || null;
+        if (profileData.dateOfBirth !== undefined) profileUpdateData.dateOfBirth = profileData.dateOfBirth || null;
+        if (profileData.gender !== undefined) profileUpdateData.gender = profileData.gender || null;
+        if (profileData.bloodGroup !== undefined) profileUpdateData.bloodGroup = profileData.bloodGroup?.trim() || null;
+        if (profileData.altEmail !== undefined) profileUpdateData.altEmail = profileData.altEmail?.trim() || null;
+        if (profileData.address !== undefined) profileUpdateData.address = profileData.address?.trim() || null;
+        if (profileData.permanentAddress !== undefined) profileUpdateData.permanentAddress = profileData.permanentAddress?.trim() || null;
+        if (profileData.bio !== undefined) profileUpdateData.bio = profileData.bio?.trim() || null;
+
+        // Academic Info (Students)
+        if (profileData.section !== undefined) profileUpdateData.section = profileData.section?.trim() || null;
+        if (profileData.semester !== undefined) profileUpdateData.semester = profileData.semester?.trim() || null;
+        if (profileData.cgpa !== undefined) profileUpdateData.cgpa = profileData.cgpa ? parseFloat(profileData.cgpa) : null;
+        if (profileData.batch !== undefined) profileUpdateData.batch = profileData.batch?.trim() || null;
+        if (profileData.rollNumber !== undefined) profileUpdateData.rollNumber = profileData.rollNumber?.trim() || null;
+        if (profileData.specialization !== undefined) profileUpdateData.specialization = profileData.specialization?.trim() || null;
+        if (profileData.admissionDate !== undefined) profileUpdateData.admissionDate = profileData.admissionDate || null;
+        if (profileData.expectedGraduation !== undefined) profileUpdateData.expectedGraduation = profileData.expectedGraduation || null;
+        if (profileData.previousEducation !== undefined) profileUpdateData.previousEducation = profileData.previousEducation?.trim() || null;
+
+        // Faculty/Staff Info
+        if (profileData.officeHours !== undefined) profileUpdateData.officeHours = profileData.officeHours?.trim() || null;
+        if (profileData.researchInterests !== undefined) profileUpdateData.researchInterests = profileData.researchInterests || null;
+        if (profileData.qualifications !== undefined) profileUpdateData.qualifications = profileData.qualifications || null;
+        if (profileData.experienceYears !== undefined) profileUpdateData.experienceYears = profileData.experienceYears ? parseInt(profileData.experienceYears) : null;
+
+        // Guardian Info
+        if (profileData.guardianName !== undefined) profileUpdateData.guardianName = profileData.guardianName?.trim() || null;
+        if (profileData.guardianContact !== undefined) profileUpdateData.guardianContact = profileData.guardianContact?.trim() || null;
+        if (profileData.guardianEmail !== undefined) profileUpdateData.guardianEmail = profileData.guardianEmail?.trim() || null;
+        if (profileData.guardianRelation !== undefined) profileUpdateData.guardianRelation = profileData.guardianRelation?.trim() || null;
+        if (profileData.guardianOccupation !== undefined) profileUpdateData.guardianOccupation = profileData.guardianOccupation?.trim() || null;
+
+        // Mentor Info
+        if (profileData.mentorId !== undefined) profileUpdateData.mentorId = profileData.mentorId || null;
+
+        // Social Links and Skills
+        if (profileData.socialLinks !== undefined) profileUpdateData.socialLinks = profileData.socialLinks || {};
+        if (profileData.skills !== undefined) profileUpdateData.skills = profileData.skills || [];
+        if (profileData.hobbies !== undefined) {
+            // Store hobbies in skills array for now (or create a hobbies column if needed)
+            // For this implementation, we'll keep them separate in the frontend
+        }
+        if (profileData.achievements !== undefined) {
+            // Store achievements in qualifications array for students
+            // For this implementation, we'll keep them separate in the frontend
+        }
+
+        // Check if profile exists
+        const [existingProfile] = await db
+            .select({ id: profiles.id })
+            .from(profiles)
+            .where(eq(profiles.userId, user.userId))
+            .limit(1);
+
+        if (existingProfile) {
+            // Update existing profile
+            if (Object.keys(profileUpdateData).length > 1) { // More than just updatedAt
+                await db
+                    .update(profiles)
+                    .set(profileUpdateData)
+                    .where(eq(profiles.userId, user.userId));
+            }
+        } else {
+            // Create new profile
+            profileUpdateData.userId = user.userId;
+            await db.insert(profiles).values(profileUpdateData);
+        }
+
+        // Fetch updated profile
+        const [updatedProfile] = await db
+            .select()
+            .from(users)
+            .leftJoin(profiles, eq(profiles.userId, users.id))
             .where(eq(users.id, user.userId))
-            .returning();
+            .limit(1);
 
-        if (!updatedUser) {
+        if (!updatedProfile) {
             res.status(404).json({
                 success: false,
                 message: 'User not found',
@@ -536,13 +738,11 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
             return;
         }
 
-        const { passwordHash, ...userWithoutPassword } = updatedUser;
-
         res.json({
             success: true,
             message: 'Profile updated successfully',
             data: {
-                user: userWithoutPassword
+                profile: updatedProfile
             }
         });
 
@@ -631,6 +831,63 @@ export async function changePassword(req: Request, res: Response): Promise<void>
             success: false,
             message: 'Internal server error changing password',
             code: 'CHANGE_PASSWORD_ERROR'
+        });
+    }
+}
+
+/**
+ * Get faculty members for mentor selection
+ */
+export async function getFacultyList(req: Request, res: Response): Promise<void> {
+    try {
+        const { db } = getDatabase();
+
+        // Fetch all active faculty members
+        const facultyMembers = await db
+            .select({
+                id: users.id,
+                name: users.name,
+                email: users.email,
+                phone: users.phone,
+                departmentId: users.departmentId,
+                employeeId: users.employeeId,
+                role: users.role,
+            })
+            .from(users)
+            .leftJoin(departments, eq(departments.id, users.departmentId))
+            .where(eq(users.role, 'FACULTY'))
+            .orderBy(users.name);
+
+        // Fetch department names for each faculty
+        const facultyWithDepartments = await Promise.all(
+            facultyMembers.map(async (faculty) => {
+                let departmentName = null;
+                if (faculty.departmentId) {
+                    const [dept] = await db
+                        .select({ name: departments.name })
+                        .from(departments)
+                        .where(eq(departments.id, faculty.departmentId))
+                        .limit(1);
+                    departmentName = dept?.name || null;
+                }
+                return {
+                    ...faculty,
+                    department: departmentName,
+                };
+            })
+        );
+
+        res.json({
+            success: true,
+            data: { faculty: facultyWithDepartments }
+        });
+
+    } catch (error) {
+        console.error('Get faculty list error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error fetching faculty list',
+            code: 'FACULTY_LIST_ERROR'
         });
     }
 }

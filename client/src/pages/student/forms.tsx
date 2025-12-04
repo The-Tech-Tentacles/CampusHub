@@ -23,11 +23,22 @@ import {
   Timer,
   AlertTriangle,
   ArrowUpDown,
+  Loader2,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLocation } from "wouter";
 import { EmptyState } from "@/components/empty-state";
 import { dataService, type Form, formatDate } from "@/services/dataService";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function Forms() {
   const { user } = useAuthStore();
@@ -37,6 +48,11 @@ export default function Forms() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("available");
   const [sortByDueDate, setSortByDueDate] = useState(false);
+  const [selectedForm, setSelectedForm] = useState<Form | null>(null);
+  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<Record<string, any>>({});
 
   useEffect(() => {
     const loadForms = async () => {
@@ -107,6 +123,58 @@ export default function Forms() {
 
     return tabForms;
   })();
+
+  const handleFillForm = (form: Form) => {
+    setSelectedForm(form);
+    setFormData({});
+    setIsSubmitDialogOpen(true);
+  };
+
+  const handleViewSubmission = async (form: Form) => {
+    try {
+      // Fetch the full form data including submission details
+      const fullFormData = await dataService.getFormById(form.id);
+      if (fullFormData) {
+        setSelectedForm(fullFormData);
+      } else {
+        setSelectedForm(form);
+      }
+      setIsViewDialogOpen(true);
+    } catch (error) {
+      console.error("Error loading form submission:", error);
+      setSelectedForm(form);
+      setIsViewDialogOpen(true);
+    }
+  };
+
+  const handleSubmitForm = async () => {
+    if (!selectedForm) return;
+
+    try {
+      setIsSubmitting(true);
+      const success = await dataService.submitForm(selectedForm.id, formData);
+
+      if (success) {
+        setIsSubmitDialogOpen(false);
+        setFormData({});
+        setSelectedForm(null);
+
+        // Reload forms to update submission status
+        const formsData = await dataService.getForms();
+        setForms(formsData);
+
+        // Switch to submitted tab to show the submitted form
+        setActiveTab("submitted");
+      } else {
+        alert("Failed to submit form. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("Failed to submit form. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const getDeadlineStatus = (deadline: string) => {
     const deadlineDate = new Date(deadline);
@@ -311,6 +379,7 @@ export default function Forms() {
 
                       {/* Action Button */}
                       <Button
+                        onClick={() => handleFillForm(form)}
                         className="w-full group/btn hover:bg-gradient-to-r hover:from-green-500 hover:to-blue-500 hover:text-white transition-all duration-200"
                         data-testid={`button-fill-form-${form.id}`}
                       >
@@ -376,6 +445,7 @@ export default function Forms() {
                     {/* Action Button */}
                     <Button
                       variant="outline"
+                      onClick={() => handleViewSubmission(form)}
                       className="w-full border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-300 dark:hover:bg-green-950/30"
                       data-testid={`button-view-submission-${form.id}`}
                     >
@@ -463,6 +533,194 @@ export default function Forms() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Form Submission Dialog */}
+      <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
+        <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+              {selectedForm?.title}
+            </DialogTitle>
+            <DialogDescription>{selectedForm?.description}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Dynamic form fields based on formData structure from database */}
+            {selectedForm?.formData?.fields?.map(
+              (field: any, index: number) => (
+                <div key={field.name || index} className="space-y-2">
+                  <Label htmlFor={field.name}>
+                    {field.label || field.name}
+                    {field.required && <span className="text-red-500">*</span>}
+                  </Label>
+
+                  {field.type === "textarea" ? (
+                    <Textarea
+                      id={field.name}
+                      placeholder={
+                        field.placeholder ||
+                        `Enter ${field.label || field.name}`
+                      }
+                      value={formData[field.name] || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          [field.name]: e.target.value,
+                        })
+                      }
+                      required={field.required}
+                      className="min-h-[100px] border-2 focus:border-green-500 dark:focus:border-green-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  ) : field.type === "select" ? (
+                    <select
+                      id={field.name}
+                      value={formData[field.name] || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          [field.name]: e.target.value,
+                        })
+                      }
+                      required={field.required}
+                      className="flex h-10 w-full rounded-md border-2 border-input bg-background px-3 py-2 text-sm ring-offset-background focus:border-green-500 dark:focus:border-green-400 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    >
+                      <option value="">Select an option</option>
+                      {field.options?.map((option: string, idx: number) => (
+                        <option key={idx} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Input
+                      id={field.name}
+                      type={field.type || "text"}
+                      placeholder={
+                        field.placeholder ||
+                        `Enter ${field.label || field.name}`
+                      }
+                      value={formData[field.name] || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          [field.name]: e.target.value,
+                        })
+                      }
+                      required={field.required}
+                      className="border-2 focus:border-green-500 dark:focus:border-green-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  )}
+                </div>
+              )
+            )}
+
+            {selectedForm && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-orange-50 dark:bg-orange-950/20 p-3 rounded-lg border border-orange-200 dark:border-orange-800">
+                <Timer className="h-4 w-4 text-orange-600" />
+                <span>
+                  Due: {new Date(selectedForm.deadline).toLocaleDateString()} at{" "}
+                  {new Date(selectedForm.deadline).toLocaleTimeString()}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsSubmitDialogOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitForm}
+              disabled={
+                isSubmitting ||
+                selectedForm?.formData?.fields?.some(
+                  (field: any) => field.required && !formData[field.name]
+                )
+              }
+              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Submit Form
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Submission Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+              {selectedForm?.title}
+            </DialogTitle>
+            <DialogDescription>View your submitted form data</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Display submitted data */}
+            {selectedForm?.formData?.fields?.map(
+              (field: any, index: number) => {
+                const submittedValue =
+                  selectedForm?.submissionData?.[field.name];
+
+                return (
+                  <div key={field.name || index} className="space-y-2">
+                    <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      {field.label || field.name}
+                      {field.required && (
+                        <span className="text-red-500 ml-1">*</span>
+                      )}
+                    </Label>
+
+                    <div className="p-3 rounded-md bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+                      <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
+                        {submittedValue || (
+                          <span className="text-gray-400 italic">
+                            No data provided
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+            )}
+
+            {selectedForm?.submittedAt && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-green-50 dark:bg-green-950/20 p-3 rounded-lg border border-green-200 dark:border-green-800 mt-4">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <span>
+                  Submitted on{" "}
+                  {new Date(selectedForm.submittedAt).toLocaleDateString()} at{" "}
+                  {new Date(selectedForm.submittedAt).toLocaleTimeString()}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsViewDialogOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

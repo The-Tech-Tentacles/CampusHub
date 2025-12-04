@@ -3,16 +3,17 @@
 
 import { UserRole } from "@/stores/auth-store";
 import { AlertTriangle, Info, Clock } from "lucide-react";
+import { noticeAPI, eventAPI, academicEventAPI, applicationAPI, formAPI, api } from "./api";
 
 // =================== TYPES ===================
 export type NoticeType = "urgent" | "important" | "general";
-export type NoticeScope = "GLOBAL" | "DEPARTMENT" | "YEAR" | "CLASS";
-export type ApplicationStatus = "PENDING" | "APPROVED" | "REJECTED" | "UNDER_REVIEW";
+export type NoticeScope = "GLOBAL" | "DEPARTMENT" | "YEAR";
+export type ApplicationStatus = "PENDING" | "APPROVED" | "REJECTED" | "UNDER_REVIEW" | "ESCALATED";
 export type FormStatus = "ACTIVE" | "INACTIVE" | "DRAFT";
 export type NotificationType = "NOTICE" | "FORM" | "APPLICATION" | "SYSTEM" | "ALERT";
 export type EventType = "LECTURE" | "LAB" | "EXAM" | "SEMINAR" | "WORKSHOP" | "SPORTS" | "CULTURAL" | "GENERIC";
 export type EventStatus = "SCHEDULED" | "ONGOING" | "COMPLETED" | "CANCELLED";
-export type AcademicEventType = "SEMESTER_START" | "SEMESTER_END" | "EXAM_WEEK" | "HOLIDAY" | "REGISTRATION" | "ORIENTATION" | "BREAK";
+export type AcademicEventType = "SEMESTER_START" | "SEMESTER_END" | "EXAM_WEEK" | "HOLIDAY" | "REGISTRATION" | "ORIENTATION" | "BREAK" | "OTHER";
 export type Gender = "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY";
 
 export interface Profile {
@@ -30,6 +31,8 @@ export interface Profile {
     bio?: string;
 
     // Academic Info (Students)
+    department?: string; // Department name from users table
+    year?: string; // Academic year name from users table
     section?: string;
     semester?: string;
     cgpa?: number;
@@ -58,6 +61,8 @@ export interface Profile {
     // Mentor Info (Students)
     mentorId?: string;
     mentorName?: string; // For display
+    mentorEmail?: string; // Mentor email
+    mentorPhone?: string; // Mentor phone
 
     // Social Links
     socialLinks?: Record<string, string>;
@@ -89,6 +94,16 @@ export interface Notice {
     isRead: boolean;
     department?: string;
     year?: number;
+    targetYears?: string[];
+    targetDepartments?: string[];
+    targetRoles?: string[];
+    attachmentUrl?: string;
+    expiresAt?: string;
+    isActive?: boolean;
+    createdByEmail?: string;
+    readAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface TimetableSlot {
@@ -117,32 +132,29 @@ export interface Application {
     id: string;
     title: string;
     type: string;
-    submittedBy: string;
-    submittedAt: string;
-    status: ApplicationStatus;
     description: string;
+    status: ApplicationStatus;
+    submittedBy: string;
+    submittedByEmail?: string;
     department?: string;
-    proof?: {
-        fileName: string;
-        fileUrl: string;
-        fileType: string;
-        uploadedAt: string;
-    };
-    mentorTeacher?: {
-        name: string;
-        email: string;
-        approvedAt?: string;
-        comments?: string;
-    };
-    hod?: {
-        name: string;
-        email: string;
-        approvedAt?: string;
-        comments?: string;
-    };
-    rejectedBy?: 'MENTOR' | 'HOD';
-    rejectedAt?: string;
-    rejectionReason?: string;
+    departmentCode?: string;
+    proofFileUrl?: string;
+    mentorStatus: ApplicationStatus;
+    mentorNotes?: string;
+    mentorReviewedAt?: string;
+    hodStatus: ApplicationStatus;
+    hodNotes?: string;
+    hodReviewedAt?: string;
+    requiresDeanApproval?: boolean;
+    deanStatus?: ApplicationStatus;
+    deanNotes?: string;
+    deanReviewedAt?: string;
+    escalationReason?: string;
+    currentLevel: 'MENTOR' | 'HOD' | 'DEAN' | 'COMPLETED';
+    finalDecision: ApplicationStatus;
+    submittedAt: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface Form {
@@ -150,14 +162,23 @@ export interface Form {
     title: string;
     description: string;
     createdBy: string;
+    createdByEmail?: string;
     createdAt: string;
     deadline: string;
     status: FormStatus;
     department?: string;
+    departmentCode?: string;
+    formData: Record<string, any>; // JSON structure defining form fields
     submissions: number;
     maxSubmissions?: number;
+    allowMultipleSubmissions?: boolean;
+    requiresApproval?: boolean;
+    targetYears?: string[];
+    targetDepartments?: string[];
+    targetRoles?: string[];
     isSubmitted?: boolean;
     submittedAt?: string;
+    submissionData?: Record<string, any>;
 }
 
 export interface User {
@@ -177,18 +198,18 @@ export interface Event {
     title: string;
     description?: string;
     type: EventType;
-    status: EventStatus;
     date: string;
     startTime: string;
     endTime: string;
-    location: string;
+    location?: string;
     instructor?: string;
-    department?: string;
-    isRecurring?: boolean;
-    recurringPattern?: "WEEKLY" | "MONTHLY";
-    maxAttendees?: number;
-    currentAttendees?: number;
+    linkUrl?: string;
+    targetYears?: string[];
+    targetDepartments?: string[];
+    targetRoles?: string[];
+    isActive: boolean;
     createdBy: string;
+    createdByEmail?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -201,130 +222,20 @@ export interface AcademicEvent {
     startDate: string;
     endDate: string;
     isHoliday: boolean;
-    department?: string;
-    year: number; // Academic year
-    semester?: 1 | 2;
+    linkUrl?: string;
+    targetYears?: string[];
+    targetDepartments?: string[];
+    targetRoles?: string[];
+    academicYear: number;
+    semester: 1 | 2;
+    canEdit: boolean;
     createdBy: string;
-    canEdit: boolean; // Based on user role
+    createdByEmail?: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 // =================== MOCK DATA ===================
-
-// Mock Notices Data
-const mockNotices: Notice[] = [
-    {
-        id: "1",
-        title: "Emergency: Campus Closure Due to Weather Alert",
-        content: "Due to severe weather conditions expected tomorrow, all classes and campus activities are suspended. Students are advised to stay in their accommodations and follow safety protocols. The cafeteria will remain open with limited hours (8 AM - 6 PM). Emergency contact: +1-234-567-8900. Further updates will be shared via official channels.",
-        createdBy: "Dr. Sarah Johnson",
-        type: "urgent",
-        scope: "GLOBAL",
-        publishedAt: new Date().toISOString(), // Today
-        isRead: false,
-    },
-    {
-        id: "2",
-        title: "Mid-Semester Examination Schedule Released",
-        content: "The schedule for mid-semester examinations has been finalized and is now available on the student portal. Students are required to check their exam timings, venues, and seat numbers before the examination week begins. Any discrepancies should be reported to the academic office within 48 hours. Study materials and guidelines are also available for download.",
-        createdBy: "Academic Office",
-        type: "important",
-        scope: "GLOBAL",
-        publishedAt: "2024-01-14T14:20:00Z",
-        isRead: false,
-        department: "All Departments",
-    },
-    {
-        id: "3",
-        title: "Library Timings Extended for Exam Week",
-        content: "To support students during the examination period, the central library will extend its operating hours from 7:00 AM to 11:00 PM throughout the exam week. Additional study spaces have been arranged in the community hall. Students are encouraged to follow library rules and maintain silence in designated study areas.",
-        createdBy: "Library Administration",
-        type: "important",
-        scope: "GLOBAL",
-        publishedAt: new Date().toISOString(), // Today
-        isRead: true,
-    },
-    {
-        id: "4",
-        title: "Guest Lecture: Future of AI and Quantum Computing",
-        content: "Join us for an exciting guest lecture by Prof. Michael Chen from MIT on 'The Convergence of AI and Quantum Computing: Shaping Tomorrow's Technology'. The session will cover cutting-edge research, career opportunities, and interactive Q&A. Venue: Main Auditorium, Date: January 20th, Time: 2:00 PM - 4:00 PM.",
-        createdBy: "Prof. David Williams",
-        type: "important",
-        scope: "DEPARTMENT",
-        publishedAt: "2024-01-12T16:45:00Z",
-        isRead: true,
-        department: "Computer Science",
-    },
-    {
-        id: "5",
-        title: "Annual Sports Day Registration Now Open",
-        content: "Get ready for the most exciting event of the year! Annual Sports Day registration is now live on the student portal. Choose from basketball, football, cricket, athletics, and many more events. Early bird registration gets exclusive merchandise. Deadline: January 25th. Let's make this sports day unforgettable!",
-        createdBy: "Sports Committee",
-        type: "general",
-        scope: "GLOBAL",
-        publishedAt: "2024-01-11T11:30:00Z",
-        isRead: false,
-    },
-    {
-        id: "6",
-        title: "Scholarship Applications for Merit Students",
-        content: "Merit-based scholarship applications are now open for exceptional students. This scholarship covers 50% of tuition fees for the next semester. Eligibility: CGPA above 8.5, active participation in extracurricular activities, and clean disciplinary record. Application deadline: January 30th. Apply through the student portal.",
-        createdBy: "Financial Aid Office",
-        type: "important",
-        scope: "GLOBAL",
-        publishedAt: "2024-01-10T13:20:00Z",
-        isRead: true,
-    },
-    {
-        id: "7",
-        title: "New WiFi Network Deployment Campus-wide",
-        content: "We are excited to announce the deployment of our new high-speed WiFi network 'CampusNet-5G' across all academic buildings and dormitories. The new network offers speeds up to 500 Mbps and better coverage. Students can connect using their student ID and password. The old network will be phased out by January 31st. Technical support is available at the IT helpdesk.",
-        createdBy: "IT Services",
-        type: "general",
-        scope: "GLOBAL",
-        publishedAt: new Date().toISOString(), // Today
-        isRead: false,
-    },
-    {
-        id: "8",
-        title: "Internship Fair 2025 - Fortune 500 Companies Participating",
-        content: "Mark your calendars! The Annual Internship Fair will be held on February 5th-6th in the Main Exhibition Hall. Over 50 Fortune 500 companies including Google, Microsoft, Apple, Tesla, and Amazon will be recruiting interns for summer 2025. Bring multiple copies of your resume and dress professionally. Pre-registration is mandatory through the career services portal.",
-        createdBy: "Career Services",
-        type: "important",
-        scope: "GLOBAL",
-        publishedAt: "2024-01-15T09:30:00Z",
-        isRead: false,
-    },
-    {
-        id: "9",
-        title: "Campus Safety Alert: Increased Security Measures",
-        content: "Following recent security assessments, we are implementing enhanced safety measures across campus. New security checkpoints will be active at all main entrances from January 20th. Students must carry their ID cards at all times. Emergency blue light stations have been installed throughout campus. Report any suspicious activities to campus security at ext. 911.",
-        createdBy: "Campus Security",
-        type: "urgent",
-        scope: "GLOBAL",
-        publishedAt: "2024-01-16T07:45:00Z",
-        isRead: false,
-    },
-    {
-        id: "10",
-        title: "Mental Health Awareness Week - Free Counseling Services",
-        content: "As part of Mental Health Awareness Week (January 22-26), the Student Counseling Center is offering free individual and group counseling sessions. Professional therapists will be available for stress management, anxiety, and academic pressure support. Workshop topics include mindfulness, time management, and healthy study habits. Book your session online or walk-in during office hours.",
-        createdBy: "Student Wellness Center",
-        type: "important",
-        scope: "GLOBAL",
-        publishedAt: "2024-01-13T15:20:00Z",
-        isRead: true,
-    },
-    {
-        id: "11",
-        title: "Research Symposium Call for Papers - Undergraduate Division",
-        content: "Calling all undergraduate researchers! Submit your research papers for the Annual Undergraduate Research Symposium scheduled for March 15th. Categories include Engineering, Sciences, Humanities, and Social Sciences. Cash prizes up to $5,000 for winners in each category. Submission deadline: February 10th. Mentorship support available through faculty advisors.",
-        createdBy: "Research Office",
-        type: "general",
-        scope: "GLOBAL",
-        publishedAt: "2024-01-09T12:15:00Z",
-        isRead: true,
-    },
-];
 
 // Mock Notifications Data
 const mockNotifications: Notification[] = [
@@ -413,542 +324,20 @@ const mockTimetable: Timetable = {
     },
 };
 
-// Mock Applications Data
-const mockApplications: Application[] = [
-    {
-        id: "1",
-        title: "Leave Application - Medical Emergency",
-        type: "Leave Request",
-        submittedBy: "John Doe",
-        submittedAt: "2024-01-15T10:00:00Z",
-        status: "PENDING",
-        description: "Requesting 3 days leave for medical treatment",
-        department: "Computer Science",
-        proof: {
-            fileName: "medical_certificate.pdf",
-            fileUrl: "/uploads/medical_certificate.pdf",
-            fileType: "application/pdf",
-            uploadedAt: "2024-01-15T10:00:00Z"
-        },
-        mentorTeacher: {
-            name: "Dr. Sarah Johnson",
-            email: "sarah.johnson@university.edu"
-        },
-        hod: {
-            name: "Prof. Michael Chen",
-            email: "michael.chen@university.edu"
-        }
-    },
-    {
-        id: "2",
-        title: "Hostel Room Change Request",
-        type: "Accommodation",
-        submittedBy: "Jane Smith",
-        submittedAt: "2024-01-14T15:30:00Z",
-        status: "UNDER_REVIEW",
-        description: "Request to change hostel room due to personal reasons",
-        proof: {
-            fileName: "hostel_complaint.jpg",
-            fileUrl: "/uploads/hostel_complaint.jpg",
-            fileType: "image/jpeg",
-            uploadedAt: "2024-01-14T15:30:00Z"
-        },
-        mentorTeacher: {
-            name: "Dr. Sarah Johnson",
-            email: "sarah.johnson@university.edu",
-            approvedAt: "2024-01-15T09:00:00Z",
-            comments: "Valid reason for room change request"
-        },
-        hod: {
-            name: "Prof. Michael Chen",
-            email: "michael.chen@university.edu"
-        }
-    },
-    {
-        id: "3",
-        title: "Extra Credit Assignment Submission",
-        type: "Academic",
-        submittedBy: "Mike Johnson",
-        submittedAt: "2024-01-13T09:15:00Z",
-        status: "APPROVED",
-        description: "Submission for extra credit in Database Management course",
-        department: "Computer Science",
-        proof: {
-            fileName: "assignment_report.docx",
-            fileUrl: "/uploads/assignment_report.docx",
-            fileType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            uploadedAt: "2024-01-13T09:15:00Z"
-        },
-        mentorTeacher: {
-            name: "Dr. Sarah Johnson",
-            email: "sarah.johnson@university.edu",
-            approvedAt: "2024-01-14T10:00:00Z",
-            comments: "Excellent work on the assignment"
-        },
-        hod: {
-            name: "Prof. Michael Chen",
-            email: "michael.chen@university.edu",
-            approvedAt: "2024-01-14T16:00:00Z",
-            comments: "Approved for extra credits"
-        }
-    },
-    {
-        id: "4",
-        title: "Event Organization Permission",
-        type: "Event",
-        submittedBy: "Sarah Wilson",
-        submittedAt: "2024-01-12T14:20:00Z",
-        status: "APPROVED",
-        description: "Permission to organize a tech talk in the auditorium",
-        proof: {
-            fileName: "event_proposal.pdf",
-            fileUrl: "/uploads/event_proposal.pdf",
-            fileType: "application/pdf",
-            uploadedAt: "2024-01-12T14:20:00Z"
-        },
-        mentorTeacher: {
-            name: "Dr. Robert Davis",
-            email: "robert.davis@university.edu",
-            approvedAt: "2024-01-13T11:00:00Z",
-            comments: "Great initiative for student development"
-        },
-        hod: {
-            name: "Prof. Lisa Anderson",
-            email: "lisa.anderson@university.edu",
-            approvedAt: "2024-01-13T15:30:00Z",
-            comments: "Approved with all necessary arrangements"
-        }
-    },
-    {
-        id: "5",
-        title: "Research Project Extension Request",
-        type: "Academic",
-        submittedBy: "Alex Thompson",
-        submittedAt: "2024-01-16T11:00:00Z",
-        status: "REJECTED",
-        description: "Request for extension of research project deadline due to equipment failure",
-        department: "Computer Science",
-        proof: {
-            fileName: "equipment_failure_report.pdf",
-            fileUrl: "/uploads/equipment_failure_report.pdf",
-            fileType: "application/pdf",
-            uploadedAt: "2024-01-16T11:00:00Z"
-        },
-        mentorTeacher: {
-            name: "Dr. Sarah Johnson",
-            email: "sarah.johnson@university.edu"
-        },
-        hod: {
-            name: "Prof. Michael Chen",
-            email: "michael.chen@university.edu"
-        },
-        rejectedBy: "MENTOR",
-        rejectedAt: "2024-01-17T09:00:00Z",
-        rejectionReason: "Insufficient justification provided. Alternative solutions were available."
-    }
-];
-
-// Mock Forms Data
-const mockForms: Form[] = [
-    // Available Forms (Active and not expired)
-    {
-        id: "1",
-        title: "Course Feedback Form",
-        description: "Mid-semester feedback for all enrolled courses",
-        createdBy: "Academic Office",
-        createdAt: "2024-01-10T09:00:00Z",
-        deadline: "2026-01-25T23:59:00Z",
-        status: "ACTIVE",
-        submissions: 234,
-        maxSubmissions: 500,
-        isSubmitted: false,
-    },
-    {
-        id: "2",
-        title: "Hostel Accommodation Preference",
-        description: "Submit your hostel room and mess preferences for next semester",
-        createdBy: "Hostel Administration",
-        createdAt: "2024-01-08T12:00:00Z",
-        deadline: "2025-11-30T18:00:00Z",
-        status: "ACTIVE",
-        department: "All Departments",
-        submissions: 156,
-        maxSubmissions: 800,
-        isSubmitted: false,
-    },
-    {
-        id: "4",
-        title: "Research Project Proposal",
-        description: "Submit your final year research project proposal",
-        createdBy: "Research Committee",
-        createdAt: "2024-01-15T11:00:00Z",
-        deadline: "2025-12-15T23:59:00Z",
-        status: "ACTIVE",
-        department: "Computer Science",
-        submissions: 12,
-        maxSubmissions: 50,
-        isSubmitted: false,
-    },
-    {
-        id: "6",
-        title: "Library Book Request",
-        description: "Request new books for the library collection",
-        createdBy: "Library Committee",
-        createdAt: "2024-10-01T09:00:00Z",
-        deadline: "2025-11-25T23:59:00Z",
-        status: "ACTIVE",
-        submissions: 45,
-        maxSubmissions: 100,
-        isSubmitted: false,
-    },
-
-    // Submitted Forms (Completed by user)
-    {
-        id: "7",
-        title: "Course Registration Form",
-        description: "Register for courses for the upcoming semester",
-        createdBy: "Academic Office",
-        createdAt: "2024-09-01T10:00:00Z",
-        deadline: "2024-10-01T23:59:00Z",
-        status: "ACTIVE",
-        submissions: 456,
-        maxSubmissions: 600,
-        isSubmitted: true,
-        submittedAt: "2024-09-15T14:30:00Z",
-    },
-    {
-        id: "8",
-        title: "Student ID Card Application",
-        description: "Apply for new student ID card or replacement",
-        createdBy: "Administration",
-        createdAt: "2024-08-15T11:00:00Z",
-        deadline: "2024-12-01T17:00:00Z",
-        status: "ACTIVE",
-        department: "All Departments",
-        submissions: 234,
-        maxSubmissions: 800,
-        isSubmitted: true,
-        submittedAt: "2024-08-20T16:45:00Z",
-    },
-    {
-        id: "9",
-        title: "Exam Hall Ticket Request",
-        description: "Download your exam hall ticket",
-        createdBy: "Examination Cell",
-        createdAt: "2024-09-20T08:00:00Z",
-        deadline: "2024-11-15T18:00:00Z",
-        status: "ACTIVE",
-        submissions: 567,
-        maxSubmissions: 700,
-        isSubmitted: true,
-        submittedAt: "2024-10-05T12:20:00Z",
-    },
-
-    // Missed Forms (Expired and not submitted)
-    {
-        id: "3",
-        title: "Alumni Mentorship Program Registration",
-        description: "Register for the alumni mentorship program to get guidance from industry experts",
-        createdBy: "Career Services",
-        createdAt: "2024-01-05T10:30:00Z",
-        deadline: "2024-10-15T17:00:00Z",
-        status: "INACTIVE",
-        submissions: 89,
-        maxSubmissions: 200,
-        isSubmitted: false,
-    },
-    {
-        id: "5",
-        title: "Sports Day Event Registration",
-        description: "Register for various sports events in the annual sports day",
-        createdBy: "Sports Committee",
-        createdAt: "2024-01-01T08:00:00Z",
-        deadline: "2024-10-10T20:00:00Z",
-        status: "INACTIVE",
-        submissions: 345,
-        maxSubmissions: 400,
-        isSubmitted: false,
-    },
-    {
-        id: "10",
-        title: "Scholarship Application Form",
-        description: "Apply for merit-based scholarships for this semester",
-        createdBy: "Scholarship Committee",
-        createdAt: "2024-08-01T09:00:00Z",
-        deadline: "2024-10-01T23:59:00Z",
-        status: "INACTIVE",
-        department: "All Departments",
-        submissions: 123,
-        maxSubmissions: 300,
-        isSubmitted: false,
-    },
-    {
-        id: "11",
-        title: "Campus Placement Registration",
-        description: "Register for upcoming campus placement opportunities",
-        createdBy: "Placement Cell",
-        createdAt: "2024-07-15T10:00:00Z",
-        deadline: "2024-09-30T18:00:00Z",
-        status: "INACTIVE",
-        department: "All Departments",
-        submissions: 298,
-        maxSubmissions: 400,
-        isSubmitted: false,
-    },
-];
-
-// Mock Events Data
-const mockEvents: Event[] = [
-    {
-        id: "1",
-        title: "Data Structures - Advanced Topics",
-        description: "Deep dive into advanced data structure concepts including graphs and trees",
-        type: "LECTURE",
-        status: "SCHEDULED",
-        date: "2025-10-20",
-        startTime: "10:00",
-        endTime: "11:30",
-        location: "Room 205",
-        instructor: "Dr. Sarah Johnson",
-        department: "Computer Science",
-        createdBy: "faculty_001",
-        createdAt: "2025-10-15T09:00:00Z",
-        updatedAt: "2025-10-15T09:00:00Z"
-    },
-    {
-        id: "2",
-        title: "Machine Learning Workshop",
-        description: "Hands-on workshop covering ML algorithms and implementation",
-        type: "WORKSHOP",
-        status: "SCHEDULED",
-        date: "2025-10-22",
-        startTime: "14:00",
-        endTime: "17:00",
-        location: "Lab 301",
-        instructor: "Prof. Michael Chen",
-        department: "AI & DS",
-        maxAttendees: 30,
-        currentAttendees: 18,
-        createdBy: "faculty_002",
-        createdAt: "2025-10-10T10:00:00Z",
-        updatedAt: "2025-10-18T15:30:00Z"
-    },
-    {
-        id: "3",
-        title: "Cultural Night - Diwali Celebration",
-        description: "Traditional Diwali celebration with performances and food",
-        type: "CULTURAL",
-        status: "SCHEDULED",
-        date: "2025-10-30",
-        startTime: "18:00",
-        endTime: "22:00",
-        location: "Auditorium",
-        department: "Cultural Committee",
-        maxAttendees: 400,
-        currentAttendees: 156,
-        createdBy: "student_council",
-        createdAt: "2025-10-01T14:00:00Z",
-        updatedAt: "2025-10-17T16:45:00Z"
-    },
-    {
-        id: "4",
-        title: "Mid-Semester Examination",
-        description: "Mid-semester examinations for all departments",
-        type: "EXAM",
-        status: "SCHEDULED",
-        date: "2025-11-15",
-        startTime: "09:00",
-        endTime: "12:00",
-        location: "Exam Halls A, B, C",
-        department: "All Departments",
-        createdBy: "academic_office",
-        createdAt: "2025-08-20T11:00:00Z",
-        updatedAt: "2025-10-10T14:20:00Z"
-    },
-    {
-        id: "5",
-        title: "Guest Lecture: Industry 4.0",
-        description: "Industry expert sharing insights on modern manufacturing trends",
-        type: "SEMINAR",
-        status: "SCHEDULED",
-        date: "2025-11-28",
-        startTime: "15:00",
-        endTime: "16:30",
-        location: "Auditorium",
-        instructor: "Mr. Rajesh Kumar (Industry Expert)",
-        department: "Mechanical Engineering",
-        maxAttendees: 200,
-        currentAttendees: 89,
-        createdBy: "faculty_003",
-        createdAt: "2025-10-12T13:30:00Z",
-        updatedAt: "2025-10-19T09:15:00Z"
-    }
-];
-
-// Mock Academic Calendar Data
-const mockAcademicEvents: AcademicEvent[] = [
-    {
-        id: "ac_1",
-        title: "Semester 1 Begins",
-        description: "Start of Academic Year 2025-26 - First Semester",
-        type: "SEMESTER_START",
-        startDate: "2025-08-15",
-        endDate: "2025-08-15",
-        isHoliday: false,
-        year: 2025,
-        semester: 1,
-        createdBy: "academic_office",
-        canEdit: true
-    },
-    {
-        id: "ac_2",
-        title: "Independence Day",
-        description: "National Holiday - Independence Day of India",
-        type: "HOLIDAY",
-        startDate: "2025-08-15",
-        endDate: "2025-08-15",
-        isHoliday: true,
-        year: 2025,
-        createdBy: "academic_office",
-        canEdit: false
-    },
-    {
-        id: "ac_3",
-        title: "Orientation Week",
-        description: "Orientation program for new students",
-        type: "ORIENTATION",
-        startDate: "2025-08-16",
-        endDate: "2025-08-22",
-        isHoliday: false,
-        year: 2025,
-        semester: 1,
-        createdBy: "academic_office",
-        canEdit: true
-    },
-    {
-        id: "ac_4",
-        title: "Diwali Break",
-        description: "Diwali festival holidays",
-        type: "HOLIDAY",
-        startDate: "2025-10-17",
-        endDate: "2025-10-27",
-        isHoliday: true,
-        year: 2025,
-        createdBy: "academic_office",
-        canEdit: true
-    },
-    {
-        id: "ac_5",
-        title: "Mid-Semester Exam Week",
-        description: "Mid-semester examinations for all courses",
-        type: "EXAM_WEEK",
-        startDate: "2025-11-10",
-        endDate: "2025-11-20",
-        isHoliday: false,
-        year: 2025,
-        semester: 1,
-        createdBy: "academic_office",
-        canEdit: true
-    },
-    {
-        id: "ac_6",
-        title: "Winter Break",
-        description: "Winter vacation break",
-        type: "BREAK",
-        startDate: "2025-12-20",
-        endDate: "2026-01-05",
-        isHoliday: true,
-        year: 2025,
-        createdBy: "academic_office",
-        canEdit: true
-    },
-    {
-        id: "ac_7",
-        title: "Semester 1 Ends",
-        description: "End of First Semester 2025-26",
-        type: "SEMESTER_END",
-        startDate: "2026-01-15",
-        endDate: "2026-01-15",
-        isHoliday: false,
-        year: 2025,
-        semester: 1,
-        createdBy: "academic_office",
-        canEdit: true
-    },
-    {
-        id: "ac_8",
-        title: "Semester 2 Registration",
-        description: "Course registration for second semester",
-        type: "REGISTRATION",
-        startDate: "2026-01-16",
-        endDate: "2026-01-25",
-        isHoliday: false,
-        year: 2025,
-        semester: 2,
-        createdBy: "academic_office",
-        canEdit: true
-    }
-];
-
-// Mock Users Data
-const mockUsers: User[] = [
-    {
-        id: "1",
-        name: "Rax",
-        email: "rakesh.yadav@campus.edu",
-        role: "STUDENT",
-        department: "AI & DS",
-        year: "B. Tech",
-        enrollmentNumber: "21AI001",
-        joiningDate: "2021-08-15",
-    },
-    {
-        id: "2",
-        name: "Dr. Sarah Williams",
-        email: "s.williams@campus.edu",
-        role: "FACULTY",
-        department: "Computer Science",
-        joiningDate: "2018-07-01",
-    },
-    {
-        id: "3",
-        name: "Prof. Michael Chen",
-        email: "m.chen@campus.edu",
-        role: "HOD",
-        department: "Computer Science",
-        joiningDate: "2015-08-01",
-    },
-    {
-        id: "4",
-        name: "Dr. Emily Davis",
-        email: "e.davis@campus.edu",
-        role: "DEAN",
-        department: "Engineering",
-        joiningDate: "2012-06-01",
-    },
-    {
-        id: "5",
-        name: "Admin User",
-        email: "admin@campus.edu",
-        role: "ADMIN",
-        department: "Administration",
-        joiningDate: "2020-01-01",
-    },
-];
+// Users data now comes from backend API
 
 // =================== DATA SERVICE CLASS ===================
 
 class DataService {
-    private notices: Notice[] = [...mockNotices];
+    // private notices: Notice[] = [];
     private timetable: Timetable = { ...mockTimetable };
-    private applications: Application[] = [...mockApplications];
-    private forms: Form[] = [...mockForms];
-    private users: User[] = [...mockUsers];
+    // private applications: Application[] = [];
+    // private forms: Form[] = [];
     private notifications: Notification[] = [...mockNotifications];
-    private events: Event[] = [...mockEvents];
-    private academicEvents: AcademicEvent[] = [...mockAcademicEvents];
+    private events: Event[] = [];
+    private academicEvents: AcademicEvent[] = [];
 
-    // ===== NOTICES =====
+    // ===== NOTICES ===== (Now using real API)
     async getNotices(filters?: {
         type?: NoticeType;
         scope?: NoticeScope;
@@ -956,55 +345,39 @@ class DataService {
         isRead?: boolean;
         today?: boolean;
     }): Promise<Notice[]> {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        let filteredNotices = [...this.notices];
-
-        if (filters?.type) {
-            filteredNotices = filteredNotices.filter(notice => notice.type === filters.type);
+        try {
+            const response = await noticeAPI.getAll(filters);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            return [];
+        } catch (error) {
+            console.error('Error fetching notices:', error);
+            return [];
         }
-
-        if (filters?.scope) {
-            filteredNotices = filteredNotices.filter(notice => notice.scope === filters.scope);
-        }
-
-        if (filters?.department) {
-            filteredNotices = filteredNotices.filter(notice =>
-                !notice.department || notice.department === filters.department || notice.department === "All Departments"
-            );
-        }
-
-        if (filters?.isRead !== undefined) {
-            filteredNotices = filteredNotices.filter(notice => notice.isRead === filters.isRead);
-        }
-
-        if (filters?.today) {
-            const today = new Date().toISOString().split('T')[0];
-            filteredNotices = filteredNotices.filter(notice => {
-                const noticeDate = new Date(notice.publishedAt).toISOString().split('T')[0];
-                return noticeDate === today;
-            });
-        }
-
-        return filteredNotices.sort((a, b) =>
-            new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-        );
     }
 
     async getNoticeById(id: string): Promise<Notice | null> {
-        await new Promise(resolve => setTimeout(resolve, 50));
-        return this.notices.find(notice => notice.id === id) || null;
+        try {
+            const response = await noticeAPI.getById(id);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching notice:', error);
+            return null;
+        }
     }
 
     async markNoticeAsRead(id: string): Promise<boolean> {
-        await new Promise(resolve => setTimeout(resolve, 50));
-        const notice = this.notices.find(n => n.id === id);
-        if (notice) {
-            notice.isRead = true;
-            return true;
+        try {
+            const response = await noticeAPI.markAsRead(id);
+            return response.success;
+        } catch (error) {
+            console.error('Error marking notice as read:', error);
+            return false;
         }
-        return false;
     }
 
     // ===== TIMETABLE =====
@@ -1033,57 +406,183 @@ class DataService {
         type?: string;
         submittedBy?: string;
     }): Promise<Application[]> {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        try {
+            const response = await applicationAPI.getAll();
 
-        let filteredApps = [...this.applications];
+            if (!response.success || !response.data) {
+                throw new Error(response.message || 'Failed to fetch applications');
+            }
 
-        if (filters?.status) {
-            filteredApps = filteredApps.filter(app => app.status === filters.status);
+            let applications = response.data;
+
+            // Apply client-side filters if needed
+            if (filters?.status) {
+                applications = applications.filter(app => app.status === filters.status);
+            }
+
+            if (filters?.type) {
+                applications = applications.filter(app => app.type === filters.type);
+            }
+
+            if (filters?.submittedBy) {
+                applications = applications.filter(app => app.submittedBy === filters.submittedBy);
+            }
+
+            return applications;
+        } catch (error) {
+            console.error('Error fetching applications:', error);
+            return [];
         }
-
-        if (filters?.type) {
-            filteredApps = filteredApps.filter(app => app.type === filters.type);
-        }
-
-        if (filters?.submittedBy) {
-            filteredApps = filteredApps.filter(app => app.submittedBy === filters.submittedBy);
-        }
-
-        return filteredApps.sort((a, b) =>
-            new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
-        );
     }
 
-    // ===== FORMS =====
+    async getApplicationById(id: string): Promise<Application | null> {
+        try {
+            const response = await applicationAPI.getById(id);
+
+            if (!response.success || !response.data) {
+                throw new Error(response.message || 'Failed to fetch application');
+            }
+
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching application:', error);
+            return null;
+        }
+    }
+
+    async createApplication(data: {
+        title: string;
+        type: string;
+        description: string;
+        proofFileUrl?: string;
+    }): Promise<Application | null> {
+        try {
+            const response = await applicationAPI.create(data);
+
+            if (!response.success || !response.data) {
+                throw new Error(response.message || 'Failed to create application');
+            }
+
+            return response.data;
+        } catch (error) {
+            console.error('Error creating application:', error);
+            throw error;
+        }
+    }
+
+    async deleteApplication(id: string): Promise<boolean> {
+        try {
+            const response = await applicationAPI.delete(id);
+            return response.success;
+        } catch (error) {
+            console.error('Error deleting application:', error);
+            return false;
+        }
+    }
+
+    // ===== FORMS ===== (Now using real API)
     async getForms(filters?: {
         status?: FormStatus;
         department?: string;
     }): Promise<Form[]> {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        try {
+            const response = await formAPI.getAll();
+            if (response.success && response.data) {
+                let forms = response.data.map((form: any) => ({
+                    id: form.id,
+                    title: form.title,
+                    description: form.description,
+                    createdBy: form.createdBy,
+                    createdByEmail: form.createdByEmail,
+                    createdAt: form.createdAt,
+                    deadline: form.deadline,
+                    status: form.status as FormStatus,
+                    department: form.department,
+                    departmentCode: form.departmentCode,
+                    formData: form.formData || {},
+                    submissions: 0, // Not tracked in this version
+                    maxSubmissions: form.maxSubmissions,
+                    allowMultipleSubmissions: form.allowMultipleSubmissions,
+                    requiresApproval: form.requiresApproval,
+                    targetYears: form.targetYears,
+                    targetDepartments: form.targetDepartments,
+                    targetRoles: form.targetRoles,
+                    isSubmitted: form.isSubmitted,
+                    submittedAt: form.submittedAt,
+                    submissionData: form.submissionData
+                }));
 
-        let filteredForms = [...this.forms];
-        const now = new Date();
+                // Apply client-side filters if needed
+                const now = new Date();
+                if (filters?.status) {
+                    if (filters.status === "ACTIVE") {
+                        forms = forms.filter((form: Form) =>
+                            form.status === "ACTIVE" && new Date(form.deadline) > now
+                        );
+                    } else {
+                        forms = forms.filter((form: Form) => form.status === filters.status);
+                    }
+                }
 
-        if (filters?.status) {
-            if (filters.status === "ACTIVE") {
-                // Only return forms that are marked as ACTIVE AND not expired
-                filteredForms = filteredForms.filter(form =>
-                    form.status === "ACTIVE" && new Date(form.deadline) > now
-                );
-            } else {
-                filteredForms = filteredForms.filter(form => form.status === filters.status);
+                if (filters?.department) {
+                    forms = forms.filter((form: Form) =>
+                        !form.department || form.department === filters.department || form.department === "All Departments"
+                    );
+                }
+
+                return forms;
             }
+            return [];
+        } catch (error) {
+            console.error('Error fetching forms:', error);
+            return [];
         }
+    }
 
-        if (filters?.department) {
-            filteredForms = filteredForms.filter(form =>
-                !form.department || form.department === filters.department || form.department === "All Departments"
-            );
+    async getFormById(id: string): Promise<Form | null> {
+        try {
+            const response = await formAPI.getById(id);
+            if (response.success && response.data) {
+                const form = response.data;
+                return {
+                    id: form.id,
+                    title: form.title,
+                    description: form.description,
+                    createdBy: form.createdBy,
+                    createdByEmail: form.createdByEmail,
+                    createdAt: form.createdAt,
+                    deadline: form.deadline,
+                    status: form.status as FormStatus,
+                    department: form.department,
+                    departmentCode: form.departmentCode,
+                    formData: form.formData || {},
+                    submissions: 0,
+                    maxSubmissions: form.maxSubmissions,
+                    allowMultipleSubmissions: form.allowMultipleSubmissions,
+                    requiresApproval: form.requiresApproval,
+                    targetYears: form.targetYears,
+                    targetDepartments: form.targetDepartments,
+                    targetRoles: form.targetRoles,
+                    isSubmitted: form.isSubmitted,
+                    submittedAt: form.submittedAt,
+                    submissionData: form.submissionData
+                };
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching form:', error);
+            return null;
         }
+    }
 
-        return filteredForms.sort((a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+    async submitForm(id: string, submissionData: Record<string, any>): Promise<boolean> {
+        try {
+            const response = await formAPI.submit(id, submissionData);
+            return response.success;
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            return false;
+        }
     }
 
     // ===== USERS =====
@@ -1091,19 +590,9 @@ class DataService {
         role?: UserRole;
         department?: string;
     }): Promise<User[]> {
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        let filteredUsers = [...this.users];
-
-        if (filters?.role) {
-            filteredUsers = filteredUsers.filter(user => user.role === filters.role);
-        }
-
-        if (filters?.department) {
-            filteredUsers = filteredUsers.filter(user => user.department === filters.department);
-        }
-
-        return filteredUsers;
+        // TODO: Implement backend API endpoint for fetching users list
+        // For now, return empty array as this is admin functionality
+        return [];
     }
 
     // ===== STATISTICS =====
@@ -1198,42 +687,36 @@ class DataService {
         return this.notifications.filter(n => !n.readAt).length;
     }
 
-    // ===== EVENTS =====
+    // ===== EVENTS ===== (Now using real API)
     async getEvents(filters?: {
         month?: number;
         year?: number;
         type?: EventType;
         department?: string;
-        status?: EventStatus;
     }): Promise<Event[]> {
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        let filteredEvents = [...this.events];
-
-        if (filters?.month !== undefined && filters?.year !== undefined) {
-            filteredEvents = filteredEvents.filter(event => {
-                const eventDate = new Date(event.date);
-                return eventDate.getMonth() === filters.month && eventDate.getFullYear() === filters.year;
-            });
+        try {
+            const response = await eventAPI.getAll(filters);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            return [];
+        } catch (error) {
+            console.error('Error fetching events:', error);
+            return [];
         }
+    }
 
-        if (filters?.type) {
-            filteredEvents = filteredEvents.filter(event => event.type === filters.type);
+    async getEventById(id: string): Promise<Event | null> {
+        try {
+            const response = await eventAPI.getById(id);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching event:', error);
+            return null;
         }
-
-        if (filters?.department) {
-            filteredEvents = filteredEvents.filter(event =>
-                !event.department ||
-                event.department === filters.department ||
-                event.department === "All Departments"
-            );
-        }
-
-        if (filters?.status) {
-            filteredEvents = filteredEvents.filter(event => event.status === filters.status);
-        }
-
-        return filteredEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     }
 
     async createEvent(eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>): Promise<Event> {
@@ -1276,40 +759,36 @@ class DataService {
         return false;
     }
 
-    // ===== ACADEMIC CALENDAR =====
+    // ===== ACADEMIC CALENDAR ===== (Now using real API)
     async getAcademicEvents(filters?: {
         year?: number;
         month?: number;
         semester?: 1 | 2;
         type?: AcademicEventType;
     }): Promise<AcademicEvent[]> {
-        await new Promise(resolve => setTimeout(resolve, 80));
-
-        let filteredEvents = [...this.academicEvents];
-
-        if (filters?.year) {
-            filteredEvents = filteredEvents.filter(event => event.year === filters.year);
+        try {
+            const response = await academicEventAPI.getAll(filters);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            return [];
+        } catch (error) {
+            console.error('Error fetching academic events:', error);
+            return [];
         }
+    }
 
-        if (filters?.month !== undefined) {
-            filteredEvents = filteredEvents.filter(event => {
-                const startDate = new Date(event.startDate);
-                const endDate = new Date(event.endDate);
-                return startDate.getMonth() <= filters.month! && endDate.getMonth() >= filters.month!;
-            });
+    async getAcademicEventById(id: string): Promise<AcademicEvent | null> {
+        try {
+            const response = await academicEventAPI.getById(id);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching academic event:', error);
+            return null;
         }
-
-        if (filters?.semester) {
-            filteredEvents = filteredEvents.filter(event =>
-                event.semester === filters.semester || !event.semester
-            );
-        }
-
-        if (filters?.type) {
-            filteredEvents = filteredEvents.filter(event => event.type === filters.type);
-        }
-
-        return filteredEvents.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     }
 
     async createAcademicEvent(eventData: Omit<AcademicEvent, 'id'>): Promise<AcademicEvent> {
@@ -1351,6 +830,101 @@ class DataService {
 
     async getFullYearCalendar(year: number): Promise<AcademicEvent[]> {
         return this.getAcademicEvents({ year });
+    }
+
+    // ===== PROFILE ===== (Using real API)
+    async getUserProfile(): Promise<Profile> {
+        try {
+            const response = await api.getProfile();
+            if (!response.success || !response.data) {
+                throw new Error('Failed to fetch profile');
+            }
+            // Backend returns { success: true, data: { profile: {...} } }
+            const profile = (response.data as any).profile;
+
+            // Map backend response to frontend Profile type
+            return {
+                id: profile.profileId,
+                userId: profile.id,
+
+                // Personal Info
+                prefix: profile.prefix,
+                dateOfBirth: profile.dateOfBirth,
+                gender: profile.gender,
+                bloodGroup: profile.bloodGroup,
+                altEmail: profile.altEmail,
+                address: profile.address,
+                permanentAddress: profile.permanentAddress,
+                bio: profile.bio,
+
+                // Academic Info (Students)
+                department: profile.department,
+                year: profile.year,
+                section: profile.section,
+                semester: profile.semester,
+                cgpa: profile.cgpa ? parseFloat(profile.cgpa) : undefined,
+                batch: profile.batch,
+                rollNumber: profile.rollNumber,
+                specialization: profile.specialization,
+                admissionDate: profile.admissionDate,
+                expectedGraduation: profile.expectedGraduation,
+                previousEducation: profile.previousEducation,
+
+                // Faculty/Staff Info
+                officeHours: profile.officeHours,
+                researchInterests: profile.researchInterests || [],
+                qualifications: profile.qualifications || [],
+                experienceYears: profile.experienceYears,
+
+                // Guardian Info
+                guardianName: profile.guardianName,
+                guardianContact: profile.guardianContact,
+                guardianEmail: profile.guardianEmail,
+                guardianRelation: profile.guardianRelation,
+                guardianOccupation: profile.guardianOccupation,
+
+                // Mentor Info
+                mentorId: profile.mentorId,
+                mentorName: profile.mentor?.name,
+                mentorEmail: profile.mentor?.email,
+                mentorPhone: profile.mentor?.phone,
+
+                // Social Links
+                socialLinks: profile.socialLinks || {},
+
+                // Skills
+                skills: profile.skills || [],
+
+                createdAt: profile.createdAt,
+                updatedAt: profile.updatedAt,
+            };
+        } catch (error) {
+            console.error('Get user profile error:', error);
+            throw error;
+        }
+    }
+
+    async updateUserProfile(profileData: Partial<Profile>): Promise<boolean> {
+        try {
+            const response = await api.updateProfile(profileData as any);
+            return response.success;
+        } catch (error) {
+            console.error('Update user profile error:', error);
+            throw error;
+        }
+    }
+
+    async getFacultyList(): Promise<any[]> {
+        try {
+            const response = await api.getFacultyList();
+            if (!response.success || !response.data) {
+                throw new Error('Failed to fetch faculty list');
+            }
+            return (response.data as any).faculty || [];
+        } catch (error) {
+            console.error('Get faculty list error:', error);
+            throw error;
+        }
     }
 }
 

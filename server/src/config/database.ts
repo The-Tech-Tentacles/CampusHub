@@ -7,7 +7,6 @@ export function initializeDatabase() {
     if (!process.env.DATABASE_URL) {
         throw new Error('DATABASE_URL is not set');
     }
-
     const sql = neon(process.env.DATABASE_URL);
     // @ts-ignore - Type compatibility issue between Drizzle and Neon, functionality works fine
     return { db: drizzle(sql, { schema }), sql };

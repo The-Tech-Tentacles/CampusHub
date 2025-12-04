@@ -323,6 +323,14 @@ export const forms = pgTable('forms', {
     targetDepartments: uuid('target_departments').array(),
     targetRoles: userRoleEnum('target_roles').array(),
 
+    // Optional department association
+    departmentId: uuid('department_id').references(() => departments.id, { onDelete: 'set null' }),
+
+    // Form configuration
+    maxSubmissions: integer('max_submissions'),
+    allowMultipleSubmissions: boolean('allow_multiple_submissions').default(false),
+    requiresApproval: boolean('requires_approval').default(false),
+
     status: formStatusEnum('status').notNull().default('DRAFT'),
     deadline: timestamp('deadline', { withTimezone: true }).notNull(),
     formData: jsonb('form_data').notNull(),
@@ -332,6 +340,7 @@ export const forms = pgTable('forms', {
     createdByIdx: index('idx_forms_created_by').on(table.createdBy),
     statusIdx: index('idx_forms_status').on(table.status),
     deadlineIdx: index('idx_forms_deadline').on(table.deadline),
+    departmentIdx: index('idx_forms_department').on(table.departmentId),
 }));
 
 // Applications table - THE MISSING ONE!

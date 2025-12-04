@@ -70,6 +70,158 @@ export interface AcademicYear {
     endYear: number;
 }
 
+export interface Notice {
+    id: string;
+    title: string;
+    content: string;
+    type: 'urgent' | 'important' | 'general';
+    scope: 'GLOBAL' | 'DEPARTMENT' | 'YEAR';
+    targetYears?: string[];
+    targetDepartments?: string[];
+    targetRoles?: string[];
+    attachmentUrl?: string;
+    publishedAt: string;
+    expiresAt?: string;
+    isActive: boolean;
+    createdBy: string;
+    createdByEmail?: string;
+    isRead: boolean;
+    readAt?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface Event {
+    id: string;
+    title: string;
+    description?: string;
+    type: 'LECTURE' | 'LAB' | 'EXAM' | 'SEMINAR' | 'WORKSHOP' | 'SPORTS' | 'CULTURAL' | 'GENERIC';
+    date: string;
+    startTime: string;
+    endTime: string;
+    location?: string;
+    instructor?: string;
+    linkUrl?: string;
+    targetYears?: string[];
+    targetDepartments?: string[];
+    targetRoles?: string[];
+    isActive: boolean;
+    createdBy: string;
+    createdByEmail?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface AcademicEvent {
+    id: string;
+    title: string;
+    description?: string;
+    type: 'SEMESTER_START' | 'SEMESTER_END' | 'EXAM_WEEK' | 'HOLIDAY' | 'REGISTRATION' | 'ORIENTATION' | 'BREAK' | 'OTHER';
+    startDate: string;
+    endDate: string;
+    isHoliday: boolean;
+    linkUrl?: string;
+    targetYears?: string[];
+    targetDepartments?: string[];
+    targetRoles?: string[];
+    academicYear: number;
+    semester: 1 | 2;
+    canEdit: boolean;
+    createdBy: string;
+    createdByEmail?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface Application {
+    id: string;
+    title: string;
+    type: string;
+    description: string;
+    status: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'ESCALATED';
+    submittedBy: string;
+    submittedByEmail?: string;
+    department?: string;
+    departmentCode?: string;
+    proofFileUrl?: string;
+    mentorStatus: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
+    mentorNotes?: string;
+    mentorReviewedAt?: string;
+    hodStatus: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
+    hodNotes?: string;
+    hodReviewedAt?: string;
+    requiresDeanApproval: boolean;
+    deanStatus: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
+    deanNotes?: string;
+    deanReviewedAt?: string;
+    escalationReason?: string;
+    currentLevel: 'MENTOR' | 'HOD' | 'DEAN' | 'COMPLETED';
+    finalDecision: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
+    submittedAt: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateApplicationRequest {
+    title: string;
+    type: string;
+    description: string;
+    proofFileUrl?: string;
+}
+
+export interface UpdateApplicationStatusRequest {
+    status: 'APPROVED' | 'REJECTED' | 'UNDER_REVIEW';
+    notes?: string;
+    escalate?: boolean;
+    escalationReason?: string;
+}
+
+export interface Form {
+    id: string;
+    title: string;
+    description: string;
+    createdBy: string;
+    createdByEmail?: string;
+    createdAt: string;
+    deadline: string;
+    status: 'ACTIVE' | 'INACTIVE' | 'DRAFT';
+    department?: string;
+    departmentCode?: string;
+    formData: Record<string, any>; // JSON structure defining form fields
+    maxSubmissions?: number;
+    allowMultipleSubmissions: boolean;
+    requiresApproval: boolean;
+    targetYears?: string[];
+    targetDepartments?: string[];
+    targetRoles?: string[];
+    isSubmitted: boolean;
+    submittedAt?: string;
+    submissionData?: Record<string, any>;
+}
+
+export interface FormSubmission {
+    id: string;
+    formId: string;
+    submittedBy: string;
+    submissionData: Record<string, any>;
+    submittedAt: string;
+    updatedAt: string;
+}
+
+export interface CreateFormRequest {
+    title: string;
+    description: string;
+    deadline: string;
+    formData: Record<string, any>;
+    targetYears?: string[];
+    targetDepartments?: string[];
+    targetRoles?: string[];
+    departmentId?: string;
+    maxSubmissions?: number;
+    allowMultipleSubmissions?: boolean;
+    requiresApproval?: boolean;
+}
+
 // =================== API CLIENT ===================
 class ApiClient {
     private baseURL: string;
@@ -261,6 +413,13 @@ class ApiClient {
         });
     }
 
+    /**
+     * Get faculty list for mentor selection
+     */
+    async getFacultyList(): Promise<ApiResponse> {
+        return this.makeRequest('/auth/faculty');
+    }
+
     // =================== DEPARTMENT ENDPOINTS ===================
     /**
      * Get all departments
@@ -289,6 +448,194 @@ class ApiClient {
      */
     async getAcademicYear(id: string): Promise<ApiResponse<AcademicYear>> {
         return this.makeRequest(`/academic-years/${id}`);
+    }
+
+    // =================== NOTICES ENDPOINTS ===================
+    /**
+     * Get all notices with optional filters
+     */
+    async getNotices(filters?: {
+        type?: 'urgent' | 'important' | 'general';
+        scope?: 'GLOBAL' | 'DEPARTMENT' | 'YEAR';
+        department?: string;
+        isRead?: boolean;
+        today?: boolean;
+    }): Promise<ApiResponse<Notice[]>> {
+        const queryParams = new URLSearchParams();
+
+        if (filters?.type) queryParams.append('type', filters.type);
+        if (filters?.scope) queryParams.append('scope', filters.scope);
+        if (filters?.department) queryParams.append('department', filters.department);
+        if (filters?.isRead !== undefined) queryParams.append('isRead', filters.isRead.toString());
+        if (filters?.today !== undefined) queryParams.append('today', filters.today.toString());
+
+        const queryString = queryParams.toString();
+        const endpoint = queryString ? `/notices?${queryString}` : '/notices';
+
+        return this.makeRequest(endpoint);
+    }
+
+    /**
+     * Get notice by ID
+     */
+    async getNotice(id: string): Promise<ApiResponse<Notice>> {
+        return this.makeRequest(`/notices/${id}`);
+    }
+
+    /**
+     * Mark notice as read
+     */
+    async markNoticeAsRead(id: string): Promise<ApiResponse<{ readAt: string }>> {
+        return this.makeRequest(`/notices/${id}/read`, {
+            method: 'PATCH',
+        });
+    }
+
+    // =================== SCHEDULE ENDPOINTS ===================
+    /**
+     * Get all events with optional filters
+     */
+    async getEvents(filters?: {
+        month?: number;
+        year?: number;
+        type?: Event['type'];
+        department?: string;
+    }): Promise<ApiResponse<Event[]>> {
+        const queryParams = new URLSearchParams();
+
+        if (filters?.month !== undefined) queryParams.append('month', filters.month.toString());
+        if (filters?.year !== undefined) queryParams.append('year', filters.year.toString());
+        if (filters?.type) queryParams.append('type', filters.type);
+        if (filters?.department) queryParams.append('department', filters.department);
+
+        const queryString = queryParams.toString();
+        const endpoint = queryString ? `/schedule/events?${queryString}` : '/schedule/events';
+
+        return this.makeRequest(endpoint);
+    }
+
+    /**
+     * Get event by ID
+     */
+    async getEvent(id: string): Promise<ApiResponse<Event>> {
+        return this.makeRequest(`/schedule/events/${id}`);
+    }
+
+    /**
+     * Get all academic events with optional filters
+     */
+    async getAcademicEvents(filters?: {
+        year?: number;
+        month?: number;
+        semester?: 1 | 2;
+        type?: AcademicEvent['type'];
+    }): Promise<ApiResponse<AcademicEvent[]>> {
+        const queryParams = new URLSearchParams();
+
+        if (filters?.year !== undefined) queryParams.append('year', filters.year.toString());
+        if (filters?.month !== undefined) queryParams.append('month', filters.month.toString());
+        if (filters?.semester !== undefined) queryParams.append('semester', filters.semester.toString());
+        if (filters?.type) queryParams.append('type', filters.type);
+
+        const queryString = queryParams.toString();
+        const endpoint = queryString ? `/schedule/academic-events?${queryString}` : '/schedule/academic-events';
+
+        return this.makeRequest(endpoint);
+    }
+
+    /**
+     * Get academic event by ID
+     */
+    async getAcademicEvent(id: string): Promise<ApiResponse<AcademicEvent>> {
+        return this.makeRequest(`/schedule/academic-events/${id}`);
+    }
+
+    // =================== APPLICATIONS ===================
+    /**
+     * Get all applications
+     */
+    async getApplications(): Promise<ApiResponse<Application[]>> {
+        return this.makeRequest('/applications');
+    }
+
+    /**
+     * Get application by ID
+     */
+    async getApplication(id: string): Promise<ApiResponse<Application>> {
+        return this.makeRequest(`/applications/${id}`);
+    }
+
+    /**
+     * Create a new application
+     */
+    async createApplication(data: CreateApplicationRequest): Promise<ApiResponse<Application>> {
+        return this.makeRequest('/applications', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    /**
+     * Update application status
+     */
+    async updateApplicationStatus(id: string, data: UpdateApplicationStatusRequest): Promise<ApiResponse<Application>> {
+        return this.makeRequest(`/applications/${id}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    }
+
+    /**
+     * Delete/Cancel application
+     */
+    async deleteApplication(id: string): Promise<ApiResponse<void>> {
+        return this.makeRequest(`/applications/${id}`, {
+            method: 'DELETE',
+        });
+    }
+
+    // =================== FORMS ===================
+    /**
+     * Get all forms
+     */
+    async getForms(): Promise<ApiResponse<Form[]>> {
+        return this.makeRequest('/forms');
+    }
+
+    /**
+     * Get form by ID
+     */
+    async getForm(id: string): Promise<ApiResponse<Form>> {
+        return this.makeRequest(`/forms/${id}`);
+    }
+
+    /**
+     * Create a new form
+     */
+    async createForm(data: CreateFormRequest): Promise<ApiResponse<Form>> {
+        return this.makeRequest('/forms', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    /**
+     * Submit a form
+     */
+    async submitForm(id: string, submissionData: Record<string, any>): Promise<ApiResponse<FormSubmission>> {
+        return this.makeRequest(`/forms/${id}/submit`, {
+            method: 'POST',
+            body: JSON.stringify({ submissionData }),
+        });
+    }
+
+    /**
+     * Delete a form
+     */
+    async deleteForm(id: string): Promise<ApiResponse<void>> {
+        return this.makeRequest(`/forms/${id}`, {
+            method: 'DELETE',
+        });
     }
 
     // =================== UTILITY METHODS ===================
@@ -329,6 +676,38 @@ export const departmentAPI = {
 export const academicYearAPI = {
     getAll: () => api.getAcademicYears(),
     getById: (id: string) => api.getAcademicYear(id),
+};
+
+export const noticeAPI = {
+    getAll: (filters?: Parameters<typeof api.getNotices>[0]) => api.getNotices(filters),
+    getById: (id: string) => api.getNotice(id),
+    markAsRead: (id: string) => api.markNoticeAsRead(id),
+};
+
+export const eventAPI = {
+    getAll: (filters?: Parameters<typeof api.getEvents>[0]) => api.getEvents(filters),
+    getById: (id: string) => api.getEvent(id),
+};
+
+export const academicEventAPI = {
+    getAll: (filters?: Parameters<typeof api.getAcademicEvents>[0]) => api.getAcademicEvents(filters),
+    getById: (id: string) => api.getAcademicEvent(id),
+};
+
+export const applicationAPI = {
+    getAll: () => api.getApplications(),
+    getById: (id: string) => api.getApplication(id),
+    create: (data: CreateApplicationRequest) => api.createApplication(data),
+    updateStatus: (id: string, data: UpdateApplicationStatusRequest) => api.updateApplicationStatus(id, data),
+    delete: (id: string) => api.deleteApplication(id),
+};
+
+export const formAPI = {
+    getAll: () => api.getForms(),
+    getById: (id: string) => api.getForm(id),
+    create: (data: CreateFormRequest) => api.createForm(data),
+    submit: (id: string, submissionData: Record<string, any>) => api.submitForm(id, submissionData),
+    delete: (id: string) => api.deleteForm(id),
 };
 
 export default api;

@@ -26,6 +26,7 @@ import {
   Paperclip,
   UserCheck,
   Crown,
+  X,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLocation } from "wouter";
@@ -153,8 +154,16 @@ export default function Applications() {
 
   const handleCreateApplication = async () => {
     try {
-      // In a real app, this would call dataService.createApplication
-      console.log("Creating application:", newApplication);
+      // Create the application
+      await dataService.createApplication({
+        title: newApplication.title,
+        type: newApplication.type,
+        description: newApplication.description,
+        proofFileUrl: newApplication.proofFile
+          ? URL.createObjectURL(newApplication.proofFile)
+          : undefined,
+      });
+
       setIsCreateOpen(false);
       setNewApplication({
         title: "",
@@ -162,11 +171,13 @@ export default function Applications() {
         description: "",
         proofFile: null,
       });
+
       // Reload applications
       const applicationsData = await dataService.getApplications();
       setApplications(applicationsData);
     } catch (error) {
       console.error("Error creating application:", error);
+      alert("Failed to create application. Please try again.");
     }
   };
 
@@ -270,37 +281,62 @@ export default function Applications() {
                 <Label htmlFor="proof">
                   Supporting Document/Proof (Optional)
                 </Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
-                  <Input
-                    id="proof"
-                    type="file"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] || null;
-                      setNewApplication({
-                        ...newApplication,
-                        proofFile: file,
-                      });
-                    }}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="proof"
-                    className="flex flex-col items-center justify-center cursor-pointer space-y-2"
-                  >
-                    <Upload className="h-8 w-8 text-gray-400" />
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-700">
-                        {newApplication.proofFile
-                          ? newApplication.proofFile.name
-                          : "Click to upload or drag and drop"}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        PDF, DOC, DOCX, JPG, PNG (Max 10MB)
-                      </p>
+                {newApplication.proofFile ? (
+                  <div className="border-2 border-blue-300 rounded-lg p-4 bg-blue-50 dark:bg-blue-950/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Paperclip className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                          {newApplication.proofFile.name}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setNewApplication({
+                            ...newApplication,
+                            proofFile: null,
+                          })
+                        }
+                        className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-950/30 flex-shrink-0"
+                      >
+                        <X className="h-4 w-4 text-red-600" />
+                      </Button>
                     </div>
-                  </label>
-                </div>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
+                    <Input
+                      id="proof"
+                      type="file"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setNewApplication({
+                          ...newApplication,
+                          proofFile: file,
+                        });
+                      }}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="proof"
+                      className="flex flex-col items-center justify-center cursor-pointer space-y-2"
+                    >
+                      <Upload className="h-8 w-8 text-gray-400" />
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Click to upload or drag and drop
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          PDF, DOC, DOCX, JPG, PNG (Max 10MB)
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
             <DialogFooter>
@@ -309,8 +345,7 @@ export default function Applications() {
                 disabled={
                   !newApplication.title ||
                   !newApplication.type ||
-                  !newApplication.description ||
-                  !newApplication.proofFile
+                  !newApplication.description
                 }
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
               >
@@ -455,11 +490,11 @@ export default function Applications() {
                             ).toLocaleDateString()}
                           </span>
                         </div>
-                        {application.proof && (
+                        {application.proofFileUrl && (
                           <div className="flex items-center gap-2 text-sm">
                             <Paperclip className="h-4 w-4 text-blue-500" />
                             <span className="text-blue-600 text-xs">
-                              {application.proof.fileName}
+                              {application.proofFileUrl.split("/").pop()}
                             </span>
                           </div>
                         )}
@@ -473,36 +508,32 @@ export default function Applications() {
 
                         {/* Mentor Teacher Approval */}
                         <div className="flex items-center gap-2">
-                          {application.mentorTeacher?.approvedAt ? (
+                          {application.mentorStatus === "APPROVED" ? (
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          ) : application.rejectedBy === "MENTOR" ? (
+                          ) : application.mentorStatus === "REJECTED" ? (
                             <XCircle className="h-4 w-4 text-red-500" />
-                          ) : (
+                          ) : application.mentorStatus === "UNDER_REVIEW" ? (
                             <Clock className="h-4 w-4 text-orange-500" />
+                          ) : (
+                            <Clock className="h-4 w-4 text-gray-300" />
                           )}
                           <UserCheck className="h-4 w-4 text-gray-400" />
                           <div className="flex-1">
                             <p className="text-sm font-medium ">Mentor</p>
                             <p className="text-xs text-gray-500">
-                              {application.mentorTeacher?.name ||
-                                "Not assigned"}
+                              Status: {application.mentorStatus || "Pending"}
                             </p>
-                            {application.mentorTeacher?.approvedAt && (
+                            {application.mentorReviewedAt && (
                               <p className="text-xs text-green-600">
-                                Approved on{" "}
+                                Reviewed on{" "}
                                 {new Date(
-                                  application.mentorTeacher.approvedAt
+                                  application.mentorReviewedAt
                                 ).toLocaleDateString()}
                               </p>
                             )}
-                            {application.rejectedBy === "MENTOR" && (
-                              <p className="text-xs text-red-600">
-                                Rejected on{" "}
-                                {application.rejectedAt
-                                  ? new Date(
-                                      application.rejectedAt
-                                    ).toLocaleDateString()
-                                  : "N/A"}
+                            {application.mentorNotes && (
+                              <p className="text-xs text-gray-600 italic mt-1">
+                                "{application.mentorNotes}"
                               </p>
                             )}
                           </div>
@@ -510,12 +541,14 @@ export default function Applications() {
 
                         {/* HOD Approval */}
                         <div className="flex items-center gap-2">
-                          {application.hod?.approvedAt ? (
+                          {application.hodStatus === "APPROVED" ? (
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          ) : application.rejectedBy === "HOD" ? (
+                          ) : application.hodStatus === "REJECTED" ? (
                             <XCircle className="h-4 w-4 text-red-500" />
-                          ) : application.mentorTeacher?.approvedAt ? (
+                          ) : application.hodStatus === "UNDER_REVIEW" ? (
                             <Clock className="h-4 w-4 text-orange-500" />
+                          ) : application.mentorStatus === "APPROVED" ? (
+                            <Clock className="h-4 w-4 text-gray-400" />
                           ) : (
                             <Clock className="h-4 w-4 text-gray-300" />
                           )}
@@ -523,39 +556,24 @@ export default function Applications() {
                           <div className="flex-1">
                             <p className="text-sm font-medium ">HOD </p>
                             <p className="text-xs text-gray-500">
-                              {application.hod?.name || "Not assigned"}
+                              Status: {application.hodStatus || "Pending"}
                             </p>
-                            {application.hod?.approvedAt && (
+                            {application.hodReviewedAt && (
                               <p className="text-xs text-green-600">
-                                Approved on{" "}
+                                Reviewed on{" "}
                                 {new Date(
-                                  application.hod.approvedAt
+                                  application.hodReviewedAt
                                 ).toLocaleDateString()}
                               </p>
                             )}
-                            {application.rejectedBy === "HOD" && (
-                              <p className="text-xs text-red-600">
-                                Rejected on{" "}
-                                {application.rejectedAt
-                                  ? new Date(
-                                      application.rejectedAt
-                                    ).toLocaleDateString()
-                                  : "N/A"}
+                            {application.hodNotes && (
+                              <p className="text-xs text-gray-600 italic mt-1">
+                                "{application.hodNotes}"
                               </p>
                             )}
                           </div>
                         </div>
                       </div>
-
-                      {/* Action Button */}
-                      <Button
-                        variant="outline"
-                        className="w-full group/btn hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/30 hover:border-blue-500 transition-all duration-200"
-                        data-testid={`button-view-application-${application.id}`}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
-                      </Button>
                     </CardContent>
                   </Card>
                 );
@@ -620,11 +638,11 @@ export default function Applications() {
                             ).toLocaleDateString()}
                           </span>
                         </div>
-                        {application.proof && (
+                        {application.proofFileUrl && (
                           <div className="flex items-center gap-2 text-sm">
                             <Paperclip className="h-4 w-4 text-blue-500" />
                             <span className="text-blue-600 text-xs">
-                              {application.proof.fileName}
+                              {application.proofFileUrl.split("/").pop()}
                             </span>
                           </div>
                         )}
@@ -635,28 +653,30 @@ export default function Applications() {
                         <h5 className="text-xs font-semibold text-green-700 dark:text-green-300">
                           Approval Timeline:
                         </h5>
-                        {application.mentorTeacher?.approvedAt && (
-                          <div className="flex items-center gap-2 text-xs">
-                            <UserCheck className="h-3 w-3 text-green-600 dark:text-green-400" />
-                            <span className="text-green-700 dark:text-green-300">
-                              Mentor approved:{" "}
-                              {new Date(
-                                application.mentorTeacher.approvedAt
-                              ).toLocaleDateString()}
-                            </span>
-                          </div>
-                        )}
-                        {application.hod?.approvedAt && (
-                          <div className="flex items-center gap-2 text-xs">
-                            <Crown className="h-3 w-3 text-green-600 dark:text-green-400" />
-                            <span className="text-green-700 dark:text-green-300">
-                              HOD approved:{" "}
-                              {new Date(
-                                application.hod.approvedAt
-                              ).toLocaleDateString()}
-                            </span>
-                          </div>
-                        )}
+                        {application.mentorReviewedAt &&
+                          application.mentorStatus === "APPROVED" && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <UserCheck className="h-3 w-3 text-green-600 dark:text-green-400" />
+                              <span className="text-green-700 dark:text-green-300">
+                                Mentor approved:{" "}
+                                {new Date(
+                                  application.mentorReviewedAt
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                          )}
+                        {application.hodReviewedAt &&
+                          application.hodStatus === "APPROVED" && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <Crown className="h-3 w-3 text-green-600 dark:text-green-400" />
+                              <span className="text-green-700 dark:text-green-300">
+                                HOD approved:{" "}
+                                {new Date(
+                                  application.hodReviewedAt
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                          )}
                       </div>
                     </CardContent>
                   </Card>
@@ -722,11 +742,11 @@ export default function Applications() {
                             ).toLocaleDateString()}
                           </span>
                         </div>
-                        {application.proof && (
+                        {application.proofFileUrl && (
                           <div className="flex items-center gap-2 text-sm">
                             <Paperclip className="h-4 w-4 text-blue-500" />
                             <span className="text-blue-600 text-xs">
-                              {application.proof.fileName}
+                              {application.proofFileUrl.split("/").pop()}
                             </span>
                           </div>
                         )}
@@ -738,30 +758,35 @@ export default function Applications() {
                           Rejection Details:
                         </h5>
                         <div className="flex items-center gap-2 text-xs">
-                          {application.rejectedBy === "MENTOR" ? (
+                          {application.mentorStatus === "REJECTED" ? (
                             <UserCheck className="h-3 w-3 text-red-600 dark:text-red-400" />
                           ) : (
                             <Crown className="h-3 w-3 text-red-600 dark:text-red-400" />
                           )}
                           <span className="text-red-700 dark:text-red-300">
                             Rejected by{" "}
-                            {application.rejectedBy === "MENTOR"
+                            {application.mentorStatus === "REJECTED"
                               ? "Mentor Teacher"
                               : "HOD"}
                           </span>
                         </div>
-                        {application.rejectedAt && (
+                        {(application.mentorReviewedAt ||
+                          application.hodReviewedAt) && (
                           <div className="text-xs text-red-700 dark:text-red-300">
                             Date:{" "}
                             {new Date(
-                              application.rejectedAt
+                              application.mentorStatus === "REJECTED"
+                                ? application.mentorReviewedAt!
+                                : application.hodReviewedAt!
                             ).toLocaleDateString()}
                           </div>
                         )}
-                        {application.rejectionReason && (
+                        {(application.mentorNotes || application.hodNotes) && (
                           <div className="text-xs text-red-800 dark:text-red-200 bg-red-100 dark:bg-red-900/30 p-2 rounded border-l-2 border-red-400 dark:border-red-500">
                             <strong>Reason:</strong>{" "}
-                            {application.rejectionReason}
+                            {application.mentorStatus === "REJECTED"
+                              ? application.mentorNotes
+                              : application.hodNotes}
                           </div>
                         )}
                       </div>

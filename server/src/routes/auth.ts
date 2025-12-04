@@ -6,7 +6,8 @@ import {
     logout,
     getProfile,
     updateProfile,
-    changePassword
+    changePassword,
+    getFacultyList
 } from '../controllers/auth.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -60,5 +61,12 @@ router.put('/profile', authenticateToken, updateProfile);
  * @access  Private
  */
 router.put('/change-password', authenticateToken, changePassword);
+
+/**
+ * @route   GET /api/auth/faculty
+ * @desc    Get list of faculty members for mentor selection
+ * @access  Private
+ */
+router.get('/faculty', authenticateToken, getFacultyList);
 
 export default router;

@@ -183,12 +183,19 @@ CREATE TABLE IF NOT EXISTS forms (
     -- Array of department IDs for multi-department forms
     target_roles user_role [],
     -- Array of user roles for role-specific forms
-    status form_status NOT NULL DEFAULT 'DRAFT',
-    deadline TIMESTAMP WITH TIME ZONE NOT NULL,
-    form_data JSONB NOT NULL,
-    -- Store form structure as JSON
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    -- Optional department association
+    department_id UUID REFERENCES departments(id) ON DELETE
+    SET NULL,
+        -- Form configuration
+        max_submissions INTEGER,
+        allow_multiple_submissions BOOLEAN DEFAULT false,
+        requires_approval BOOLEAN DEFAULT false,
+        status form_status NOT NULL DEFAULT 'DRAFT',
+        deadline TIMESTAMP WITH TIME ZONE NOT NULL,
+        form_data JSONB NOT NULL,
+        -- Store form structure as JSON
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 -- Applications table
 CREATE TABLE IF NOT EXISTS applications (
@@ -443,6 +450,7 @@ CREATE INDEX IF NOT EXISTS idx_notice_reads_user ON notice_reads(user_id);
 CREATE INDEX IF NOT EXISTS idx_forms_created_by ON forms(created_by);
 CREATE INDEX IF NOT EXISTS idx_forms_status ON forms(status);
 CREATE INDEX IF NOT EXISTS idx_forms_deadline ON forms(deadline);
+CREATE INDEX IF NOT EXISTS idx_forms_department ON forms(department_id);
 CREATE INDEX IF NOT EXISTS idx_forms_target_years ON forms USING GIN(target_years);
 CREATE INDEX IF NOT EXISTS idx_forms_target_departments ON forms USING GIN(target_departments);
 CREATE INDEX IF NOT EXISTS idx_forms_target_roles ON forms USING GIN(target_roles);

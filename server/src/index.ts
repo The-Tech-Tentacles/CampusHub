@@ -97,10 +97,18 @@ app.get('/health', async (req, res) => {
 import authRoutes from './routes/auth.js';
 import departmentRoutes from './routes/departments.js';
 import academicYearRoutes from './routes/academic-years.js';
+import noticeRoutes from './routes/notices.js';
+import scheduleRoutes from './routes/schedule.js';
+import applicationRoutes from './routes/applications.js';
+import formRoutes from './routes/forms.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/academic-years', academicYearRoutes);
+app.use('/api/notices', noticeRoutes);
+app.use('/api/schedule', scheduleRoutes);
+app.use('/api/applications', applicationRoutes);
+app.use('/api/forms', formRoutes);
 
 // Catch-all for undefined API routes
 app.use('/api', (req, res) => {

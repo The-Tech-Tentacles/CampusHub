@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -12,9 +12,12 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/auth-store";
 import { RoleBadge } from "@/components/role-badge";
+import { dataService } from "@/services/dataService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import {
   Mail,
   Phone,
@@ -49,78 +52,298 @@ import {
 
 export default function Profile() {
   const { user } = useAuthStore();
+  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-
-  const studentProfile = {
-    // Basic Info
-    enrollmentNo: "10220910xx",
-    department: "AI & DS",
-    year: "B. Tech",
-    section: "A",
-    cgpa: "8.5",
-    semester: "7",
-    batch: "B1",
-    rollNumber: "40xx",
-
-    // Contact Info
-    phone: "+91 98765 43210",
-    altEmail: "john.doe.alt@gmail.com",
-    address: "Room 205, Tower B, University Hostel",
-    permanentAddress: "123 Main Street, Downtown, City - 110001",
-    dateOfBirth: "2003-05-15",
-    bloodGroup: "O+",
-
-    // Guardian Info
-    guardianName: "John Doe Sr.",
-    guardianContact: "+91 98765 43211",
-    guardianEmail: "john.sr@email.com",
-    guardianRelation: "Father",
-    guardianOccupation: "Software Engineer",
-
-    // Academic Info
-    previousEducation: "Delhi Public School",
-    admissionDate: "2021-08-15",
-    expectedGraduation: "2025-06-30",
-    specialization: "Full Stack Development",
-
-    // Mentor Info
-    mentorName: "Dr. Sarah Johnson",
-    mentorEmail: "sarah.johnson@university.edu",
-    mentorPhone: "+91 98765 43299",
-    mentorDepartment: "Computer Science",
-    mentorOffice: "Room 301, CS Building",
-
-    // Social & Interests
+  const [loading, setLoading] = useState(true);
+  const [facultyList, setFacultyList] = useState<any[]>([]);
+  const [profileData, setProfileData] = useState({
+    enrollmentNo: "",
+    department: "",
+    year: "",
+    section: "",
+    cgpa: "",
+    semester: "",
+    batch: "",
+    rollNumber: "",
+    phone: "",
+    altEmail: "",
+    address: "",
+    permanentAddress: "",
+    dateOfBirth: "",
+    bloodGroup: "",
+    guardianName: "",
+    guardianContact: "",
+    guardianEmail: "",
+    guardianRelation: "",
+    guardianOccupation: "",
+    previousEducation: "",
+    admissionDate: "",
+    expectedGraduation: "",
+    specialization: "",
+    mentorId: "",
+    mentorName: "",
+    mentorEmail: "",
+    mentorPhone: "",
+    mentorDepartment: "",
+    mentorOffice: "",
     socialLinks: {
-      github: "johndoe",
-      linkedin: "john-doe-dev",
-      portfolio: "https://johndoe.dev",
+      github: "",
+      linkedin: "",
+      portfolio: "",
     },
+    skills: [] as string[],
+    achievements: [] as string[],
+    hobbies: [] as string[],
+    bio: "",
+  });
 
-    // Skills & Achievements
-    skills: ["React", "Node.js", "Python", "Machine Learning", "UI/UX Design"],
-    achievements: [
-      "Dean's List Fall 2023",
-      "Best Project Award 2023",
-      "Hackathon Winner - TechFest 2024",
-    ],
+  const [formData, setFormData] = useState(profileData);
 
-    // Additional Info
-    hobbies: ["Coding", "Photography", "Music", "Gaming"],
-    bio: "Passionate computer science student with a love for full-stack development and AI. Always eager to learn new technologies and contribute to open-source projects.",
+  useEffect(() => {
+    // Load profile data and faculty list from backend
+    loadProfileData();
+    loadFacultyList();
+  }, []);
+
+  const loadFacultyList = async () => {
+    try {
+      const faculty = await dataService.getFacultyList();
+      setFacultyList(faculty);
+    } catch (error) {
+      console.error("Error loading faculty list:", error);
+    }
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // Handle save logic here
-    console.log("Profile saved!");
+  const loadProfileData = async () => {
+    try {
+      setLoading(true);
+      const data = await dataService.getUserProfile();
+      console.log("Raw profile data from API:", data);
+
+      // Map API response to profile page format
+      const mappedData = {
+        enrollmentNo: data.userId || "",
+        department: data.department || "",
+        year: data.year || "",
+        section: data.section || "",
+        cgpa: data.cgpa?.toString() || "",
+        semester: data.semester || "",
+        batch: data.batch || "",
+        rollNumber: data.rollNumber || "",
+
+        phone: user?.phone || "",
+        altEmail: data.altEmail || "",
+        address: data.address || "",
+        permanentAddress: data.permanentAddress || "",
+        dateOfBirth: data.dateOfBirth || "",
+        bloodGroup: data.bloodGroup || "",
+
+        guardianName: data.guardianName || "",
+        guardianContact: data.guardianContact || "",
+        guardianEmail: data.guardianEmail || "",
+        guardianRelation: data.guardianRelation || "",
+        guardianOccupation: data.guardianOccupation || "",
+
+        previousEducation: data.previousEducation || "",
+        admissionDate: data.admissionDate || "",
+        expectedGraduation: data.expectedGraduation || "",
+        specialization: data.specialization || "",
+
+        mentorId: data.mentorId || "",
+        mentorName: data.mentorName || "",
+        mentorEmail: data.mentorEmail || "",
+        mentorPhone: data.mentorPhone || "",
+        mentorDepartment: "",
+        mentorOffice: "",
+
+        socialLinks: {
+          github: (data.socialLinks as any)?.github || "",
+          linkedin: (data.socialLinks as any)?.linkedin || "",
+          portfolio: (data.socialLinks as any)?.portfolio || "",
+        },
+        skills: data.skills || [],
+        achievements: [],
+        hobbies: [],
+        bio: data.bio || "",
+      };
+
+      console.log("Mapped profile data:", mappedData);
+      setProfileData(mappedData);
+      setFormData(mappedData);
+    } catch (error) {
+      console.error("Error loading profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+
+      // Map formData to API format
+      const updateData = {
+        name: user?.name,
+        phone: formData.phone,
+        altEmail: formData.altEmail,
+        address: formData.address,
+        permanentAddress: formData.permanentAddress,
+        dateOfBirth: formData.dateOfBirth,
+        bloodGroup: formData.bloodGroup,
+        bio: formData.bio,
+
+        // Academic Info
+        section: formData.section,
+        semester: formData.semester,
+        cgpa: formData.cgpa ? parseFloat(formData.cgpa) : undefined,
+        batch: formData.batch,
+        rollNumber: formData.rollNumber,
+        specialization: formData.specialization,
+        admissionDate: formData.admissionDate,
+        expectedGraduation: formData.expectedGraduation,
+        previousEducation: formData.previousEducation,
+
+        // Guardian Info
+        guardianName: formData.guardianName,
+        guardianContact: formData.guardianContact,
+        guardianEmail: formData.guardianEmail,
+        guardianRelation: formData.guardianRelation,
+        guardianOccupation: formData.guardianOccupation,
+
+        // Mentor Info
+        mentorId: formData.mentorId,
+
+        // Social and Skills
+        socialLinks: formData.socialLinks,
+        skills: formData.skills,
+      };
+
+      console.log("Sending profile update with data:", updateData);
+      const success = await dataService.updateUserProfile(updateData);
+      console.log("Profile update result:", success);
+
+      if (success) {
+        // Reload profile data from backend to get updated mentor info
+        await loadProfileData();
+        setIsEditing(false);
+
+        toast({
+          title: "Success",
+          description: "Profile updated successfully",
+        });
+      } else {
+        throw new Error("Update returned false");
+      }
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
+    setFormData(profileData);
     setIsEditing(false);
-    // Reset form data
   };
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSocialLinkChange = (platform: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      socialLinks: {
+        ...prev.socialLinks,
+        [platform]: value,
+      },
+    }));
+  };
+
+  const addSkill = (skill: string) => {
+    if (skill && !formData.skills.includes(skill)) {
+      setFormData((prev) => ({
+        ...prev,
+        skills: [...prev.skills, skill],
+      }));
+    }
+  };
+
+  const removeSkill = (skillToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((s) => s !== skillToRemove),
+    }));
+  };
+
+  const addHobby = (hobby: string) => {
+    if (hobby && !formData.hobbies.includes(hobby)) {
+      setFormData((prev) => ({
+        ...prev,
+        hobbies: [...prev.hobbies, hobby],
+      }));
+    }
+  };
+
+  const removeHobby = (hobbyToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      hobbies: prev.hobbies.filter((h) => h !== hobbyToRemove),
+    }));
+  };
+
+  const addAchievement = (achievement: string) => {
+    if (achievement && !formData.achievements.includes(achievement)) {
+      setFormData((prev) => ({
+        ...prev,
+        achievements: [...prev.achievements, achievement],
+      }));
+    }
+  };
+
+  const removeAchievement = (achievementToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      achievements: prev.achievements.filter((a) => a !== achievementToRemove),
+    }));
+  };
+
+  const studentProfile = isEditing ? formData : profileData;
+
+  if (loading) {
+    return (
+      <div className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto">
+        <Card className="overflow-hidden border-0 shadow-lg">
+          <CardContent className="p-8">
+            <div className="space-y-4">
+              <Skeleton className="h-20 w-20 rounded-full" />
+              <Skeleton className="h-8 w-[250px]" />
+              <Skeleton className="h-4 w-[200px]" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-8">
+            <Skeleton className="h-[400px] w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto">
@@ -408,8 +631,7 @@ export default function Profile() {
                   >
                     <Github className="h-4 w-4" />
                     <span className="text-xs font-medium">
-                      {/* {studentProfile.socialLinks.github} */}
-                      GitHub
+                      {studentProfile.socialLinks.github || "GitHub"}
                     </span>
                   </Badge>
                   <Badge
@@ -418,8 +640,7 @@ export default function Profile() {
                   >
                     <Linkedin className="h-4 w-4" />
                     <span className="text-xs font-medium">
-                      {/* {studentProfile.socialLinks.linkedin} */}
-                      LinkedIn
+                      {studentProfile.socialLinks.linkedin || "LinkedIn"}
                     </span>
                   </Badge>
                   <Badge
@@ -460,28 +681,31 @@ export default function Profile() {
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Roll Number</Label>
                   <Input
-                    defaultValue={studentProfile.rollNumber}
+                    value={studentProfile.rollNumber}
+                    onChange={(e) =>
+                      handleInputChange("rollNumber", e.target.value)
+                    }
                     disabled={!isEditing}
                     className="font-mono"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Department</Label>
-                  <Input
-                    defaultValue={studentProfile.department}
-                    disabled={!isEditing}
-                  />
+                  <Input value={studentProfile.department} disabled={true} />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Year & Section</Label>
                   <div className="flex gap-2">
                     <Input
-                      defaultValue={studentProfile.year}
-                      disabled={!isEditing}
+                      value={studentProfile.year}
+                      disabled={true}
                       className="flex-1"
                     />
                     <Input
-                      defaultValue={studentProfile.section}
+                      value={studentProfile.section}
+                      onChange={(e) =>
+                        handleInputChange("section", e.target.value)
+                      }
                       disabled={!isEditing}
                       className="w-20"
                     />
@@ -492,28 +716,36 @@ export default function Profile() {
                     Current Semester
                   </Label>
                   <Input
-                    defaultValue={studentProfile.semester}
+                    value={studentProfile.semester}
+                    onChange={(e) =>
+                      handleInputChange("semester", e.target.value)
+                    }
                     disabled={!isEditing}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">CGPA</Label>
                   <Input
-                    defaultValue={studentProfile.cgpa}
+                    value={studentProfile.cgpa}
+                    onChange={(e) => handleInputChange("cgpa", e.target.value)}
                     disabled={!isEditing}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Specialization</Label>
                   <Input
-                    defaultValue={studentProfile.specialization}
+                    value={studentProfile.specialization}
+                    onChange={(e) =>
+                      handleInputChange("specialization", e.target.value)
+                    }
                     disabled={!isEditing}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Batch</Label>
                   <Input
-                    defaultValue={studentProfile.batch}
+                    value={studentProfile.batch}
+                    onChange={(e) => handleInputChange("batch", e.target.value)}
                     disabled={!isEditing}
                   />
                 </div>
@@ -536,25 +768,28 @@ export default function Profile() {
                     Choose your mentor from available faculty members
                   </CardDescription>
                 </div>
-                {isEditing && (
+                {studentProfile.mentorName && !isEditing && (
                   <Button
                     size="sm"
                     variant="outline"
-                    className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                    onClick={() => setIsEditing(true)}
+                    className="border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-300 dark:hover:bg-purple-900/20"
                   >
-                    <Users className="h-4 w-4 mr-2" />
+                    <Edit3 className="h-4 w-4 mr-2" />
                     Change Mentor
                   </Button>
                 )}
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Mentor Selection Dropdown - shown when editing */}
-              {isEditing && (
+              {/* Mentor Selection Dropdown - Always shown when editing OR when no mentor selected */}
+              {(isEditing || !studentProfile.mentorName) && (
                 <Card className="border-purple-200 bg-purple-50/50 dark:bg-purple-900/10">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                      Select Your Mentor
+                      {studentProfile.mentorName
+                        ? "Change Your Mentor"
+                        : "Select Your Mentor"}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -565,121 +800,165 @@ export default function Profile() {
                         </Label>
                         <select
                           className="w-full px-3 py-2 border border-purple-200 rounded-lg bg-white dark:bg-gray-900 dark:border-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                          defaultValue={studentProfile.mentorName}
+                          value={formData.mentorId}
+                          onChange={(e) =>
+                            handleInputChange("mentorId", e.target.value)
+                          }
                         >
                           <option value="">-- Select a mentor --</option>
-                          <option value="Dr. Sarah Johnson">
-                            Dr. Sarah Johnson - Computer Science
-                          </option>
-                          <option value="Prof. Michael Chen">
-                            Prof. Michael Chen - AI & Machine Learning
-                          </option>
-                          <option value="Dr. Priya Sharma">
-                            Dr. Priya Sharma - Data Science
-                          </option>
-                          <option value="Prof. David Wilson">
-                            Prof. David Wilson - Software Engineering
-                          </option>
-                          <option value="Dr. Anita Patel">
-                            Dr. Anita Patel - Cybersecurity
-                          </option>
+                          {facultyList.map((faculty) => (
+                            <option key={faculty.id} value={faculty.id}>
+                              {faculty.name}{" "}
+                              {faculty.department
+                                ? `- ${faculty.department}`
+                                : ""}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <p className="text-sm text-purple-600 dark:text-purple-400">
                         Choose a mentor based on your interests and career
                         goals. You can change your mentor once per semester.
                       </p>
+                      {/* Confirm Mentor Selection Button */}
+                      {formData.mentorId &&
+                        formData.mentorId !== profileData.mentorId && (
+                          <Button
+                            onClick={handleSave}
+                            disabled={loading}
+                            className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                            {loading
+                              ? "Confirming..."
+                              : "Confirm Mentor Selection"}
+                          </Button>
+                        )}
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {/* Current Mentor Profile Card */}
-              <div className="flex items-center gap-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                <Avatar className="h-10 w-10 border-2 border-purple-200">
-                  <AvatarImage src="/placeholder-mentor.jpg" />
-                  <AvatarFallback className="bg-purple-100 text-purple-700 text-sm font-bold p-3">
-                    {studentProfile.mentorName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 ">
-                  <h2 className="text-xl font-bold text-purple-800 dark:text-purple-300 mb-1">
-                    {studentProfile.mentorName}
-                  </h2>
-                </div>
-              </div>
+              {/* Current Mentor Profile Card - Show preview when selecting or saved mentor */}
+              {(() => {
+                // Get selected mentor from dropdown or use saved mentor
+                const selectedMentor = formData.mentorId
+                  ? facultyList.find((f) => f.id === formData.mentorId)
+                  : null;
 
-              {/* Mentor Details Grid */}
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Mail className="h-5 w-5 text-blue-600" />
-                      Contact Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      <Mail className="h-5 w-5 text-blue-600" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                          Email
-                        </div>
-                        <div className="font-medium">
-                          {studentProfile.mentorEmail}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      <Phone className="h-5 w-5 text-green-600" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                          Phone
-                        </div>
-                        <div className="font-medium">
-                          {studentProfile.mentorPhone}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                const displayMentor =
+                  selectedMentor ||
+                  (studentProfile.mentorName
+                    ? {
+                        name: studentProfile.mentorName,
+                        email: studentProfile.mentorEmail,
+                        phone: studentProfile.mentorPhone,
+                        department: studentProfile.mentorDepartment,
+                      }
+                    : null);
 
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Building className="h-5 w-5 text-orange-600" />
-                      Cabin Location
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      <Building className="h-5 w-5 text-orange-600" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                          Cabin
-                        </div>
-                        <div className="font-medium">
-                          {studentProfile.mentorOffice}
+                return (
+                  displayMentor && (
+                    <>
+                      <div className="flex items-center gap-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                        <Avatar className="h-10 w-10 border-2 border-purple-200">
+                          <AvatarImage src="/placeholder-mentor.jpg" />
+                          <AvatarFallback className="bg-purple-100 text-purple-700 text-sm font-bold p-3">
+                            {displayMentor.name
+                              ?.split(" ")
+                              .map((n: string) => n[0])
+                              .join("") || "M"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 ">
+                          <h2 className="text-xl font-bold text-purple-800 dark:text-purple-300 mb-1">
+                            {displayMentor.name}
+                          </h2>
+                          {selectedMentor &&
+                            formData.mentorId !== profileData.mentorId && (
+                              <Badge
+                                variant="secondary"
+                                className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                              >
+                                Preview - Not Saved Yet
+                              </Badge>
+                            )}
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      <GraduationCap className="h-5 w-5 text-purple-600" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                          Department
-                        </div>
-                        <div className="font-medium">
-                          {studentProfile.mentorDepartment}
-                        </div>
+
+                      {/* Mentor Details Grid */}
+                      <div className="grid gap-6 md:grid-cols-2">
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              <Mail className="h-5 w-5 text-blue-600" />
+                              Contact Information
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                              <Mail className="h-5 w-5 text-blue-600" />
+                              <div>
+                                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                  Email
+                                </div>
+                                <div className="font-medium">
+                                  {displayMentor.email || "Not available"}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                              <Phone className="h-5 w-5 text-green-600" />
+                              <div>
+                                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                  Phone
+                                </div>
+                                <div className="font-medium">
+                                  {displayMentor.phone || "Not available"}
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              <Building className="h-5 w-5 text-orange-600" />
+                              Department Info
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                              <GraduationCap className="h-5 w-5 text-purple-600" />
+                              <div>
+                                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                  Department
+                                </div>
+                                <div className="font-medium">
+                                  {displayMentor.department || "Not available"}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                              <User className="h-5 w-5 text-blue-600" />
+                              <div>
+                                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                  Employee ID
+                                </div>
+                                <div className="font-medium">
+                                  {selectedMentor?.employeeId ||
+                                    "Not available"}
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                    </>
+                  )
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
@@ -697,11 +976,7 @@ export default function Profile() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Primary Email</Label>
-                  <Input
-                    type="email"
-                    defaultValue={user?.email}
-                    disabled={!isEditing}
-                  />
+                  <Input type="email" value={user?.email} disabled={true} />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">
@@ -709,14 +984,18 @@ export default function Profile() {
                   </Label>
                   <Input
                     type="email"
-                    defaultValue={studentProfile.altEmail}
+                    value={studentProfile.altEmail}
+                    onChange={(e) =>
+                      handleInputChange("altEmail", e.target.value)
+                    }
                     disabled={!isEditing}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Phone Number</Label>
                   <Input
-                    defaultValue={studentProfile.phone}
+                    value={studentProfile.phone}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
                     disabled={!isEditing}
                   />
                 </div>
@@ -724,14 +1003,20 @@ export default function Profile() {
                   <Label className="text-sm font-medium">Date of Birth</Label>
                   <Input
                     type="date"
-                    defaultValue={studentProfile.dateOfBirth}
+                    value={studentProfile.dateOfBirth}
+                    onChange={(e) =>
+                      handleInputChange("dateOfBirth", e.target.value)
+                    }
                     disabled={!isEditing}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Blood Group</Label>
                   <Input
-                    defaultValue={studentProfile.bloodGroup}
+                    value={studentProfile.bloodGroup}
+                    onChange={(e) =>
+                      handleInputChange("bloodGroup", e.target.value)
+                    }
                     disabled={!isEditing}
                   />
                 </div>
@@ -749,7 +1034,10 @@ export default function Profile() {
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Current Address</Label>
                   <Textarea
-                    defaultValue={studentProfile.address}
+                    value={studentProfile.address}
+                    onChange={(e) =>
+                      handleInputChange("address", e.target.value)
+                    }
                     disabled={!isEditing}
                     className="min-h-[80px]"
                   />
@@ -759,7 +1047,10 @@ export default function Profile() {
                     Permanent Address
                   </Label>
                   <Textarea
-                    defaultValue={studentProfile.permanentAddress}
+                    value={studentProfile.permanentAddress}
+                    onChange={(e) =>
+                      handleInputChange("permanentAddress", e.target.value)
+                    }
                     disabled={!isEditing}
                     className="min-h-[80px]"
                   />
@@ -787,7 +1078,10 @@ export default function Profile() {
                     GitHub Username
                   </Label>
                   <Input
-                    defaultValue={studentProfile.socialLinks.github}
+                    value={studentProfile.socialLinks.github}
+                    onChange={(e) =>
+                      handleSocialLinkChange("github", e.target.value)
+                    }
                     disabled={!isEditing}
                     placeholder="johndoe"
                   />
@@ -798,7 +1092,10 @@ export default function Profile() {
                     LinkedIn Username
                   </Label>
                   <Input
-                    defaultValue={studentProfile.socialLinks.linkedin}
+                    value={studentProfile.socialLinks.linkedin}
+                    onChange={(e) =>
+                      handleSocialLinkChange("linkedin", e.target.value)
+                    }
                     disabled={!isEditing}
                     placeholder="john-doe-dev"
                   />
@@ -809,7 +1106,10 @@ export default function Profile() {
                     Portfolio Website URL
                   </Label>
                   <Input
-                    defaultValue={studentProfile.socialLinks.portfolio}
+                    value={studentProfile.socialLinks.portfolio}
+                    onChange={(e) =>
+                      handleSocialLinkChange("portfolio", e.target.value)
+                    }
                     disabled={!isEditing}
                     placeholder="https://johndoe.dev"
                   />
@@ -931,7 +1231,8 @@ export default function Profile() {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Personal Bio</Label>
                 <Textarea
-                  defaultValue={studentProfile.bio}
+                  value={studentProfile.bio}
+                  onChange={(e) => handleInputChange("bio", e.target.value)}
                   disabled={!isEditing}
                   className="min-h-[100px]"
                   placeholder="Tell us about yourself..."
@@ -958,21 +1259,30 @@ export default function Profile() {
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Guardian Name</Label>
                   <Input
-                    defaultValue={studentProfile.guardianName}
+                    value={studentProfile.guardianName}
+                    onChange={(e) =>
+                      handleInputChange("guardianName", e.target.value)
+                    }
                     disabled={!isEditing}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Relationship</Label>
                   <Input
-                    defaultValue={studentProfile.guardianRelation}
+                    value={studentProfile.guardianRelation}
+                    onChange={(e) =>
+                      handleInputChange("guardianRelation", e.target.value)
+                    }
                     disabled={!isEditing}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Contact Number</Label>
                   <Input
-                    defaultValue={studentProfile.guardianContact}
+                    value={studentProfile.guardianContact}
+                    onChange={(e) =>
+                      handleInputChange("guardianContact", e.target.value)
+                    }
                     disabled={!isEditing}
                   />
                 </div>
@@ -980,14 +1290,20 @@ export default function Profile() {
                   <Label className="text-sm font-medium">Email</Label>
                   <Input
                     type="email"
-                    defaultValue={studentProfile.guardianEmail}
+                    value={studentProfile.guardianEmail}
+                    onChange={(e) =>
+                      handleInputChange("guardianEmail", e.target.value)
+                    }
                     disabled={!isEditing}
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label className="text-sm font-medium">Occupation</Label>
                   <Input
-                    defaultValue={studentProfile.guardianOccupation}
+                    value={studentProfile.guardianOccupation}
+                    onChange={(e) =>
+                      handleInputChange("guardianOccupation", e.target.value)
+                    }
                     disabled={!isEditing}
                   />
                 </div>

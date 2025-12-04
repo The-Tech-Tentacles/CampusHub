@@ -227,6 +227,14 @@ CREATE TABLE forms (
     target_departments UUID[], -- Array of department IDs for multi-department forms
     target_roles user_role[], -- Array of user roles for role-specific forms
 
+    -- Optional department association
+    department_id UUID REFERENCES departments(id) ON DELETE SET NULL,
+
+    -- Form configuration
+    max_submissions INTEGER, -- Maximum number of submissions allowed (null = unlimited)
+    allow_multiple_submissions BOOLEAN DEFAULT false, -- Whether users can submit multiple times
+    requires_approval BOOLEAN DEFAULT false, -- Whether submissions require approval
+
     status form_status NOT NULL DEFAULT 'DRAFT',
     deadline TIMESTAMP WITH TIME ZONE NOT NULL,
     form_data JSONB NOT NULL, -- Store form structure as JSON
