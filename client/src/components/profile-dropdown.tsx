@@ -80,11 +80,17 @@ export function ProfileDropdown() {
                   {user?.name?.split(" ")[0] || "User"}!
                 </p>
                 <p className="text-xs text-muted-foreground/80 truncate font-medium">
-                  {user?.department || "user@campushub.com"}
-                  {/* draw dot sperater*/}
-                  <span className="mx-1 text-muted-foreground"> • </span>
-                  {user?.year || "40xx"}
+                  {user?.email || "user@campushub.com"}
                 </p>
+                {(user?.department || user?.year) && (
+                  <p className="text-xs text-muted-foreground/60 truncate font-medium mt-0.5">
+                    {user?.department || "No Department"}
+                    {user?.department && user?.year && (
+                      <span className="mx-1"> • </span>
+                    )}
+                    {user?.year}
+                  </p>
+                )}
               </div>
             </div>
           </DropdownMenuLabel>

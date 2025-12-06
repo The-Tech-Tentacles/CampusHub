@@ -22,6 +22,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/theme-toggle";
 import heroImage from "@assets/image.png";
 
 export default function Login() {
@@ -79,7 +80,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-950 dark:via-indigo-950 dark:to-purple-950">
       {/* Hero Section - Enhanced GenZ Vibe */}
       <div
         className="hidden lg:flex lg:w-1/2 relative overflow-hidden"
@@ -237,7 +238,11 @@ export default function Login() {
       </div>
 
       {/* Login Form Section */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 min-h-screen">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 min-h-screen relative">
+        {/* Theme Toggle */}
+        <div className="absolute top-4 right-4 z-10">
+          <ThemeToggle />
+        </div>
         <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl">
           {/* Mobile Header */}
           <div className="lg:hidden flex items-center gap-3 mb-6 justify-center">
@@ -248,22 +253,22 @@ export default function Login() {
               </div>
             </div>
             <div className="text-center">
-              <h1 className="text-2xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
                 CampusHub
               </h1>
-              <p className="text-sm font-medium text-slate-600 flex items-center justify-center gap-1">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1">
                 where campus life gets lit ✨
                 <Sparkles className="h-3 w-3 animate-pulse" />
               </p>
             </div>
           </div>
 
-          <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur-sm rounded-3xl overflow-hidden mx-2 sm:mx-0">
+          <Card className="border-0 shadow-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm rounded-3xl overflow-hidden mx-2 sm:mx-0">
             <CardHeader className="space-y-3 text-center pb-6 pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8">
-              <CardTitle className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+              <CardTitle className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
                 Welcome back!
               </CardTitle>
-              <CardDescription className="text-sm sm:text-base lg:text-lg text-slate-600 px-2">
+              <CardDescription className="text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 px-2">
                 Ready to dive back into campus life?
               </CardDescription>
             </CardHeader>
@@ -272,9 +277,9 @@ export default function Login() {
               {error && (
                 <Alert
                   variant="destructive"
-                  className="mb-6 rounded-xl border-0 bg-red-50/80 backdrop-blur-sm"
+                  className="mb-6 rounded-xl border-0 bg-red-50/80 dark:bg-red-950/80 backdrop-blur-sm"
                 >
-                  <AlertDescription className="text-red-800 font-medium">
+                  <AlertDescription className="text-red-800 dark:text-red-200 font-medium">
                     {error}
                   </AlertDescription>
                 </Alert>
@@ -285,7 +290,7 @@ export default function Login() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="email"
-                    className="text-sm font-semibold text-slate-700 flex items-center gap-1"
+                    className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1"
                   >
                     <Mail className="h-4 w-4 text-indigo-500" />
                     Email Address
@@ -297,7 +302,7 @@ export default function Login() {
                       placeholder="your.email@campus.edu"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-12 border-2 border-slate-200 focus:border-indigo-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-indigo-500/10 focus:outline-none pl-4 text-black"
+                      className="h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm transition-all duration-200 focus:bg-white dark:focus:bg-slate-800 focus:shadow-lg focus:shadow-indigo-500/10 focus:outline-none pl-4 text-slate-900 dark:text-white"
                       data-testid="input-email"
                       required
                     />
@@ -308,7 +313,7 @@ export default function Login() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="password"
-                    className="text-sm font-semibold text-slate-700 flex items-center gap-1"
+                    className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1"
                   >
                     <Lock className="h-4 w-4 text-indigo-500" />
                     Password
@@ -320,7 +325,7 @@ export default function Login() {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="h-12 border-2 border-slate-200 focus:border-indigo-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-indigo-500/10 focus:outline-none pl-4 pr-12 text-black"
+                      className="h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500 rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm transition-all duration-200 focus:bg-white dark:focus:bg-slate-800 focus:shadow-lg focus:shadow-indigo-500/10 focus:outline-none pl-4 pr-12 text-slate-900 dark:text-white"
                       data-testid="input-password"
                       required
                     />
@@ -366,10 +371,10 @@ export default function Login() {
               <div className="mt-8 text-center">
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200"></div>
+                    <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white/80 text-slate-500 font-medium rounded-full backdrop-blur-sm">
+                    <span className="px-4 bg-white/80 dark:bg-slate-900/80 text-slate-500 dark:text-slate-400 font-medium rounded-full backdrop-blur-sm">
                       New to campus?
                     </span>
                   </div>
@@ -377,7 +382,7 @@ export default function Login() {
                 <p className="mt-4">
                   <Link
                     href="/register"
-                    className="inline-flex items-center gap-2 font-bold text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 text-lg hover:scale-105"
+                    className="inline-flex items-center gap-2 font-bold text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text hover:from-indigo-700 hover:to-purple-700 dark:hover:from-indigo-500 dark:hover:to-purple-500 transition-all duration-200 text-lg hover:scale-105"
                   >
                     Join the community! 🎓
                     <ArrowRight className="h-4 w-4" />

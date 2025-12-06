@@ -685,20 +685,32 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
         if (profileData.guardianRelation !== undefined) profileUpdateData.guardianRelation = profileData.guardianRelation?.trim() || null;
         if (profileData.guardianOccupation !== undefined) profileUpdateData.guardianOccupation = profileData.guardianOccupation?.trim() || null;
 
-        // Mentor Info
-        if (profileData.mentorId !== undefined) profileUpdateData.mentorId = profileData.mentorId || null;
+        // Mentor Info - Only allow setting mentor once for students
+        if (profileData.mentorId !== undefined && user.role === 'STUDENT') {
+            // Check if student already has a mentor
+            const [existingProfile] = await db
+                .select({ mentorId: profiles.mentorId })
+                .from(profiles)
+                .where(eq(profiles.userId, user.userId))
+                .limit(1);
+
+            if (existingProfile && existingProfile.mentorId) {
+                // Student already has a mentor, don't allow change
+                console.log(`Student ${user.userId} attempted to change mentor from ${existingProfile.mentorId} to ${profileData.mentorId}`);
+            } else {
+                // Student doesn't have a mentor yet, allow setting it
+                profileUpdateData.mentorId = profileData.mentorId || null;
+            }
+        } else if (profileData.mentorId !== undefined && user.role !== 'STUDENT') {
+            // Non-students can update mentor freely (for admin purposes)
+            profileUpdateData.mentorId = profileData.mentorId || null;
+        }
 
         // Social Links and Skills
         if (profileData.socialLinks !== undefined) profileUpdateData.socialLinks = profileData.socialLinks || {};
         if (profileData.skills !== undefined) profileUpdateData.skills = profileData.skills || [];
-        if (profileData.hobbies !== undefined) {
-            // Store hobbies in skills array for now (or create a hobbies column if needed)
-            // For this implementation, we'll keep them separate in the frontend
-        }
-        if (profileData.achievements !== undefined) {
-            // Store achievements in qualifications array for students
-            // For this implementation, we'll keep them separate in the frontend
-        }
+        if (profileData.hobbies !== undefined) profileUpdateData.hobbies = profileData.hobbies || [];
+        if (profileData.achievements !== undefined) profileUpdateData.achievements = profileData.achievements || [];
 
         // Check if profile exists
         const [existingProfile] = await db
@@ -965,20 +977,9 @@ export async function getFacultyStats(req: Request, res: Response): Promise<void
             departmentFaculty = facultyCount.length || 0;
 
             // Count active courses/events for department
-            try {
-                const courseCount = await db
-                    .select()
-                    .from(events)
-                    .where(
-                        and(
-                            eq(events.departmentId, user.departmentId),
-                            eq(events.isActive, true)
-                        )
-                    );
-                activeCourses = courseCount.length || 0;
-            } catch (err) {
-                console.log('Events count skipped:', err);
-            }
+            // Note: Events table doesn't have departmentId, so we'll set this to 0 for now
+            // TODO: Add departmentId to events table or create a separate course tracking system
+            activeCourses = 0;
         }
 
         res.json({

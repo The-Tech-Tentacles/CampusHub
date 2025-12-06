@@ -111,7 +111,7 @@ export const profiles = pgTable('profiles', {
     specialization: varchar('specialization', { length: 200 }),
     admissionDate: date('admission_date'),
     expectedGraduation: date('expected_graduation'),
-    previousEducation: varchar('previous_education', { length: 255 }),
+    previousEducation: text('previous_education'), // Changed from varchar(255) to text to store JSON data
 
     // Faculty/Staff Info
     cabinLocationId: uuid('cabin_location_id').references(() => rooms.id, { onDelete: 'set null' }),
@@ -135,6 +135,8 @@ export const profiles = pgTable('profiles', {
 
     // Skills and Interests (All users)
     skills: text('skills').array(),
+    hobbies: text('hobbies').array(),
+    achievements: text('achievements').array(),
 
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

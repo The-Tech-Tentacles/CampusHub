@@ -602,7 +602,7 @@ export async function updateNotice(req: Request, res: Response): Promise<void> {
     try {
         const { db } = getDatabase();
         const user = (req as any).user;
-        const { id } = req.params;
+        const id = req.params.id as string;
         const {
             title,
             content,
@@ -695,7 +695,7 @@ export async function deleteNotice(req: Request, res: Response): Promise<void> {
     try {
         const { db } = getDatabase();
         const user = (req as any).user;
-        const { id } = req.params;
+        const id = req.params.id as string;
 
         // Validate user role
         if (!['FACULTY', 'HOD', 'DEAN', 'ADMIN'].includes(user.role)) {

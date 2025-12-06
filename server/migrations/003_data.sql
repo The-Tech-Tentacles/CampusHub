@@ -1585,7 +1585,9 @@ INSERT INTO profiles (
         guardian_relation,
         guardian_occupation,
         social_links,
-        skills
+        skills,
+        hobbies,
+        achievements
     )
 SELECT 'd2c77299-9d21-4d12-9789-8d2dd659b2c5' as user_id,
     'Mr.' as prefix,
@@ -1611,7 +1613,9 @@ SELECT 'd2c77299-9d21-4d12-9789-8d2dd659b2c5' as user_id,
     'Father' as guardian_relation,
     'Farming' as guardian_occupation,
     '{"github": "johndoe", "linkedin": "john-doe-dev", "portfolio": "https://johndoe.dev"}'::jsonb as social_links,
-    ARRAY ['React', 'Node.js', 'Python', 'Machine Learning', 'UI/UX Design'] as skills
+    ARRAY ['React', 'Node.js', 'Python', 'Machine Learning', 'UI/UX Design'] as skills,
+    ARRAY ['Coding', 'Photography', 'Music', 'Gaming'] as hobbies,
+    ARRAY ['Best Project Award 2023', 'Hackathon Winner - TechFest 2024', 'Dean''s List 2023'] as achievements
 FROM users u
 WHERE u.role = 'STUDENT'
     AND NOT EXISTS (
@@ -1635,7 +1639,9 @@ INSERT INTO profiles (
         qualifications,
         experience_years,
         social_links,
-        skills
+        skills,
+        hobbies,
+        achievements
     )
 SELECT '46cbf487-a2f8-4fb3-b877-fdf9fdb46c24' as user_id,
     'Prof.' as prefix,
@@ -1651,7 +1657,9 @@ SELECT '46cbf487-a2f8-4fb3-b877-fdf9fdb46c24' as user_id,
     ARRAY ['Ph.D. in Computer Science, MIT', 'M.S. in AI, Stanford University', 'B.Tech in CSE, IIT Delhi'] as qualifications,
     12 as experience_years,
     '{"linkedin": "am-phd", "researchgate": "am-phd", "scholar": "am-phd"}'::jsonb as social_links,
-    ARRAY ['Python', 'TensorFlow', 'PyTorch', 'Research', 'Teaching'] as skills
+    ARRAY ['Python', 'TensorFlow', 'PyTorch', 'Research', 'Teaching'] as skills,
+    ARRAY ['Reading', 'Chess', 'Mentoring'] as hobbies,
+    ARRAY ['Best Teacher Award 2022', 'Published 50+ Research Papers', 'IEEE Fellow'] as achievements
 FROM users u
 WHERE u.role = 'FACULTY'
     AND NOT EXISTS (

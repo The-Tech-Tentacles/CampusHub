@@ -113,15 +113,20 @@ export default function Forms() {
   const currentTabForms = (() => {
     const tabForms = getTabForms(activeTab);
 
-    if (sortByDueDate) {
-      return [...tabForms].sort((a, b) => {
+    // Sort based on the selected option
+    return [...tabForms].sort((a, b) => {
+      if (sortByDueDate) {
+        // Sort by due date (earliest first)
         const dateA = new Date(a.deadline);
         const dateB = new Date(b.deadline);
-        return dateA.getTime() - dateB.getTime(); // Earliest first
-      });
-    }
-
-    return tabForms;
+        return dateA.getTime() - dateB.getTime();
+      } else {
+        // Default: Sort by posted date (most recent first)
+        const dateA = new Date(a.createdAt);
+        const dateB = new Date(b.createdAt);
+        return dateB.getTime() - dateA.getTime(); // Most recent first
+      }
+    });
   })();
 
   const handleFillForm = (form: Form) => {

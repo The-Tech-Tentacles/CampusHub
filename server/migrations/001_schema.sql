@@ -114,7 +114,8 @@ CREATE TABLE IF NOT EXISTS profiles (
     specialization VARCHAR(200),
     admission_date DATE,
     expected_graduation DATE,
-    previous_education VARCHAR(255),
+    previous_education TEXT,
+    -- Stores JSON: {tenth, intermediateType, twelfth, diploma}
     -- Faculty/Staff Info
     cabin_location_id UUID REFERENCES rooms(id) ON DELETE
     SET NULL,
@@ -136,6 +137,10 @@ CREATE TABLE IF NOT EXISTS profiles (
         -- Skills and Interests (All users)
         skills TEXT [],
         -- Array of skills
+        hobbies TEXT [],
+        -- Array of hobbies and interests
+        achievements TEXT [],
+        -- Array of achievements and awards
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

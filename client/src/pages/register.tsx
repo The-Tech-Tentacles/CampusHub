@@ -40,6 +40,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/theme-toggle";
 import heroImage from "@assets/image.png";
 
 export default function Register() {
@@ -67,6 +68,9 @@ export default function Register() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Field-level errors
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Data loading state
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -123,85 +127,87 @@ export default function Register() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const validateForm = () => {
+    const errors: Record<string, string> = {};
+
+    // Name validation
     if (!formData.name.trim()) {
-      toast({
-        title: "Missing name",
-        description: "Please enter your full name.",
-        variant: "destructive",
-      });
-      return false;
+      errors.name = "Please enter your full name";
+    } else if (formData.name.trim().length < 3) {
+      errors.name = "Name must be at least 3 characters long";
     }
 
+    // Email validation
     if (!formData.email.trim()) {
-      toast({
-        title: "Missing email",
-        description: "Please enter your email address.",
-        variant: "destructive",
-      });
-      return false;
+      errors.email = "Please enter your email address";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email =
+        "Please enter a valid email address (e.g., name@campus.edu)";
     }
 
+    // Password validation
     if (!formData.password) {
-      toast({
-        title: "Missing password",
-        description: "Please enter a password.",
-        variant: "destructive",
-      });
-      return false;
+      errors.password = "Please create a password";
+    } else if (formData.password.length < 6) {
+      errors.password = "Password must be at least 6 characters long";
+    } else if (!/(?=.*[a-z])/.test(formData.password)) {
+      errors.password = "Password must contain at least one lowercase letter";
+    } else if (!/(?=.*[A-Z])/.test(formData.password)) {
+      errors.password = "Password must contain at least one uppercase letter";
+    } else if (!/(?=.*\d)/.test(formData.password)) {
+      errors.password = "Password must contain at least one number";
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Password mismatch",
-        description: "Passwords don't match. Please check and try again.",
-        variant: "destructive",
-      });
-      return false;
+    // Confirm password validation
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "Passwords don't match";
     }
 
-    if (formData.password.length < 6) {
-      toast({
-        title: "Weak password",
-        description: "Password must be at least 6 characters long.",
-        variant: "destructive",
-      });
-      return false;
-    }
-
+    // Phone validation
     if (!formData.phone.trim()) {
-      toast({
-        title: "Missing phone number",
-        description: "Please enter your phone number.",
-        variant: "destructive",
-      });
-      return false;
+      errors.phone = "Please enter your phone number";
+    } else if (!/^\+?\d{10,15}$/.test(formData.phone.replace(/[\s-]/g, ""))) {
+      errors.phone = "Please enter a valid phone number (10-15 digits)";
     }
 
+    // Enrollment number validation
     if (!formData.enrollmentNumber.trim()) {
-      toast({
-        title: "Missing enrollment number",
-        description: "Please enter your enrollment number.",
-        variant: "destructive",
-      });
-      return false;
+      errors.enrollmentNumber = "Please enter your enrollment number";
+    } else if (formData.enrollmentNumber.trim().length < 4) {
+      errors.enrollmentNumber =
+        "Enrollment number must be at least 4 characters";
     }
 
+    // Department validation
     if (!formData.departmentId) {
-      toast({
-        title: "Missing department",
-        description: "Please select your department.",
-        variant: "destructive",
-      });
-      return false;
+      errors.departmentId = "Please select your department";
     }
 
+    // Academic year validation
     if (!formData.academicYearId) {
+      errors.academicYearId = "Please select your academic year";
+    }
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      // Show toast with first error
+      const firstError = Object.values(errors)[0];
       toast({
-        title: "Missing academic year",
-        description: "Please select your academic year.",
+        title: "Form validation failed",
+        description: firstError,
         variant: "destructive",
       });
       return false;
@@ -239,7 +245,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-slate-950 dark:via-emerald-950 dark:to-teal-950">
       {/* Hero Section - Enhanced GenZ Vibe */}
       <div
         className="hidden lg:flex lg:w-1/2 relative overflow-hidden"
@@ -397,7 +403,11 @@ export default function Register() {
       </div>
 
       {/* Register Form Section */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 min-h-screen">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 min-h-screen relative">
+        {/* Theme Toggle */}
+        <div className="absolute top-4 right-4 z-10">
+          <ThemeToggle />
+        </div>
         <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl">
           {/* Mobile Header */}
           <div className="lg:hidden flex items-center gap-3 mb-6 justify-center">
@@ -408,22 +418,22 @@ export default function Register() {
               </div>
             </div>
             <div className="text-center">
-              <h1 className="text-2xl font-black bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-black bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
                 CampusHub
               </h1>
-              <p className="text-sm font-medium text-slate-600 flex items-center justify-center gap-1">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1">
                 join the movement ⚡
                 <Sparkles className="h-3 w-3 animate-pulse" />
               </p>
             </div>
           </div>
 
-          <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur-sm rounded-3xl overflow-hidden mx-2 sm:mx-0">
+          <Card className="border-0 shadow-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm rounded-3xl overflow-hidden mx-2 sm:mx-0">
             <CardHeader className="space-y-3 text-center pb-6 pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8">
-              <CardTitle className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+              <CardTitle className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
                 Join CampusHub! 🎓
               </CardTitle>
-              <CardDescription className="text-sm sm:text-base lg:text-lg text-slate-600 px-2">
+              <CardDescription className="text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 px-2">
                 Create your account and become part of the community
               </CardDescription>
             </CardHeader>
@@ -432,9 +442,9 @@ export default function Register() {
               {error && (
                 <Alert
                   variant="destructive"
-                  className="mb-6 rounded-xl border-0 bg-red-50/80 backdrop-blur-sm"
+                  className="mb-6 rounded-xl border-0 bg-red-50/80 dark:bg-red-950/80 backdrop-blur-sm"
                 >
-                  <AlertDescription className="text-red-800 font-medium">
+                  <AlertDescription className="text-red-800 dark:text-red-200 font-medium">
                     {error}
                   </AlertDescription>
                 </Alert>
@@ -442,10 +452,10 @@ export default function Register() {
 
               {/* Loading State */}
               {isLoadingData && (
-                <div className="mb-6 text-center p-4 bg-slate-50/80 rounded-xl backdrop-blur-sm">
+                <div className="mb-6 text-center p-4 bg-slate-50/80 dark:bg-slate-800/80 rounded-xl backdrop-blur-sm">
                   <div className="inline-flex items-center gap-3">
                     <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-slate-600 font-medium">
+                    <p className="text-slate-600 dark:text-slate-300 font-medium">
                       Loading departments and academic years...
                     </p>
                   </div>
@@ -460,7 +470,7 @@ export default function Register() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="name"
-                    className="text-sm font-semibold text-slate-700 flex items-center gap-1"
+                    className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1"
                   >
                     <User className="h-4 w-4 text-emerald-500" />
                     Full Name <span className="text-red-500">*</span>
@@ -474,9 +484,19 @@ export default function Register() {
                       onChange={(e) =>
                         handleInputChange("name", e.target.value)
                       }
-                      className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-black"
+                      className={`h-12 border-2 ${
+                        fieldErrors.name
+                          ? "border-red-500 dark:border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                      } focus:border-emerald-500 rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm transition-all duration-200 focus:bg-white dark:focus:bg-slate-800 focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-slate-900 dark:text-white`}
                       required
                     />
+                    {fieldErrors.name && (
+                      <p className="text-red-500 text-xs mt-1 mb-2 flex items-center gap-1">
+                        <span className="font-medium">⚠</span>{" "}
+                        {fieldErrors.name}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -484,7 +504,7 @@ export default function Register() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="email"
-                    className="text-sm font-semibold text-slate-700 flex items-center gap-1"
+                    className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1"
                   >
                     <Mail className="h-4 w-4 text-emerald-500" />
                     Email Address <span className="text-red-500">*</span>
@@ -498,9 +518,19 @@ export default function Register() {
                       onChange={(e) =>
                         handleInputChange("email", e.target.value)
                       }
-                      className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-black"
+                      className={`h-12 border-2 ${
+                        fieldErrors.email
+                          ? "border-red-500 dark:border-red-500"
+                          : "border-slate-200 dark:border-slate-700"
+                      } focus:border-emerald-500 rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm transition-all duration-200 focus:bg-white dark:focus:bg-slate-800 focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-slate-900 dark:text-white`}
                       required
                     />
+                    {fieldErrors.email && (
+                      <p className="text-red-500 text-xs mt-1 mb-2 flex items-center gap-1">
+                        <span className="font-medium">⚠</span>{" "}
+                        {fieldErrors.email}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -510,34 +540,46 @@ export default function Register() {
                   <div className="space-y-2">
                     <Label
                       htmlFor="password"
-                      className="text-sm font-semibold text-slate-700 flex items-center gap-1"
+                      className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1"
                     >
                       <Lock className="h-4 w-4 text-emerald-500" />
                       Password <span className="text-red-500">*</span>
                     </Label>
                     <div className="relative group">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Choose password"
-                        value={formData.password}
-                        onChange={(e) =>
-                          handleInputChange("password", e.target.value)
-                        }
-                        className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-black pr-12"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-emerald-500 transition-colors"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Choose password"
+                          value={formData.password}
+                          onChange={(e) =>
+                            handleInputChange("password", e.target.value)
+                          }
+                          className={`h-12 border-2 ${
+                            fieldErrors.password
+                              ? "border-red-500 dark:border-red-500"
+                              : "border-slate-200 dark:border-slate-700"
+                          } focus:border-emerald-500 rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm transition-all duration-200 focus:bg-white dark:focus:bg-slate-800 focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-slate-900 dark:text-white pr-12`}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-emerald-500 transition-colors"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
+                      {fieldErrors.password && (
+                        <p className="text-red-500 text-xs mt-1 mb-2 flex items-center gap-1">
+                          <span className="font-medium">⚠</span>{" "}
+                          {fieldErrors.password}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -545,36 +587,48 @@ export default function Register() {
                   <div className="space-y-2">
                     <Label
                       htmlFor="confirmPassword"
-                      className="text-sm font-semibold text-slate-700 flex items-center gap-1"
+                      className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1"
                     >
                       <Lock className="h-4 w-4 text-emerald-500" />
                       Confirm <span className="text-red-500">*</span>
                     </Label>
                     <div className="relative group">
-                      <Input
-                        id="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Confirm password"
-                        value={formData.confirmPassword}
-                        onChange={(e) =>
-                          handleInputChange("confirmPassword", e.target.value)
-                        }
-                        className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-black pr-12"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-emerald-500 transition-colors"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
+                      <div className="relative">
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm password"
+                          value={formData.confirmPassword}
+                          onChange={(e) =>
+                            handleInputChange("confirmPassword", e.target.value)
+                          }
+                          className={`h-12 border-2 ${
+                            fieldErrors.confirmPassword
+                              ? "border-red-500 dark:border-red-500"
+                              : "border-slate-200 dark:border-slate-700"
+                          } focus:border-emerald-500 rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm transition-all duration-200 focus:bg-white dark:focus:bg-slate-800 focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-slate-900 dark:text-white pr-12`}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-emerald-500 transition-colors"
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
+                      {fieldErrors.confirmPassword && (
+                        <p className="text-red-500 text-xs mt-1 mb-2 flex items-center gap-1">
+                          <span className="font-medium">⚠</span>{" "}
+                          {fieldErrors.confirmPassword}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -585,7 +639,7 @@ export default function Register() {
                   <div className="space-y-2">
                     <Label
                       htmlFor="department"
-                      className="text-sm font-semibold text-slate-700 flex items-center gap-1"
+                      className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1"
                     >
                       <Building2 className="h-4 w-4 text-emerald-500" />
                       Department <span className="text-red-500">*</span>
@@ -599,7 +653,13 @@ export default function Register() {
                         disabled={isLoadingData}
                         required
                       >
-                        <SelectTrigger className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10">
+                        <SelectTrigger
+                          className={`h-12 border-2 ${
+                            fieldErrors.departmentId
+                              ? "border-red-500 dark:border-red-500"
+                              : "border-slate-200 dark:border-slate-700"
+                          } focus:border-emerald-500 rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm transition-all duration-200 focus:bg-white dark:focus:bg-slate-800 focus:shadow-lg focus:shadow-emerald-500/10 text-slate-900 dark:text-white`}
+                        >
                           <SelectValue
                             placeholder={
                               isLoadingData
@@ -610,13 +670,13 @@ export default function Register() {
                             }
                           />
                         </SelectTrigger>
-                        <SelectContent className="rounded-xl border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+                        <SelectContent className="rounded-xl border-0 shadow-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
                           {departments.length > 0 ? (
                             departments.map((dept) => (
                               <SelectItem
                                 key={dept.id}
                                 value={dept.id}
-                                className="rounded-lg hover:bg-emerald-50 focus:bg-emerald-50 text-black focus:text-black"
+                                className="rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900 focus:bg-emerald-50 dark:focus:bg-emerald-900 text-slate-900 dark:text-white"
                               >
                                 <div className="flex items-center gap-2">
                                   <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
@@ -631,6 +691,12 @@ export default function Register() {
                           )}
                         </SelectContent>
                       </Select>
+                      {fieldErrors.departmentId && (
+                        <p className="text-red-500 text-xs mt-1 mb-2 flex items-center gap-1">
+                          <span className="font-medium">⚠</span>{" "}
+                          {fieldErrors.departmentId}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -638,7 +704,7 @@ export default function Register() {
                   <div className="space-y-2">
                     <Label
                       htmlFor="academicYear"
-                      className="text-sm font-semibold text-slate-700 flex items-center gap-1"
+                      className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1"
                     >
                       <Calendar className="h-4 w-4 text-emerald-500" />
                       Academic Year <span className="text-red-500">*</span>
@@ -652,7 +718,13 @@ export default function Register() {
                         disabled={isLoadingData}
                         required
                       >
-                        <SelectTrigger className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10">
+                        <SelectTrigger
+                          className={`h-12 border-2 ${
+                            fieldErrors.academicYearId
+                              ? "border-red-500 dark:border-red-500"
+                              : "border-slate-200 dark:border-slate-700"
+                          } focus:border-emerald-500 rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm transition-all duration-200 focus:bg-white dark:focus:bg-slate-800 focus:shadow-lg focus:shadow-emerald-500/10 text-slate-900 dark:text-white`}
+                        >
                           <SelectValue
                             placeholder={
                               isLoadingData
@@ -663,13 +735,13 @@ export default function Register() {
                             }
                           />
                         </SelectTrigger>
-                        <SelectContent className="rounded-xl border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+                        <SelectContent className="rounded-xl border-0 shadow-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
                           {academicYears.length > 0 ? (
                             academicYears.map((year) => (
                               <SelectItem
                                 key={year.id}
                                 value={year.id}
-                                className="rounded-lg hover:bg-emerald-50 focus:bg-emerald-50 text-black focus:text-black"
+                                className="rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900 focus:bg-emerald-50 dark:focus:bg-emerald-900 text-slate-900 dark:text-white"
                               >
                                 <div className="flex items-center gap-2">
                                   <div className="w-2 h-2 rounded-full bg-teal-500"></div>
@@ -684,6 +756,12 @@ export default function Register() {
                           )}
                         </SelectContent>
                       </Select>
+                      {fieldErrors.academicYearId && (
+                        <p className="text-red-500 text-xs mt-1 mb-2 flex items-center gap-1">
+                          <span className="font-medium">⚠</span>{" "}
+                          {fieldErrors.academicYearId}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -694,7 +772,7 @@ export default function Register() {
                   <div className="space-y-2">
                     <Label
                       htmlFor="phone"
-                      className="text-sm font-semibold text-slate-700 flex items-center gap-1"
+                      className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1"
                     >
                       <Phone className="h-4 w-4 text-emerald-500" />
                       Phone Number <span className="text-red-500">*</span>
@@ -708,9 +786,19 @@ export default function Register() {
                         onChange={(e) =>
                           handleInputChange("phone", e.target.value)
                         }
-                        className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-black"
+                        className={`h-12 border-2 ${
+                          fieldErrors.phone
+                            ? "border-red-500 dark:border-red-500"
+                            : "border-slate-200 dark:border-slate-700"
+                        } focus:border-emerald-500 rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm transition-all duration-200 focus:bg-white dark:focus:bg-slate-800 focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-slate-900 dark:text-white`}
                         required
                       />
+                      {fieldErrors.phone && (
+                        <p className="text-red-500 text-xs mt-1 mb-2 flex items-center gap-1">
+                          <span className="font-medium">⚠</span>{" "}
+                          {fieldErrors.phone}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -718,7 +806,7 @@ export default function Register() {
                   <div className="space-y-2">
                     <Label
                       htmlFor="enrollmentNumber"
-                      className="text-sm font-semibold text-slate-700 flex items-center gap-1"
+                      className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1"
                     >
                       <Hash className="h-4 w-4 text-emerald-500" />
                       Enrollment Number <span className="text-red-500">*</span>
@@ -732,9 +820,19 @@ export default function Register() {
                         onChange={(e) =>
                           handleInputChange("enrollmentNumber", e.target.value)
                         }
-                        className="h-12 border-2 border-slate-200 focus:border-emerald-500 rounded-xl bg-white/70 backdrop-blur-sm transition-all duration-200 focus:bg-white focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-black"
+                        className={`h-12 border-2 ${
+                          fieldErrors.enrollmentNumber
+                            ? "border-red-500 dark:border-red-500"
+                            : "border-slate-200 dark:border-slate-700"
+                        } focus:border-emerald-500 rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm transition-all duration-200 focus:bg-white dark:focus:bg-slate-800 focus:shadow-lg focus:shadow-emerald-500/10 focus:outline-none pl-4 text-slate-900 dark:text-white`}
                         required
                       />
+                      {fieldErrors.enrollmentNumber && (
+                        <p className="text-red-500 text-xs mt-1 mb-2 flex items-center gap-1">
+                          <span className="font-medium">⚠</span>{" "}
+                          {fieldErrors.enrollmentNumber}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -769,10 +867,10 @@ export default function Register() {
               <div className="mt-8 text-center">
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200"></div>
+                    <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white/80 text-slate-500 font-medium rounded-full backdrop-blur-sm">
+                    <span className="px-4 bg-white/80 dark:bg-slate-900/80 text-slate-500 dark:text-slate-400 font-medium rounded-full backdrop-blur-sm">
                       Already part of the squad?
                     </span>
                   </div>
@@ -780,7 +878,7 @@ export default function Register() {
                 <p className="mt-4">
                   <Link
                     href="/login"
-                    className="inline-flex items-center gap-2 font-bold text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 text-lg hover:scale-105"
+                    className="inline-flex items-center gap-2 font-bold text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text hover:from-emerald-700 hover:to-teal-700 dark:hover:from-emerald-500 dark:hover:to-teal-500 transition-all duration-200 text-lg hover:scale-105"
                   >
                     Sign in here!
                     <ArrowRight className="h-4 w-4" />

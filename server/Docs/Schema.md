@@ -59,12 +59,12 @@ CREATE TABLE users (
 );
 ```
 
-### 2. Student Profiles Table
+### 2. Profiles Table
 
-Comprehensive student profile information matching frontend requirements
+Comprehensive profile information for all users (students, faculty, staff) matching frontend requirements
 
 ```sql
-CREATE TABLE student_profiles (
+CREATE TABLE profiles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
 
@@ -91,7 +91,7 @@ CREATE TABLE student_profiles (
     guardian_occupation VARCHAR(200),
 
     -- Academic Details
-    previous_education VARCHAR(255),
+    previous_education TEXT, -- JSON: {tenth: {school, percentage, yearOfPassing}, intermediateType: '12th'|'diploma', twelfth: {...}, diploma: {...}}
     admission_date DATE,
     expected_graduation DATE,
 
@@ -133,7 +133,6 @@ CREATE TABLE departments (
 
 System-wide notices and announcements with file attachment support
 
-````sql
 ```sql
 CREATE TABLE notices (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -153,7 +152,7 @@ CREATE TABLE notices (
     published_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-````
+```
 
 ### 5. Notice Reads Table
 
@@ -598,7 +597,7 @@ SELECT
     d.name as department_name,
     mentor.name as mentor_name
 FROM users u
-LEFT JOIN student_profiles sp ON u.id = sp.user_id
+LEFT JOIN profiles sp ON u.id = sp.user_id
 LEFT JOIN departments d ON u.department = d.name
 LEFT JOIN users mentor ON sp.mentor_id = mentor.id
 WHERE u.id = $1;
@@ -968,7 +967,7 @@ ORDER BY mean_time DESC;
 ALTER TABLE users ADD CONSTRAINT chk_email_format
 CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
 
-ALTER TABLE student_profiles ADD CONSTRAINT chk_cgpa_range
+ALTER TABLE profiles ADD CONSTRAINT chk_cgpa_range
 CHECK (cgpa >= 0.0 AND cgpa <= 10.0);
 
 ALTER TABLE timetable_slots ADD CONSTRAINT chk_valid_day

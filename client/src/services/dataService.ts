@@ -67,8 +67,10 @@ export interface Profile {
     // Social Links
     socialLinks?: Record<string, string>;
 
-    // Skills (All users)
+    // Skills and Interests (All users)
     skills?: string[];
+    hobbies?: string[];
+    achievements?: string[];
 
     createdAt?: string;
     updatedAt?: string;

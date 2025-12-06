@@ -72,8 +72,22 @@ export default function Schedule() {
         academicEvents: academicData.length,
       });
 
-      setEvents(eventsData);
-      setAcademicEvents(academicData);
+      // Sort events by date and time (earliest to latest)
+      const sortedEvents = [...eventsData].sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.startTime}`);
+        const dateB = new Date(`${b.date}T${b.startTime}`);
+        return dateA.getTime() - dateB.getTime();
+      });
+
+      // Sort academic events by start date (earliest to latest)
+      const sortedAcademicEvents = [...academicData].sort((a, b) => {
+        const dateA = new Date(a.startDate);
+        const dateB = new Date(b.startDate);
+        return dateA.getTime() - dateB.getTime();
+      });
+
+      setEvents(sortedEvents);
+      setAcademicEvents(sortedAcademicEvents);
     } catch (error) {
       console.error("[STUDENT SCHEDULE] Failed to load schedule data:", error);
     } finally {
