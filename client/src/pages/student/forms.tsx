@@ -155,6 +155,27 @@ export default function Forms() {
   const handleSubmitForm = async () => {
     if (!selectedForm) return;
 
+    // Final validation before submission
+    const hasInvalidRequiredFields = selectedForm.formData?.fields?.some(
+      (field: any) => {
+        if (!field.required) return false;
+        const value = formData[field.name];
+
+        if (field.type === "checkbox" && field.options) {
+          return !value || (Array.isArray(value) && value.length === 0);
+        }
+        if (field.type === "select") {
+          return !value || value === "" || value === undefined;
+        }
+        return !value || String(value).trim() === "";
+      }
+    );
+
+    if (hasInvalidRequiredFields) {
+      alert("Please fill in all required fields before submitting.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const success = await dataService.submitForm(selectedForm.id, formData);
@@ -579,23 +600,81 @@ export default function Forms() {
                   ) : field.type === "select" ? (
                     <select
                       id={field.name}
-                      value={formData[field.name] || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          [field.name]: e.target.value,
-                        })
+                      value={
+                        formData[field.name] !== undefined
+                          ? formData[field.name]
+                          : ""
                       }
-                      required={field.required}
+                      onChange={(e) => {
+                        const selectedValue = e.target.value;
+                        if (selectedValue === "") {
+                          // Remove the field from formData if empty option is selected
+                          const newFormData = { ...formData };
+                          delete newFormData[field.name];
+                          setFormData(newFormData);
+                        } else {
+                          setFormData({
+                            ...formData,
+                            [field.name]: selectedValue,
+                          });
+                        }
+                      }}
                       className="flex h-10 w-full rounded-md border-2 border-input bg-background px-3 py-2 text-sm ring-offset-background focus:border-green-500 dark:focus:border-green-400 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                     >
-                      <option value="">Select an option</option>
+                      <option value="">
+                        {field.required
+                          ? "-- Select an option * --"
+                          : "-- Select an option (optional) --"}
+                      </option>
                       {field.options?.map((option: string, idx: number) => (
                         <option key={idx} value={option}>
                           {option}
                         </option>
                       ))}
                     </select>
+                  ) : field.type === "checkbox" && field.options ? (
+                    <div className="space-y-2 p-3 border-2 rounded-md">
+                      {field.options.map((option: string, idx: number) => {
+                        const checkboxValues = Array.isArray(
+                          formData[field.name]
+                        )
+                          ? formData[field.name]
+                          : [];
+                        return (
+                          <label
+                            key={idx}
+                            className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checkboxValues.includes(option)}
+                              onChange={(e) => {
+                                const currentValues = Array.isArray(
+                                  formData[field.name]
+                                )
+                                  ? [...formData[field.name]]
+                                  : [];
+                                if (e.target.checked) {
+                                  setFormData({
+                                    ...formData,
+                                    [field.name]: [...currentValues, option],
+                                  });
+                                } else {
+                                  setFormData({
+                                    ...formData,
+                                    [field.name]: currentValues.filter(
+                                      (v) => v !== option
+                                    ),
+                                  });
+                                }
+                              }}
+                              className="h-4 w-4"
+                            />
+                            <span className="text-sm">{option}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   ) : (
                     <Input
                       id={field.name}
@@ -630,36 +709,81 @@ export default function Forms() {
             )}
           </div>
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsSubmitDialogOpen(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmitForm}
-              disabled={
-                isSubmitting ||
-                selectedForm?.formData?.fields?.some(
-                  (field: any) => field.required && !formData[field.name]
-                )
-              }
-              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit Form
-                </>
-              )}
-            </Button>
+          <DialogFooter className="flex-col gap-3">
+            {(() => {
+              const hasIncompleteRequiredFields =
+                selectedForm?.formData?.fields?.some((field: any) => {
+                  if (!field.required) return false;
+                  const value = formData[field.name];
+                  // For checkbox with options, check if at least one is selected
+                  if (field.type === "checkbox" && field.options) {
+                    return (
+                      !value || (Array.isArray(value) && value.length === 0)
+                    );
+                  }
+                  // For select dropdowns, ensure a valid option is selected (not empty string)
+                  if (field.type === "select") {
+                    return !value || value === "" || value === undefined;
+                  }
+                  // For other fields, check if value exists and is not just whitespace
+                  return !value || String(value).trim() === "";
+                });
+
+              return hasIncompleteRequiredFields && !isSubmitting ? (
+                <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 p-3 rounded-lg border border-red-200 dark:border-red-800 w-full">
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                  <span className="font-medium">
+                    Please fill all required fields (*) to activate the submit
+                    button
+                  </span>
+                </div>
+              ) : null;
+            })()}
+
+            <div className="flex gap-2 w-full justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setIsSubmitDialogOpen(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubmitForm}
+                disabled={
+                  isSubmitting ||
+                  selectedForm?.formData?.fields?.some((field: any) => {
+                    if (!field.required) return false;
+                    const value = formData[field.name];
+                    // For checkbox with options, check if at least one is selected
+                    if (field.type === "checkbox" && field.options) {
+                      return (
+                        !value || (Array.isArray(value) && value.length === 0)
+                      );
+                    }
+                    // For select dropdowns, ensure a valid option is selected (not empty string)
+                    if (field.type === "select") {
+                      return !value || value === "" || value === undefined;
+                    }
+                    // For other fields, check if value exists and is not just whitespace
+                    return !value || String(value).trim() === "";
+                  })
+                }
+                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Submit Form
+                  </>
+                )}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

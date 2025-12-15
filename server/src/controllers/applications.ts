@@ -318,131 +318,9 @@ export const createApplication = async (req: Request, res: Response) => {
 };
 
 /**
- * Update application status (For reviewers: Faculty/HOD/DEAN)
- */
-export const updateApplicationStatus = async (req: Request, res: Response) => {
-    try {
-        const { db } = getDatabase();
-        const user = req.user;
-        const { id } = req.params;
-        const { status, notes, escalate, escalationReason } = req.body;
-
-        if (!user?.userId) {
-            return res.status(401).json({
-                success: false,
-                message: 'Unauthorized'
-            });
-        }
-
-        if (!id) {
-            return res.status(400).json({
-                success: false,
-                message: 'Application ID is required'
-            });
-        }
-
-        if (!status || !['APPROVED', 'REJECTED', 'UNDER_REVIEW'].includes(status)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Valid status is required (APPROVED, REJECTED, UNDER_REVIEW)'
-            });
-        }
-
-        // Get the application
-        const [application] = await db
-            .select()
-            .from(applications)
-            .where(eq(applications.id, id))
-            .limit(1);
-
-        if (!application) {
-            return res.status(404).json({
-                success: false,
-                message: 'Application not found'
-            });
-        }
-
-        // Determine update based on user role
-        let updateData: any = {};
-
-        if (user.role === 'FACULTY' && application.mentorId === user.userId) {
-            // Mentor review
-            updateData = {
-                mentorStatus: status,
-                mentorNotes: notes || null,
-                mentorReviewedAt: new Date(),
-                currentLevel: status === 'APPROVED' ? 'HOD' : 'MENTOR',
-                status: status === 'REJECTED' ? 'REJECTED' : 'UNDER_REVIEW'
-            };
-
-            if (status === 'REJECTED') {
-                updateData.finalDecision = 'REJECTED';
-            }
-
-        } else if (user.role === 'HOD' && application.departmentId === user.departmentId) {
-            // HOD review
-            updateData = {
-                hodStatus: status,
-                hodNotes: notes || null,
-                hodReviewedAt: new Date(),
-                hodId: user.userId
-            };
-
-            if (escalate && status === 'APPROVED') {
-                // HOD escalates to DEAN
-                updateData.requiresDeanApproval = true;
-                updateData.escalationReason = escalationReason || 'Requires Dean approval';
-                updateData.currentLevel = 'DEAN';
-                updateData.status = 'ESCALATED';
-            } else {
-                updateData.currentLevel = status === 'APPROVED' ? 'COMPLETED' : 'HOD';
-                updateData.finalDecision = status;
-                updateData.status = status;
-            }
-
-        } else if (user.role === 'DEAN' && application.requiresDeanApproval) {
-            // DEAN review
-            updateData = {
-                deanStatus: status,
-                deanNotes: notes || null,
-                deanReviewedAt: new Date(),
-                deanId: user.userId,
-                currentLevel: 'COMPLETED',
-                finalDecision: status,
-                status: status
-            };
-
-        } else {
-            return res.status(403).json({
-                success: false,
-                message: 'You do not have permission to review this application'
-            });
-        }
-
-        // Update the application
-        const [updatedApplication] = await db
-            .update(applications)
-            .set(updateData)
-            .where(eq(applications.id, id))
-            .returning();
-
-        return res.status(200).json({
-            success: true,
-            data: updatedApplication,
-            message: 'Application status updated successfully'
-        });
-
-    } catch (error) {
-        console.error('Error updating application status:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to update application status'
-        });
-    }
-};
-
-/**
- * Delete/Cancel application (Students can only cancel their own pending applications)
+ * Delete/Cancel an application
+ * Students can only cancel their own pending applications
+ * Admins can delete any application
  */
 export const deleteApplication = async (req: Request, res: Response) => {
     try {
@@ -518,3 +396,5 @@ export const deleteApplication = async (req: Request, res: Response) => {
         });
     }
 };
+
+// NOTE: updateApplicationStatus moved to faculty controller (faculty/index.ts)

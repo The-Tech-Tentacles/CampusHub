@@ -95,38 +95,32 @@ export interface Event {
     id: string;
     title: string;
     description?: string;
-    type: 'LECTURE' | 'LAB' | 'EXAM' | 'SEMINAR' | 'WORKSHOP' | 'SPORTS' | 'CULTURAL' | 'GENERIC';
-    date: string;
-    startTime: string;
-    endTime: string;
+
+    // Event Category (REGULAR or ACADEMIC)
+    eventCategory: 'REGULAR' | 'ACADEMIC';
+
+    // Event Type (unified - can be EventType or AcademicEventType)
+    type: string;
+
+    // Date fields (works for both single-day and multi-day events)
+    startDate: string;
+    endDate: string;
+
+    // Regular event specific fields (optional for academic events)
     location?: string;
     instructor?: string;
+
+    // Academic event specific fields (optional for regular events)
+    isHoliday?: boolean;
+    academicYear?: number;
+    semester?: 1 | 2 | null;
+
+    // Common fields
     linkUrl?: string;
     targetYears?: string[];
     targetDepartments?: string[];
     targetRoles?: string[];
     isActive: boolean;
-    createdBy: string;
-    createdByEmail?: string;
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface AcademicEvent {
-    id: string;
-    title: string;
-    description?: string;
-    type: 'SEMESTER_START' | 'SEMESTER_END' | 'EXAM_WEEK' | 'HOLIDAY' | 'REGISTRATION' | 'ORIENTATION' | 'BREAK' | 'OTHER';
-    startDate: string;
-    endDate: string;
-    isHoliday: boolean;
-    linkUrl?: string;
-    targetYears?: string[];
-    targetDepartments?: string[];
-    targetRoles?: string[];
-    academicYear: number;
-    semester: 1 | 2;
-    canEdit: boolean;
     createdBy: string;
     createdByEmail?: string;
     createdAt: string;
@@ -452,14 +446,46 @@ class ApiClient {
      * Get faculty list for mentor selection
      */
     async getFacultyList(): Promise<ApiResponse> {
-        return this.makeRequest('/auth/faculty');
+        return this.makeRequest('/faculty');
     }
 
     /**
      * Get faculty statistics (mentees, pending reviews, etc.)
      */
     async getFacultyStats(): Promise<ApiResponse> {
-        return this.makeRequest('/auth/faculty-stats');
+        return this.makeRequest('/faculty/stats');
+    }
+
+    /**
+     * Get all rooms with optional search
+     */
+    async getRooms(search?: string): Promise<ApiResponse> {
+        const queryParam = search ? `?search=${encodeURIComponent(search)}` : '';
+        return this.makeRequest(`/rooms${queryParam}`);
+    }
+
+    /**
+     * Get list of mentees assigned to faculty
+     */
+    async getFacultyMentees(): Promise<ApiResponse> {
+        return this.makeRequest('/faculty/mentees');
+    }
+
+    /**
+     * Get faculty profile
+     */
+    async getFacultyProfile(): Promise<ApiResponse> {
+        return this.makeRequest('/faculty/profile');
+    }
+
+    /**
+     * Update faculty profile
+     */
+    async updateFacultyProfile(profileData: any): Promise<ApiResponse> {
+        return this.makeRequest('/faculty/profile', {
+            method: 'PUT',
+            body: JSON.stringify(profileData),
+        });
     }
 
     // =================== DEPARTMENT ENDPOINTS ===================
@@ -537,7 +563,7 @@ class ApiClient {
      * Create a new notice
      */
     async createNotice(noticeData: Partial<Notice>): Promise<ApiResponse<Notice>> {
-        return this.makeRequest('/notices', {
+        return this.makeRequest('/faculty/notices', {
             method: 'POST',
             body: JSON.stringify(noticeData),
         });
@@ -547,14 +573,14 @@ class ApiClient {
      * Get notices created by current user
      */
     async getMyNotices(): Promise<ApiResponse<Notice[]>> {
-        return this.makeRequest('/notices/my');
+        return this.makeRequest('/faculty/notices');
     }
 
     /**
      * Update a notice
      */
     async updateNotice(id: string, noticeData: Partial<Notice>): Promise<ApiResponse<Notice>> {
-        return this.makeRequest(`/notices/${id}`, {
+        return this.makeRequest(`/faculty/notices/${id}`, {
             method: 'PUT',
             body: JSON.stringify(noticeData),
         });
@@ -564,7 +590,7 @@ class ApiClient {
      * Delete a notice
      */
     async deleteNotice(id: string): Promise<ApiResponse<void>> {
-        return this.makeRequest(`/notices/${id}`, {
+        return this.makeRequest(`/faculty/notices/${id}`, {
             method: 'DELETE',
         });
     }
@@ -603,7 +629,7 @@ class ApiClient {
      * Create a new event
      */
     async createEvent(eventData: Partial<Event>): Promise<ApiResponse<Event>> {
-        return this.makeRequest('/events', {
+        return this.makeRequest('/faculty/events', {
             method: 'POST',
             body: JSON.stringify(eventData),
         });
@@ -613,14 +639,14 @@ class ApiClient {
      * Get events created by current user
      */
     async getMyEvents(): Promise<ApiResponse<Event[]>> {
-        return this.makeRequest('/events/my');
+        return this.makeRequest('/faculty/events');
     }
 
     /**
      * Update an event
      */
     async updateEvent(id: string, eventData: Partial<Event>): Promise<ApiResponse<Event>> {
-        return this.makeRequest(`/events/${id}`, {
+        return this.makeRequest(`/faculty/events/${id}`, {
             method: 'PUT',
             body: JSON.stringify(eventData),
         });
@@ -630,48 +656,38 @@ class ApiClient {
      * Delete an event
      */
     async deleteEvent(id: string): Promise<ApiResponse<void>> {
-        return this.makeRequest(`/events/${id}`, {
+        return this.makeRequest(`/faculty/events/${id}`, {
             method: 'DELETE',
         });
     }
 
     /**
-     * Get all academic events with optional filters
+     * Get all events with optional filters (supports both REGULAR and ACADEMIC)
      */
     async getAcademicEvents(filters?: {
         year?: number;
         month?: number;
         semester?: 1 | 2;
-        type?: AcademicEvent['type'];
-    }): Promise<ApiResponse<AcademicEvent[]>> {
+        eventCategory?: 'REGULAR' | 'ACADEMIC';
+    }): Promise<ApiResponse<Event[]>> {
         const queryParams = new URLSearchParams();
 
         if (filters?.year !== undefined) queryParams.append('year', filters.year.toString());
         if (filters?.month !== undefined) queryParams.append('month', filters.month.toString());
         if (filters?.semester !== undefined) queryParams.append('semester', filters.semester.toString());
-        if (filters?.type) queryParams.append('type', filters.type);
+        if (filters?.eventCategory) queryParams.append('eventCategory', filters.eventCategory);
 
         const queryString = queryParams.toString();
-        const endpoint = queryString ? `/events/academic?${queryString}` : '/events/academic';
+        const endpoint = queryString ? `/events?${queryString}` : '/events';
 
         return this.makeRequest(endpoint);
     }
 
     /**
-     * Get academic event by ID
+     * Get event by ID
      */
-    async getAcademicEvent(id: string): Promise<ApiResponse<AcademicEvent>> {
-        return this.makeRequest(`/events/academic/${id}`);
-    }
-
-    /**
-     * Create a new academic event
-     */
-    async createAcademicEvent(eventData: Partial<AcademicEvent>): Promise<ApiResponse<AcademicEvent>> {
-        return this.makeRequest('/events/academic', {
-            method: 'POST',
-            body: JSON.stringify(eventData),
-        });
+    async getAcademicEvent(id: string): Promise<ApiResponse<Event>> {
+        return this.makeRequest(`/events/${id}`);
     }
 
     // =================== APPLICATIONS ===================
@@ -703,7 +719,7 @@ class ApiClient {
      * Update application status
      */
     async updateApplicationStatus(id: string, data: UpdateApplicationStatusRequest): Promise<ApiResponse<Application>> {
-        return this.makeRequest(`/applications/${id}/status`, {
+        return this.makeRequest(`/faculty/applications/${id}/review`, {
             method: 'PATCH',
             body: JSON.stringify(data),
         });
@@ -737,7 +753,7 @@ class ApiClient {
      * Create a new form
      */
     async createForm(data: CreateFormRequest): Promise<ApiResponse<Form>> {
-        return this.makeRequest('/forms', {
+        return this.makeRequest('/faculty/forms', {
             method: 'POST',
             body: JSON.stringify(data),
         });
@@ -757,7 +773,7 @@ class ApiClient {
      * Delete a form
      */
     async deleteForm(id: string): Promise<ApiResponse<void>> {
-        return this.makeRequest(`/forms/${id}`, {
+        return this.makeRequest(`/faculty/forms/${id}`, {
             method: 'DELETE',
         });
     }
@@ -766,14 +782,14 @@ class ApiClient {
      * Get forms created by current user
      */
     async getMyForms(): Promise<ApiResponse<Form[]>> {
-        return this.makeRequest('/forms/my');
+        return this.makeRequest('/faculty/forms');
     }
 
     /**
      * Get all submissions for a form
      */
     async getFormSubmissions(id: string): Promise<ApiResponse<FormSubmission[]>> {
-        return this.makeRequest(`/forms/${id}/submissions`);
+        return this.makeRequest(`/faculty/forms/${id}/submissions`);
     }
 
     /**
@@ -848,7 +864,6 @@ export const eventAPI = {
 export const academicEventAPI = {
     getAll: (filters?: Parameters<typeof api.getAcademicEvents>[0]) => api.getAcademicEvents(filters),
     getById: (id: string) => api.getAcademicEvent(id),
-    create: (eventData: Partial<AcademicEvent>) => api.createAcademicEvent(eventData),
 };
 
 export const applicationAPI = {

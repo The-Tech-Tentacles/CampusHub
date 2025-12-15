@@ -42,6 +42,7 @@ import {
   Building,
   ArrowUpCircle,
   Filter,
+  ArrowLeft,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,7 +62,6 @@ export default function FacultyApplications() {
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState<Application[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedApplication, setSelectedApplication] =
     useState<Application | null>(null);
 
@@ -190,9 +190,7 @@ export default function FacultyApplications() {
       app.submittedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
       app.type.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || app.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 
   // Categorize applications
@@ -432,14 +430,26 @@ export default function FacultyApplications() {
   return (
     <div className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <FileText className="h-8 w-8 text-blue-600" />
-          Application Management
-        </h1>
-        <p className="text-muted-foreground">
-          Review and approve applications from your mentees
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+              <FileText className="h-8 w-8 text-blue-600" />
+              Application Management
+            </h1>
+          </div>
+        </div>
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.history.back()}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -455,98 +465,32 @@ export default function FacultyApplications() {
                 className="pl-9"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
-                <SelectItem value="APPROVED">Approved</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="ESCALATED">Escalated</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Pending Review
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-yellow-600">
-              {pendingApplications.length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Approved
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-600">
-              {approvedApplications.length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Rejected
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-red-600">
-              {rejectedApplications.length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Escalated
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-purple-600">
-              {escalatedApplications.length}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Tabs */}
       <Tabs defaultValue="pending" className="space-y-4">
-        <TabsList className="grid w-full max-w-3xl grid-cols-4">
-          <TabsTrigger value="pending">
+        <TabsList className="w-full inline-flex md:grid h-auto overflow-x-auto md:overflow-x-visible overflow-y-hidden justify-start md:justify-around md:grid-cols-4 gap-2 p-1">
+          <TabsTrigger value="pending" className="flex-shrink-0 md:flex-1">
             Pending
             <Badge variant="secondary" className="ml-2">
               {pendingApplications.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="approved">
+          <TabsTrigger value="approved" className="flex-shrink-0 md:flex-1">
             Approved
             <Badge variant="secondary" className="ml-2">
               {approvedApplications.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="rejected">
+          <TabsTrigger value="rejected" className="flex-shrink-0 md:flex-1">
             Rejected
             <Badge variant="secondary" className="ml-2">
               {rejectedApplications.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="escalated">
+          <TabsTrigger value="escalated" className="flex-shrink-0 md:flex-1">
             Escalated
             <Badge variant="secondary" className="ml-2">
               {escalatedApplications.length}

@@ -63,6 +63,14 @@ export interface Profile {
     mentorName?: string; // For display
     mentorEmail?: string; // Mentor email
     mentorPhone?: string; // Mentor phone
+    mentorEmployeeId?: string;
+    mentorDepartment?: string;
+    mentorCabinLocation?: string;
+    mentorOfficeHours?: string;
+    mentorBio?: string;
+    mentorResearchInterests?: string[];
+    mentorQualifications?: string[];
+    mentorExperience?: number;
 
     // Social Links
     socialLinks?: Record<string, string>;
@@ -195,42 +203,37 @@ export interface User {
     avatar?: string;
 }
 
+// Unified Event interface (merged from Event and AcademicEvent)
 export interface Event {
     id: string;
     title: string;
     description?: string;
-    type: EventType;
-    date: string;
-    startTime: string;
-    endTime: string;
+
+    // Event Category (REGULAR or ACADEMIC)
+    eventCategory: 'REGULAR' | 'ACADEMIC';
+
+    // Event Type (unified - can be EventType or AcademicEventType)
+    type: string;
+
+    // Date fields (works for both single-day and multi-day events)
+    startDate: string;
+    endDate: string;
+
+    // Regular event specific fields (optional for academic events)
     location?: string;
     instructor?: string;
+
+    // Academic event specific fields (optional for regular events)
+    isHoliday?: boolean;
+    academicYear?: number;
+    semester?: 1 | 2 | null;
+
+    // Common fields
     linkUrl?: string;
     targetYears?: string[];
     targetDepartments?: string[];
     targetRoles?: string[];
     isActive: boolean;
-    createdBy: string;
-    createdByEmail?: string;
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface AcademicEvent {
-    id: string;
-    title: string;
-    description?: string;
-    type: AcademicEventType;
-    startDate: string;
-    endDate: string;
-    isHoliday: boolean;
-    linkUrl?: string;
-    targetYears?: string[];
-    targetDepartments?: string[];
-    targetRoles?: string[];
-    academicYear: number;
-    semester: 1 | 2;
-    canEdit: boolean;
     createdBy: string;
     createdByEmail?: string;
     createdAt: string;
@@ -337,7 +340,7 @@ class DataService {
     // private forms: Form[] = [];
     private notifications: Notification[] = [...mockNotifications];
     private events: Event[] = [];
-    private academicEvents: AcademicEvent[] = [];
+    private academicEvents: Event[] = [];
 
     // ===== NOTICES ===== (Now using real API)
     async getNotices(filters?: {
@@ -767,7 +770,7 @@ class DataService {
         month?: number;
         semester?: 1 | 2;
         type?: AcademicEventType;
-    }): Promise<AcademicEvent[]> {
+    }): Promise<Event[]> {
         try {
             const response = await academicEventAPI.getAll(filters);
             if (response.success && response.data) {
@@ -780,7 +783,7 @@ class DataService {
         }
     }
 
-    async getAcademicEventById(id: string): Promise<AcademicEvent | null> {
+    async getAcademicEventById(id: string): Promise<Event | null> {
         try {
             const response = await academicEventAPI.getById(id);
             if (response.success && response.data) {
@@ -793,10 +796,10 @@ class DataService {
         }
     }
 
-    async createAcademicEvent(eventData: Omit<AcademicEvent, 'id'>): Promise<AcademicEvent> {
+    async createAcademicEvent(eventData: Omit<Event, 'id'>): Promise<Event> {
         await new Promise(resolve => setTimeout(resolve, 150));
 
-        const newEvent: AcademicEvent = {
+        const newEvent: Event = {
             ...eventData,
             id: `ac_${Date.now()}`
         };
@@ -805,7 +808,7 @@ class DataService {
         return newEvent;
     }
 
-    async updateAcademicEvent(id: string, updates: Partial<AcademicEvent>): Promise<boolean> {
+    async updateAcademicEvent(id: string, updates: Partial<Event>): Promise<boolean> {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         const eventIndex = this.academicEvents.findIndex(e => e.id === id);
@@ -830,7 +833,7 @@ class DataService {
         return false;
     }
 
-    async getFullYearCalendar(year: number): Promise<AcademicEvent[]> {
+    async getFullYearCalendar(year: number): Promise<Event[]> {
         return this.getAcademicEvents({ year });
     }
 
@@ -890,12 +893,22 @@ class DataService {
                 mentorName: profile.mentor?.name,
                 mentorEmail: profile.mentor?.email,
                 mentorPhone: profile.mentor?.phone,
+                mentorEmployeeId: profile.mentor?.employeeId,
+                mentorDepartment: profile.mentor?.department,
+                mentorCabinLocation: profile.mentor?.cabinLocation,
+                mentorOfficeHours: profile.mentor?.officeHours,
+                mentorBio: profile.mentor?.bio,
+                mentorResearchInterests: profile.mentor?.researchInterests || [],
+                mentorQualifications: profile.mentor?.qualifications || [],
+                mentorExperience: profile.mentor?.experienceYears,
 
                 // Social Links
                 socialLinks: profile.socialLinks || {},
 
-                // Skills
+                // Skills and Interests
                 skills: profile.skills || [],
+                hobbies: profile.hobbies || [],
+                achievements: profile.achievements || [],
 
                 createdAt: profile.createdAt,
                 updatedAt: profile.updatedAt,

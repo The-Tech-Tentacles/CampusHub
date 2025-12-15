@@ -22,26 +22,8 @@ CREATE TYPE notification_type AS ENUM (
     'ALERT',
     'UPDATE'
 );
-CREATE TYPE event_type AS ENUM (
-    'LECTURE',
-    'LAB',
-    'EXAM',
-    'SEMINAR',
-    'WORKSHOP',
-    'SPORTS',
-    'CULTURAL',
-    'GENERIC'
-);
-CREATE TYPE academic_event_type AS ENUM (
-    'SEMESTER_START',
-    'SEMESTER_END',
-    'EXAM_WEEK',
-    'HOLIDAY',
-    'REGISTRATION',
-    'ORIENTATION',
-    'BREAK',
-    'OTHER'
-);
+-- Note: Removed event_type and academic_event_type ENUMs - using VARCHAR(50) for flexibility
+-- This allows both regular events and academic events to use the same type field
 CREATE TYPE slot_type AS ENUM ('Lecture', 'Lab', 'Seminar', 'Break', 'Other');
 CREATE TYPE academic_level AS ENUM (
     'UNDERGRADUATE',
@@ -307,18 +289,28 @@ CREATE TABLE IF NOT EXISTS timetable_slots (
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 -- Events table (campus events)
+-- Unified events table (combines regular events and academic events)
 CREATE TABLE IF NOT EXISTS events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(500) NOT NULL,
     description TEXT,
-    type event_type NOT NULL DEFAULT 'GENERIC',
-    date DATE NOT NULL,
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-    location VARCHAR(255) NOT NULL,
+    -- Event category (REGULAR or ACADEMIC)
+    event_category VARCHAR(20) NOT NULL CHECK (event_category IN ('REGULAR', 'ACADEMIC')),
+    -- Event type (unified - supports both regular and academic event types)
+    type VARCHAR(50) NOT NULL,
+    -- Date fields (works for both single-day and multi-day events)
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    -- Regular event fields (optional for academic events)
+    location VARCHAR(255),
     instructor VARCHAR(255),
+    -- Academic event fields (optional for regular events)
+    is_holiday BOOLEAN DEFAULT false,
+    academic_year INTEGER,
+    semester INTEGER CHECK (semester IN (1, 2)),
+    -- Common fields
     link_url TEXT,
-    -- Event link (registration, meeting, etc.)
+    -- Event link (registration, meeting, calendar, etc.)
     -- Targeting options for event visibility
     target_years VARCHAR(20) [],
     -- Array for multiple years (e.g., ["1st", "2nd", "B. Tech"])
@@ -328,31 +320,6 @@ CREATE TABLE IF NOT EXISTS events (
     -- Array of user roles for role-specific events
     created_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
--- Academic events table (semester dates, holidays, etc.)
-CREATE TABLE IF NOT EXISTS academic_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title VARCHAR(500) NOT NULL,
-    description TEXT,
-    type academic_event_type NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    is_holiday BOOLEAN DEFAULT false,
-    link_url TEXT,
-    -- Event link (calendar, details, registration, etc.)
-    -- Targeting options for academic event visibility
-    target_years VARCHAR(20) [],
-    -- Array for multiple years (e.g., ["1st", "2nd", "B. Tech"])
-    target_departments UUID [],
-    -- Array of department IDs for multi-department events
-    target_roles user_role [],
-    -- Array of user roles for role-specific events
-    academic_year INTEGER NOT NULL DEFAULT 2024,
-    semester INTEGER CHECK (semester IN (1, 2)),
-    can_edit BOOLEAN DEFAULT false,
-    created_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -477,17 +444,13 @@ CREATE INDEX IF NOT EXISTS idx_timetable_department_academic_year ON timetable_s
 CREATE INDEX IF NOT EXISTS idx_timetable_academic_year ON timetable_slots(academic_year_id);
 CREATE INDEX IF NOT EXISTS idx_timetable_batch ON timetable_slots(batch);
 CREATE INDEX IF NOT EXISTS idx_timetable_section_batch ON timetable_slots(section, batch);
-CREATE INDEX IF NOT EXISTS idx_events_date ON events(date);
+CREATE INDEX IF NOT EXISTS idx_events_category ON events(event_category);
+CREATE INDEX IF NOT EXISTS idx_events_dates ON events(start_date, end_date);
 CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
+CREATE INDEX IF NOT EXISTS idx_events_created_by ON events(created_by);
 CREATE INDEX IF NOT EXISTS idx_events_target_years ON events USING GIN(target_years);
 CREATE INDEX IF NOT EXISTS idx_events_target_departments ON events USING GIN(target_departments);
 CREATE INDEX IF NOT EXISTS idx_events_target_roles ON events USING GIN(target_roles);
-CREATE INDEX IF NOT EXISTS idx_academic_events_dates ON academic_events(start_date, end_date);
-CREATE INDEX IF NOT EXISTS idx_academic_events_type ON academic_events(type);
-CREATE INDEX IF NOT EXISTS idx_academic_events_year ON academic_events(academic_year, semester);
-CREATE INDEX IF NOT EXISTS idx_academic_events_target_years ON academic_events USING GIN(target_years);
-CREATE INDEX IF NOT EXISTS idx_academic_events_target_departments ON academic_events USING GIN(target_departments);
-CREATE INDEX IF NOT EXISTS idx_academic_events_target_roles ON academic_events USING GIN(target_roles);
 CREATE INDEX IF NOT EXISTS idx_notification_templates_type ON notification_templates(type);
 CREATE INDEX IF NOT EXISTS idx_notification_templates_source ON notification_templates(source_type, source_id);
 CREATE INDEX IF NOT EXISTS idx_notification_templates_created ON notification_templates(created_at DESC);

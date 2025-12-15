@@ -2,11 +2,7 @@ import { Router } from 'express';
 import {
     getForms,
     getFormById,
-    createForm,
-    submitForm,
-    deleteForm,
-    getMyForms,
-    getFormSubmissions
+    submitForm
 } from '../controllers/forms.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -23,32 +19,11 @@ router.use(authenticateToken);
 router.get('/', getForms);
 
 /**
- * @route   GET /api/forms/my
- * @desc    Get forms created by current user
- * @access  Private (Faculty+)
- */
-router.get('/my', getMyForms);
-
-/**
  * @route   GET /api/forms/:id
  * @desc    Get a single form by ID
  * @access  Private
  */
 router.get('/:id', getFormById);
-
-/**
- * @route   GET /api/forms/:id/submissions
- * @desc    Get all submissions for a form
- * @access  Private (Creator/Admin only)
- */
-router.get('/:id/submissions', getFormSubmissions);
-
-/**
- * @route   POST /api/forms
- * @desc    Create a new form (Faculty/HOD/DEAN/ADMIN only)
- * @access  Private (Faculty+)
- */
-router.post('/', createForm);
 
 /**
  * @route   POST /api/forms/:id/submit
@@ -57,11 +32,6 @@ router.post('/', createForm);
  */
 router.post('/:id/submit', submitForm);
 
-/**
- * @route   DELETE /api/forms/:id
- * @desc    Delete a form (Faculty/HOD/DEAN/ADMIN only)
- * @access  Private (Faculty+)
- */
-router.delete('/:id', deleteForm);
+// NOTE: Faculty routes (getMyForms, getFormSubmissions, createForm, deleteForm) moved to /api/faculty/forms
 
 export default router;

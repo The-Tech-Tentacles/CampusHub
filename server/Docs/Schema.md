@@ -332,13 +332,28 @@ CREATE TABLE events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(500) NOT NULL,
     description TEXT,
-    type event_type NOT NULL DEFAULT 'GENERIC',
-    date DATE NOT NULL,
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-    location VARCHAR(255) NOT NULL,
+
+    -- Event Category (REGULAR or ACADEMIC)
+    event_category VARCHAR(20) NOT NULL DEFAULT 'REGULAR' CHECK (event_category IN ('REGULAR', 'ACADEMIC')),
+
+    -- Event Type (unified for both categories)
+    type VARCHAR(50) NOT NULL DEFAULT 'GENERIC',
+
+    -- Date fields (works for both single-day and multi-day events)
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+
+    -- Regular event specific fields (optional for academic events)
+    location VARCHAR(255),
     instructor VARCHAR(255),
-    link_url TEXT, -- Event link (registration, meeting, etc.)
+
+    -- Academic event specific fields (optional for regular events)
+    is_holiday BOOLEAN DEFAULT false,
+    academic_year INTEGER,
+    semester INTEGER CHECK (semester IN (1, 2)),
+
+    -- Common fields
+    link_url TEXT, -- Event link (registration, meeting, calendar, etc.)
 
     -- Targeting options for event visibility
     target_years VARCHAR(20)[], -- Array for multiple years (e.g., ["1st", "2nd", "B. Tech"])
@@ -352,36 +367,11 @@ CREATE TABLE events (
 );
 ```
 
-### 13. Academic Events Table
+**Note**: Event types now support both regular event types (LECTURE, LAB, EXAM, SEMINAR, WORKSHOP, SPORTS, CULTURAL, GENERIC)
+and academic event types (SEMESTER_START, SEMESTER_END, EXAM_WEEK, HOLIDAY, REGISTRATION, ORIENTATION, BREAK, OTHER).
+The `event_category` field determines which type group the event belongs to.
 
-Academic calendar events with targeted visibility
-
-```sql
-CREATE TABLE academic_events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title VARCHAR(500) NOT NULL,
-    description TEXT,
-    type academic_event_type NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    is_holiday BOOLEAN DEFAULT false,
-    link_url TEXT, -- Event link (calendar, details, registration, etc.)
-
-    -- Targeting options for academic event visibility
-    target_years VARCHAR(20)[], -- Array for multiple years (e.g., ["1st", "2nd", "B. Tech"])
-    target_departments UUID[], -- Array of department IDs for multi-department events
-    target_roles user_role[], -- Array of user roles for role-specific events
-
-    academic_year INTEGER NOT NULL DEFAULT 2024,
-    semester INTEGER CHECK (semester IN (1, 2)),
-    can_edit BOOLEAN DEFAULT false,
-    created_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-### 14. Notification Templates Table
+### 13. Notification Templates Table
 
 Scalable notification system - stores notification templates once, referenced by many users. This architecture prevents database bloat and scales efficiently like Instagram/Facebook.
 

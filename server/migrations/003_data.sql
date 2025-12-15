@@ -414,10 +414,15 @@ VALUES (
         NOW() + INTERVAL '20 days'
     );
 END $$;
-INSERT INTO academic_events (
+-- =============================================
+-- EVENTS SAMPLE DATA (Academic and Regular)
+-- =============================================
+-- Academic Events
+INSERT INTO events (
         id,
         title,
         description,
+        event_category,
         type,
         start_date,
         end_date,
@@ -428,16 +433,16 @@ INSERT INTO academic_events (
         target_roles,
         academic_year,
         semester,
-        can_edit,
         created_by,
         created_at,
         updated_at
     )
-VALUES -- Semester start
+VALUES -- Semester 1 Start
     (
         gen_random_uuid(),
         'Semester 1 Begins - Academic Year 2024-25',
         'First day of classes for Fall semester 2024. All students must report to their respective departments.',
+        'ACADEMIC',
         'SEMESTER_START',
         '2024-08-15',
         '2024-08-15',
@@ -448,7 +453,6 @@ VALUES -- Semester start
         ARRAY ['STUDENT', 'FACULTY']::user_role [],
         2024,
         1,
-        true,
         (
             SELECT id
             FROM users
@@ -457,11 +461,12 @@ VALUES -- Semester start
         ), CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     ),
-    -- National Holiday
+    -- Independence Day Holiday
     (
         gen_random_uuid(),
         'Independence Day',
         'National Holiday - Independence Day of India. University will be closed.',
+        'ACADEMIC',
         'HOLIDAY',
         '2024-08-15',
         '2024-08-15',
@@ -472,7 +477,6 @@ VALUES -- Semester start
         NULL,
         2024,
         1,
-        false,
         (
             SELECT id
             FROM users
@@ -481,42 +485,15 @@ VALUES -- Semester start
         ), CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     ),
-    -- Orientation week
-    (
-        gen_random_uuid(),
-        'Orientation Week for New Students',
-        'Welcome and orientation program for first-year students. Includes campus tour, departmental introductions, and student handbook distribution.',
-        'ORIENTATION',
-        '2024-08-16',
-        '2024-08-22',
-        false,
-        'https://campushub.edu/orientation',
-        (
-            SELECT ARRAY_AGG(id)
-            FROM academic_years
-            WHERE code = 'Y1'
-        ),
-        NULL,
-        ARRAY ['STUDENT']::user_role [],
-        2024,
-        1,
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Festival break
+    -- Diwali Break
     (
         gen_random_uuid(),
         'Diwali Break',
-        'Festival holidays for Diwali celebration. Classes will resume on the specified end date.',
+        'Festival holidays for Diwali celebration.',
+        'ACADEMIC',
         'HOLIDAY',
         CURRENT_DATE + INTERVAL '30 days',
-        CURRENT_DATE + INTERVAL '40 days',
+        CURRENT_DATE + INTERVAL '35 days',
         true,
         NULL,
         NULL,
@@ -524,7 +501,6 @@ VALUES -- Semester start
         NULL,
         2024,
         1,
-        true,
         (
             SELECT id
             FROM users
@@ -533,14 +509,15 @@ VALUES -- Semester start
         ), CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     ),
-    -- Mid-semester exams
+    -- Mid-Semester Exams
     (
         gen_random_uuid(),
         'Mid-Semester Examination Week',
-        'Mid-semester examinations for all courses. Exam schedules will be published department-wise on the portal.',
+        'Mid-semester examinations for all courses. Exam schedules will be published department-wise.',
+        'ACADEMIC',
         'EXAM_WEEK',
         CURRENT_DATE + INTERVAL '50 days',
-        CURRENT_DATE + INTERVAL '60 days',
+        CURRENT_DATE + INTERVAL '57 days',
         false,
         'https://campushub.edu/exam-schedule',
         NULL,
@@ -548,7 +525,6 @@ VALUES -- Semester start
         ARRAY ['STUDENT', 'FACULTY']::user_role [],
         2024,
         1,
-        true,
         (
             SELECT id
             FROM users
@@ -557,35 +533,12 @@ VALUES -- Semester start
         ), CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     ),
-    -- Winter break
-    (
-        gen_random_uuid(),
-        'Winter Break',
-        'Winter vacation break. Campus will be closed for instructional activities.',
-        'BREAK',
-        '2024-12-20',
-        '2025-01-05',
-        true,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        2024,
-        1,
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Semester end
+    -- Semester 1 End
     (
         gen_random_uuid(),
         'Semester 1 Ends - Academic Year 2024-25',
         'Last day of classes for Fall semester 2024. Final examinations will begin shortly after.',
+        'ACADEMIC',
         'SEMESTER_END',
         '2025-01-15',
         '2025-01-15',
@@ -596,203 +549,6 @@ VALUES -- Semester start
         ARRAY ['STUDENT', 'FACULTY']::user_role [],
         2024,
         1,
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Semester 2 registration
-    (
-        gen_random_uuid(),
-        'Course Registration for Semester 2',
-        'Online course registration window for Spring semester 2025. Students must register through the student portal.',
-        'REGISTRATION',
-        '2025-01-16',
-        '2025-01-25',
-        false,
-        'https://campushub.edu/registration',
-        NULL,
-        NULL,
-        ARRAY ['STUDENT']::user_role [],
-        2024,
-        2,
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Semester 2 start
-    (
-        gen_random_uuid(),
-        'Semester 2 Begins - Academic Year 2024-25',
-        'First day of classes for Spring semester 2025. All students must attend classes as per their registered timetable.',
-        'SEMESTER_START',
-        '2025-02-01',
-        '2025-02-01',
-        false,
-        'https://campushub.edu/academic-calendar',
-        NULL,
-        NULL,
-        ARRAY ['STUDENT', 'FACULTY']::user_role [],
-        2024,
-        2,
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Republic Day
-    (
-        gen_random_uuid(),
-        'Republic Day',
-        'National Holiday - Republic Day of India. University will be closed.',
-        'HOLIDAY',
-        '2025-01-26',
-        '2025-01-26',
-        true,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        2024,
-        2,
-        false,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Holi break
-    (
-        gen_random_uuid(),
-        'Holi Festival Break',
-        'Festival holidays for Holi celebration.',
-        'HOLIDAY',
-        '2025-03-14',
-        '2025-03-15',
-        true,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        2024,
-        2,
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Mid-sem semester 2
-    (
-        gen_random_uuid(),
-        'Mid-Semester Examination Week - Semester 2',
-        'Mid-semester examinations for Spring semester courses.',
-        'EXAM_WEEK',
-        '2025-04-01',
-        '2025-04-10',
-        false,
-        'https://campushub.edu/exam-schedule',
-        NULL,
-        NULL,
-        ARRAY ['STUDENT', 'FACULTY']::user_role [],
-        2024,
-        2,
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Summer internship registration
-    (
-        gen_random_uuid(),
-        'Summer Internship Registration',
-        'Registration window for summer internships and industrial training programs.',
-        'REGISTRATION',
-        '2025-04-15',
-        '2025-04-30',
-        false,
-        'https://campushub.edu/internships',
-        (
-            SELECT ARRAY_AGG(id)
-            FROM academic_years
-            WHERE code IN ('Y2', 'Y3')
-        ),
-        NULL,
-        ARRAY ['STUDENT']::user_role [],
-        2024,
-        2,
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Semester 2 end
-    (
-        gen_random_uuid(),
-        'Semester 2 Ends - Academic Year 2024-25',
-        'Last day of classes for Spring semester 2025. Final examinations will follow.',
-        'SEMESTER_END',
-        '2025-05-30',
-        '2025-05-30',
-        false,
-        'https://campushub.edu/academic-calendar',
-        NULL,
-        NULL,
-        ARRAY ['STUDENT', 'FACULTY']::user_role [],
-        2024,
-        2,
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Summer break
-    (
-        gen_random_uuid(),
-        'Summer Break',
-        'Summer vacation. Campus will reopen for next academic year on the specified date.',
-        'BREAK',
-        '2025-06-01',
-        '2025-07-31',
-        true,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        2024,
-        2,
-        true,
         (
             SELECT id
             FROM users
@@ -801,14 +557,15 @@ VALUES -- Semester start
         ), CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     );
+-- Regular Events
 INSERT INTO events (
         id,
         title,
         description,
+        event_category,
         type,
-        date,
-        start_time,
-        end_time,
+        start_date,
+        end_date,
         location,
         instructor,
         link_url,
@@ -820,41 +577,39 @@ INSERT INTO events (
         created_at,
         updated_at
     )
-VALUES -- Global lecture event - All students
+VALUES -- ML Lecture
     (
         gen_random_uuid(),
         'Introduction to Machine Learning',
         'Comprehensive introduction to ML algorithms, supervised and unsupervised learning, with hands-on examples.',
+        'REGULAR',
         'LECTURE',
         CURRENT_DATE + INTERVAL '5 days',
-        '10:00:00',
-        '11:30:00',
+        CURRENT_DATE + INTERVAL '5 days',
         'Auditorium - Main Block',
         'Dr. Priya Sharma',
         'https://meet.google.com/abc-defg-hij',
         NULL,
-        -- All years
         NULL,
-        -- All departments
         ARRAY ['STUDENT']::user_role [],
         true,
         (
             SELECT id
             FROM users
-            WHERE role IN ('FACULTY', 'ADMIN')
+            WHERE role = 'FACULTY'
             LIMIT 1
         ), CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     ),
-    -- Department-specific workshop
+    -- Workshop
     (
         gen_random_uuid(),
         'Web Development Bootcamp',
-        'Intensive 3-hour workshop covering React, Node.js, and full-stack development best practices.',
+        'Intensive workshop covering React, Node.js, and full-stack development best practices.',
+        'REGULAR',
         'WORKSHOP',
         CURRENT_DATE + INTERVAL '7 days',
-        '14:00:00',
-        '17:00:00',
+        CURRENT_DATE + INTERVAL '7 days',
         'Computer Lab - Building A',
         'Prof. Rajesh Kumar',
         'https://github.com/campushub/workshop-materials',
@@ -874,67 +629,15 @@ VALUES -- Global lecture event - All students
         ), CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     ),
-    -- Exam for specific years
-    (
-        gen_random_uuid(),
-        'Mid-Semester Examination',
-        'Mid-semester examinations for Data Structures and Algorithms. Students must bring university ID cards.',
-        'EXAM',
-        CURRENT_DATE + INTERVAL '15 days',
-        '09:00:00',
-        '12:00:00',
-        'Examination Halls A, B, C',
-        NULL,
-        NULL,
-        (
-            SELECT ARRAY_AGG(id)
-            FROM academic_years
-            WHERE code IN ('Y2', 'Y3')
-        ),
-        NULL,
-        ARRAY ['STUDENT']::user_role [],
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Guest seminar - open to all
-    (
-        gen_random_uuid(),
-        'Industry Insights: AI in Healthcare',
-        'Guest lecture by industry experts on the applications of artificial intelligence in modern healthcare systems.',
-        'SEMINAR',
-        CURRENT_DATE + INTERVAL '10 days',
-        '15:00:00',
-        '16:30:00',
-        'Seminar Hall - Block B',
-        'Dr. Ananya Verma (Apollo Hospitals)',
-        'https://campushub.edu/seminars/ai-healthcare',
-        NULL,
-        NULL,
-        ARRAY ['STUDENT', 'FACULTY']::user_role [],
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Sports event
+    -- Sports Event
     (
         gen_random_uuid(),
         'Annual Inter-Department Cricket Tournament',
-        'Three-day cricket tournament between all departments. Team registrations close 2 days before the event.',
+        'Three-day cricket tournament between all departments.',
+        'REGULAR',
         'SPORTS',
         CURRENT_DATE + INTERVAL '20 days',
-        '08:00:00',
-        '18:00:00',
+        CURRENT_DATE + INTERVAL '22 days',
         'University Sports Ground',
         NULL,
         'https://campushub.edu/sports/cricket-tournament',
@@ -950,130 +653,21 @@ VALUES -- Global lecture event - All students
         ), CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
     ),
-    -- Cultural event
+    -- Cultural Event
     (
         gen_random_uuid(),
-        'Diwali Celebration & Cultural Night',
-        'Traditional Diwali celebration with cultural performances, food stalls, and fireworks display. Open to all staff and students.',
+        'Tech Fest 2024',
+        'Annual technical festival with coding competitions, hackathons, and tech talks.',
+        'REGULAR',
         'CULTURAL',
         CURRENT_DATE + INTERVAL '25 days',
-        '18:00:00',
-        '22:00:00',
+        CURRENT_DATE + INTERVAL '27 days',
         'Main Campus Grounds',
         NULL,
-        'https://campushub.edu/events/diwali-2024',
+        'https://campushub.edu/events/techfest-2024',
         NULL,
         NULL,
         NULL,
-        -- Open to everyone
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Lab session for specific department
-    (
-        gen_random_uuid(),
-        'Advanced Network Security Lab',
-        'Hands-on lab session covering penetration testing, vulnerability assessment, and security hardening techniques.',
-        'LAB',
-        CURRENT_DATE + INTERVAL '3 days',
-        '11:00:00',
-        '14:00:00',
-        'Security Lab - CS Department',
-        'Prof. Amit Singh',
-        NULL,
-        (
-            SELECT ARRAY_AGG(id)
-            FROM academic_years
-            WHERE code IN ('Y3', 'Y4')
-        ),
-        (
-            SELECT ARRAY_AGG(id)
-            FROM departments
-            WHERE code = 'CSE'
-        ),
-        ARRAY ['STUDENT']::user_role [],
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Generic upcoming event
-    (
-        gen_random_uuid(),
-        'Career Counseling Session',
-        'One-on-one career guidance and placement preparation session. Students can book slots through the portal.',
-        'GENERIC',
-        CURRENT_DATE + INTERVAL '12 days',
-        '10:00:00',
-        '16:00:00',
-        'Career Development Cell - Block C',
-        'Ms. Kavya Reddy',
-        'https://campushub.edu/career-counseling',
-        NULL,
-        NULL,
-        ARRAY ['STUDENT']::user_role [],
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    ),
-    -- Past event (completed)
-    (
-        gen_random_uuid(),
-        'Orientation Day 2024',
-        'Welcome and orientation program for newly admitted students.',
-        'GENERIC',
-        CURRENT_DATE - INTERVAL '30 days',
-        '09:00:00',
-        '17:00:00',
-        'University Auditorium',
-        NULL,
-        NULL,
-        (
-            SELECT ARRAY_AGG(id)
-            FROM academic_years
-            WHERE code = 'Y1'
-        ),
-        NULL,
-        ARRAY ['STUDENT']::user_role [],
-        true,
-        (
-            SELECT id
-            FROM users
-            WHERE role = 'ADMIN'
-            LIMIT 1
-        ), CURRENT_TIMESTAMP - INTERVAL '35 days',
-        CURRENT_TIMESTAMP - INTERVAL '35 days'
-    ),
-    -- Upcoming workshop for faculty
-    (
-        gen_random_uuid(),
-        'Teaching Methodologies Workshop',
-        'Workshop on modern teaching techniques, online assessment tools, and student engagement strategies.',
-        'WORKSHOP',
-        CURRENT_DATE + INTERVAL '18 days',
-        '10:00:00',
-        '13:00:00',
-        'Faculty Development Center',
-        'Dr. Meera Nair',
-        NULL,
-        NULL,
-        NULL,
-        ARRAY ['FACULTY', 'HOD', 'DEAN']::user_role [],
         true,
         (
             SELECT id

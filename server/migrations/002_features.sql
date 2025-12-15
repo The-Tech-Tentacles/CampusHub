@@ -7,14 +7,14 @@ CREATE INDEX IF NOT EXISTS idx_notices_target_roles_gin ON notices USING GIN(tar
 CREATE INDEX IF NOT EXISTS idx_forms_target_years_gin ON forms USING GIN(target_years);
 CREATE INDEX IF NOT EXISTS idx_forms_target_departments_gin ON forms USING GIN(target_departments);
 CREATE INDEX IF NOT EXISTS idx_forms_target_roles_gin ON forms USING GIN(target_roles);
--- GIN indexes for events table
+-- GIN indexes for events table (unified - handles both regular and academic events)
 CREATE INDEX IF NOT EXISTS idx_events_target_years_gin ON events USING GIN(target_years);
 CREATE INDEX IF NOT EXISTS idx_events_target_departments_gin ON events USING GIN(target_departments);
 CREATE INDEX IF NOT EXISTS idx_events_target_roles_gin ON events USING GIN(target_roles);
--- GIN indexes for academic_events table
-CREATE INDEX IF NOT EXISTS idx_academic_events_target_years_gin ON academic_events USING GIN(target_years);
-CREATE INDEX IF NOT EXISTS idx_academic_events_target_departments_gin ON academic_events USING GIN(target_departments);
-CREATE INDEX IF NOT EXISTS idx_academic_events_target_roles_gin ON academic_events USING GIN(target_roles);
+-- Additional indexes for unified events table
+CREATE INDEX IF NOT EXISTS idx_events_category ON events(event_category);
+CREATE INDEX IF NOT EXISTS idx_events_dates ON events(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
 -- GIN indexes for notification_templates table
 CREATE INDEX IF NOT EXISTS idx_notification_templates_target_roles_gin ON notification_templates USING GIN(target_roles);
 CREATE INDEX IF NOT EXISTS idx_notification_templates_target_departments_gin ON notification_templates USING GIN(target_departments);
@@ -38,7 +38,6 @@ DROP TRIGGER IF EXISTS update_subjects_updated_at ON subjects;
 DROP TRIGGER IF EXISTS update_rooms_updated_at ON rooms;
 DROP TRIGGER IF EXISTS update_timetable_slots_updated_at ON timetable_slots;
 DROP TRIGGER IF EXISTS update_events_updated_at ON events;
-DROP TRIGGER IF EXISTS update_academic_events_updated_at ON academic_events;
 DROP TRIGGER IF EXISTS update_notification_templates_updated_at ON notification_templates;
 DROP TRIGGER IF EXISTS update_user_notifications_updated_at ON user_notifications;
 -- Create triggers
@@ -66,8 +65,6 @@ CREATE TRIGGER update_timetable_slots_updated_at BEFORE
 UPDATE ON timetable_slots FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_events_updated_at BEFORE
 UPDATE ON events FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_academic_events_updated_at BEFORE
-UPDATE ON academic_events FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_notification_templates_updated_at BEFORE
 UPDATE ON notification_templates FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_notifications_updated_at BEFORE

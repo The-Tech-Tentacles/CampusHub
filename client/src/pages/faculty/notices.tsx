@@ -51,6 +51,7 @@ import {
   GraduationCap,
   CheckCircle2,
   Clock,
+  ArrowLeft,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -64,6 +65,7 @@ interface NoticeFormData {
   targetDepartments: string[];
   targetRoles: string[];
   expiresAt?: string;
+  attachmentUrl?: string;
 }
 
 export default function FacultyNotices() {
@@ -76,6 +78,9 @@ export default function FacultyNotices() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [academicYears, setAcademicYears] = useState<any[]>([]);
   const [formData, setFormData] = useState<NoticeFormData>({
     title: "",
     content: "",
@@ -85,11 +90,36 @@ export default function FacultyNotices() {
     targetDepartments: [],
     targetRoles: [],
     expiresAt: undefined,
+    attachmentUrl: undefined,
   });
 
   useEffect(() => {
     loadNotices();
+    loadDepartments();
+    loadAcademicYears();
   }, []);
+
+  const loadDepartments = async () => {
+    try {
+      const response = await api.getDepartments();
+      if (response.success && response.data) {
+        setDepartments(response.data as any[]);
+      }
+    } catch (error) {
+      console.error("Error loading departments:", error);
+    }
+  };
+
+  const loadAcademicYears = async () => {
+    try {
+      const response = await api.getAcademicYears();
+      if (response.success && response.data) {
+        setAcademicYears(response.data as any[]);
+      }
+    } catch (error) {
+      console.error("Error loading academic years:", error);
+    }
+  };
 
   const loadNotices = async () => {
     try {
@@ -124,9 +154,27 @@ export default function FacultyNotices() {
       return;
     }
 
+    if (!formData.targetYears || formData.targetYears.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one academic year",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      const response = await api.createNotice(formData);
+
+      // Set default expiration to one week from now if not provided
+      const dataToSubmit = {
+        ...formData,
+        expiresAt:
+          formData.expiresAt ||
+          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+
+      const response = await api.createNotice(dataToSubmit);
 
       if (response.success) {
         toast({
@@ -164,6 +212,7 @@ export default function FacultyNotices() {
       expiresAt: notice.expiresAt
         ? new Date(notice.expiresAt).toISOString().slice(0, 16)
         : undefined,
+      attachmentUrl: notice.attachmentUrl || undefined,
     });
     setIsEditDialogOpen(true);
   };
@@ -178,9 +227,27 @@ export default function FacultyNotices() {
       return;
     }
 
+    if (!formData.targetYears || formData.targetYears.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one academic year",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      const response = await api.updateNotice(editingNotice.id, formData);
+
+      // Set default expiration to one week from now if not provided
+      const dataToSubmit = {
+        ...formData,
+        expiresAt:
+          formData.expiresAt ||
+          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+
+      const response = await api.updateNotice(editingNotice.id, dataToSubmit);
 
       if (response.success) {
         toast({
@@ -243,7 +310,9 @@ export default function FacultyNotices() {
       targetDepartments: [],
       targetRoles: [],
       expiresAt: undefined,
+      attachmentUrl: undefined,
     });
+    setAttachmentFile(null);
   };
 
   const getTypeIcon = (type: NoticeType) => {
@@ -373,25 +442,49 @@ export default function FacultyNotices() {
   return (
     <div className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Bell className="h-8 w-8 text-blue-600" />
-            Notice Management
-          </h1>
-          <p className="text-muted-foreground">
-            Create and manage campus-wide notices and announcements
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+              <Bell className="h-8 w-8 text-blue-600" />
+              Notice Management
+            </h1>
+          </div>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.history.back()}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex justify-center md:justify-end w-full max-w-9xl mx-auto md:w-full">
+        <Button
+          onClick={() => {
+            // Auto-select faculty's department if they're faculty
+            if (user?.role === "FACULTY" && user?.departmentId) {
+              setFormData((prev) => ({
+                ...prev,
+                targetDepartments: [user.departmentId as string],
+              }));
+            }
+            setIsCreateDialogOpen(true);
+          }}
+          className="gap-2 w-full"
+        >
           <Plus className="h-4 w-4" />
           Create Notice
         </Button>
       </div>
-
       {/* Tabs */}
       <Tabs defaultValue="all" className="space-y-4">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="all" className="gap-2">
             <Globe className="h-4 w-4" />
             All Notices
@@ -582,18 +675,109 @@ export default function FacultyNotices() {
                     <SelectItem value="DEPARTMENT">
                       <div className="flex items-center gap-2">
                         <Building className="h-4 w-4" />
-                        Department
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="YEAR">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4" />
-                        Academic Year
+                        Department Specific
                       </div>
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Department Selection (only if DEPARTMENT scope) */}
+            {formData.scope === "DEPARTMENT" && (
+              <div className="space-y-2">
+                <Label>Target Department *</Label>
+                <Select
+                  value={formData.targetDepartments[0] || ""}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      targetDepartments: [value],
+                    })
+                  }
+                  disabled={user?.role === "FACULTY"}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {user?.role === "FACULTY" && (
+                  <p className="text-xs text-muted-foreground">
+                    Your department is automatically selected
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Academic Years Selection */}
+            <div className="space-y-2">
+              <Label>Target Academic Years *</Label>
+              <div className="flex flex-wrap gap-3 p-3 border rounded-md">
+                {academicYears.map((year) => (
+                  <label
+                    key={year.id}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={
+                        formData.targetYears?.includes(year.name) || false
+                      }
+                      onChange={(e) => {
+                        const years = formData.targetYears || [];
+                        if (e.target.checked) {
+                          setFormData({
+                            ...formData,
+                            targetYears: [...years, year.name],
+                          });
+                        } else {
+                          setFormData({
+                            ...formData,
+                            targetYears: years.filter((y) => y !== year.name),
+                          });
+                        }
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm">{year.name}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Select at least one academic year
+              </p>
+            </div>
+
+            {/* Attachment File */}
+            <div className="space-y-2">
+              <Label htmlFor="attachmentFile">Attachment (Optional)</Label>
+              <Input
+                id="attachmentFile"
+                type="file"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setAttachmentFile(file);
+                  }
+                }}
+                className="cursor-pointer"
+              />
+              {attachmentFile && (
+                <p className="text-xs text-green-600 dark:text-green-400">
+                  Selected: {attachmentFile.name} (
+                  {(attachmentFile.size / 1024).toFixed(2)} KB)
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Upload a file to attach to this notice (PDF, DOC, images, etc.)
+              </p>
             </div>
 
             {/* Expiration Date */}
@@ -742,18 +926,114 @@ export default function FacultyNotices() {
                     <SelectItem value="DEPARTMENT">
                       <div className="flex items-center gap-2">
                         <Building className="h-4 w-4" />
-                        Department
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="YEAR">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4" />
-                        Academic Year
+                        Department Specific
                       </div>
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Department Selection (only if DEPARTMENT scope) */}
+            {formData.scope === "DEPARTMENT" && (
+              <div className="space-y-2">
+                <Label>Target Department *</Label>
+                <Select
+                  value={formData.targetDepartments[0] || ""}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      targetDepartments: [value],
+                    })
+                  }
+                  disabled={user?.role === "FACULTY"}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {user?.role === "FACULTY" && (
+                  <p className="text-xs text-muted-foreground">
+                    Your department is automatically selected
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Academic Years Selection */}
+            <div className="space-y-2">
+              <Label>Target Academic Years *</Label>
+              <div className="flex flex-wrap gap-3 p-3 border rounded-md">
+                {academicYears.map((year) => (
+                  <label
+                    key={year.id}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={
+                        formData.targetYears?.includes(year.name) || false
+                      }
+                      onChange={(e) => {
+                        const years = formData.targetYears || [];
+                        if (e.target.checked) {
+                          setFormData({
+                            ...formData,
+                            targetYears: [...years, year.name],
+                          });
+                        } else {
+                          setFormData({
+                            ...formData,
+                            targetYears: years.filter((y) => y !== year.name),
+                          });
+                        }
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm">{year.name}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Select at least one academic year
+              </p>
+            </div>
+
+            {/* Attachment File */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-attachmentFile">Attachment (Optional)</Label>
+              <Input
+                id="edit-attachmentFile"
+                type="file"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setAttachmentFile(file);
+                  }
+                }}
+                className="cursor-pointer"
+              />
+              {attachmentFile && (
+                <p className="text-xs text-green-600 dark:text-green-400">
+                  Selected: {attachmentFile.name} (
+                  {(attachmentFile.size / 1024).toFixed(2)} KB)
+                </p>
+              )}
+              {formData.attachmentUrl && !attachmentFile && (
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  Current attachment available
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Upload a new file to replace the current attachment
+              </p>
             </div>
 
             {/* Expiration Date */}
@@ -767,9 +1047,6 @@ export default function FacultyNotices() {
                   setFormData({ ...formData, expiresAt: e.target.value })
                 }
               />
-              <p className="text-xs text-muted-foreground">
-                Leave empty for notices that don't expire
-              </p>
             </div>
           </div>
 

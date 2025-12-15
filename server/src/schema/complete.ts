@@ -214,16 +214,32 @@ export const timetableSlots = pgTable('timetable_slots', {
 }));
 
 // Events table (campus events)
+// Unified events table (merges regular events and academic events)
 export const events = pgTable('events', {
     id: uuid('id').primaryKey().defaultRandom(),
     title: varchar('title', { length: 500 }).notNull(),
     description: text('description'),
-    type: eventTypeEnum('type').notNull().default('GENERIC'),
-    date: date('date').notNull(),
-    startTime: time('start_time').notNull(),
-    endTime: time('end_time').notNull(),
-    location: varchar('location', { length: 255 }).notNull(),
+
+    // Event Category (REGULAR or ACADEMIC)
+    eventCategory: varchar('event_category', { length: 20 }).notNull().default('REGULAR'),
+
+    // Event Type (unified for both categories - stores string values)
+    type: varchar('type', { length: 50 }).notNull().default('GENERIC'),
+
+    // Date fields (works for both single-day and multi-day events)
+    startDate: date('start_date').notNull(),
+    endDate: date('end_date').notNull(),
+
+    // Regular event specific fields (optional for academic events)
+    location: varchar('location', { length: 255 }),
     instructor: varchar('instructor', { length: 255 }),
+
+    // Academic event specific fields (optional for regular events)
+    isHoliday: boolean('is_holiday').default(false),
+    academicYear: integer('academic_year'),
+    semester: integer('semester'), // CHECK constraint: semester IN (1, 2)
+
+    // Common fields
     linkUrl: text('link_url'),
 
     // Targeting options for event visibility
@@ -236,38 +252,11 @@ export const events = pgTable('events', {
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
-    dateIdx: index('idx_events_date').on(table.date),
+    datesIdx: index('idx_events_dates').on(table.startDate, table.endDate),
     typeIdx: index('idx_events_type').on(table.type),
+    categoryIdx: index('idx_events_category').on(table.eventCategory),
+    yearIdx: index('idx_events_year').on(table.academicYear, table.semester),
     // Note: GIN indexes for arrays will be in raw SQL
-}));
-
-// Academic events table (semester dates, holidays, etc.)
-export const academicEvents = pgTable('academic_events', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    title: varchar('title', { length: 500 }).notNull(),
-    description: text('description'),
-    type: academicEventTypeEnum('type').notNull(),
-    startDate: date('start_date').notNull(),
-    endDate: date('end_date').notNull(),
-    isHoliday: boolean('is_holiday').default(false),
-    linkUrl: text('link_url'),
-
-    // Targeting options for academic event visibility
-    targetYears: varchar('target_years', { length: 20 }).array(),
-    targetDepartments: uuid('target_departments').array(),
-    targetRoles: userRoleEnum('target_roles').array(),
-
-    academicYear: integer('academic_year').notNull().default(2024),
-    semester: integer('semester'), // CHECK constraint: semester IN (1, 2)
-    canEdit: boolean('can_edit').default(false),
-
-    createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => ({
-    datesIdx: index('idx_academic_events_dates').on(table.startDate, table.endDate),
-    typeIdx: index('idx_academic_events_type').on(table.type),
-    yearIdx: index('idx_academic_events_year').on(table.academicYear, table.semester),
 }));
 
 // =================== APPLICATION TABLES ===================

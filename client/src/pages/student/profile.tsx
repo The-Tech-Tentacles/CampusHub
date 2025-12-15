@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/auth-store";
 import { RoleBadge } from "@/components/role-badge";
 import { dataService } from "@/services/dataService";
+import { api } from "@/services/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -57,6 +58,7 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState("academic");
   const [loading, setLoading] = useState(true);
   const [facultyList, setFacultyList] = useState<any[]>([]);
+  const [academicYears, setAcademicYears] = useState<any[]>([]);
   const [newSkill, setNewSkill] = useState("");
   const [newHobby, setNewHobby] = useState("");
   const [newAchievement, setNewAchievement] = useState("");
@@ -64,6 +66,7 @@ export default function Profile() {
     enrollmentNo: "",
     department: "",
     year: "",
+    academicYearId: "",
     section: "",
     cgpa: "",
     semester: "",
@@ -90,6 +93,13 @@ export default function Profile() {
     mentorPhone: "",
     mentorDepartment: "",
     mentorOffice: "",
+    mentorEmployeeId: "",
+    mentorCabinLocation: "",
+    mentorOfficeHours: "",
+    mentorBio: "",
+    mentorResearchInterests: [] as string[],
+    mentorQualifications: [] as string[],
+    mentorExperience: 0,
     socialLinks: {
       github: "",
       linkedin: "",
@@ -124,7 +134,19 @@ export default function Profile() {
     // Load profile data and faculty list from backend
     loadProfileData();
     loadFacultyList();
+    loadAcademicYears();
   }, []);
+
+  const loadAcademicYears = async () => {
+    try {
+      const response = await api.getAcademicYears();
+      if (response.success && response.data) {
+        setAcademicYears(response.data);
+      }
+    } catch (error) {
+      console.error("Error loading academic years:", error);
+    }
+  };
 
   const loadFacultyList = async () => {
     try {
@@ -146,6 +168,7 @@ export default function Profile() {
         enrollmentNo: user?.enrollmentNumber || "",
         department: data.department || "",
         year: data.year || "",
+        academicYearId: (data as any).academicYearId || "",
         section: data.section || "",
         cgpa: data.cgpa?.toString() || "",
         semester: data.semester || "",
@@ -174,8 +197,15 @@ export default function Profile() {
         mentorName: data.mentorName || "",
         mentorEmail: data.mentorEmail || "",
         mentorPhone: data.mentorPhone || "",
-        mentorDepartment: "",
+        mentorDepartment: (data as any).mentorDepartment || "",
         mentorOffice: "",
+        mentorEmployeeId: (data as any).mentorEmployeeId || "",
+        mentorCabinLocation: (data as any).mentorCabinLocation || "",
+        mentorOfficeHours: (data as any).mentorOfficeHours || "",
+        mentorBio: (data as any).mentorBio || "",
+        mentorResearchInterests: (data as any).mentorResearchInterests || [],
+        mentorQualifications: (data as any).mentorQualifications || [],
+        mentorExperience: (data as any).mentorExperience || 0,
 
         socialLinks: {
           github: (data.socialLinks as any)?.github || "",
@@ -267,6 +297,8 @@ export default function Profile() {
       const updateData = {
         name: user?.name,
         phone: formData.phone,
+        enrollmentNumber: formData.enrollmentNo,
+        academicYearId: formData.academicYearId,
         altEmail: formData.altEmail,
         address: formData.address,
         permanentAddress: formData.permanentAddress,
@@ -638,9 +670,19 @@ export default function Profile() {
                     <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
                       Enrollment No.
                     </span>
-                    <span className="font-mono font-semibold text-blue-900 dark:text-blue-100">
-                      {studentProfile.enrollmentNo}
-                    </span>
+                    {isEditing ? (
+                      <Input
+                        value={studentProfile.enrollmentNo}
+                        onChange={(e) =>
+                          handleInputChange("enrollmentNo", e.target.value)
+                        }
+                        className="w-40 h-8 text-right font-mono border-2 border-blue-200 dark:border-blue-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-950"
+                      />
+                    ) : (
+                      <span className="font-mono font-semibold text-blue-900 dark:text-blue-100">
+                        {studentProfile.enrollmentNo}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between p-4 bg-white/70 dark:bg-gray-900/50 rounded-xl shadow-sm">
                     <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
@@ -675,12 +717,36 @@ export default function Profile() {
                     <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
                       Year
                     </span>
-                    <Badge
-                      variant="secondary"
-                      className="bg-blue-200 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200"
-                    >
-                      {studentProfile.year}
-                    </Badge>
+                    {isEditing ? (
+                      <select
+                        value={studentProfile.academicYearId}
+                        onChange={(e) => {
+                          const selectedYear = academicYears.find(
+                            (y) => y.id === e.target.value
+                          );
+                          setFormData((prev) => ({
+                            ...prev,
+                            academicYearId: e.target.value,
+                            year: selectedYear?.name || "",
+                          }));
+                        }}
+                        className="w-40 h-8 text-sm border-2 border-blue-200 dark:border-blue-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-950 px-2"
+                      >
+                        <option value="">Select Year</option>
+                        {academicYears.map((year) => (
+                          <option key={year.id} value={year.id}>
+                            {year.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Badge
+                        variant="secondary"
+                        className="bg-blue-200 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200"
+                      >
+                        {studentProfile.year}
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -1219,7 +1285,7 @@ export default function Profile() {
                           Available Mentors from {studentProfile.department}
                         </Label>
                         <select
-                          className="w-full px-4 py-3 border-2 border-purple-300 dark:border-purple-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-gray-950 focus:border-purple-500 transition-all"
+                          className="w-full px-4 py-3 border-2 border-purple-300 dark:border-purple-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-gray-950 transition-all"
                           value={formData.mentorId}
                           onChange={(e) =>
                             handleInputChange("mentorId", e.target.value)
@@ -1310,6 +1376,7 @@ export default function Profile() {
 
                       {/* Mentor Details Grid */}
                       <div className="grid gap-6 md:grid-cols-2">
+                        {/* Contact Information */}
                         <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-200 dark:border-blue-800">
                           <CardHeader className="pb-3">
                             <CardTitle className="text-lg flex items-center gap-2 text-blue-700 dark:text-blue-300">
@@ -1319,29 +1386,29 @@ export default function Profile() {
                               Contact Information
                             </CardTitle>
                           </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div className="flex items-center gap-3 p-4 bg-white/60 dark:bg-gray-950/40 rounded-xl border-0 shadow-md">
+                          <CardContent className="space-y-3">
+                            <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-gray-950/40 rounded-xl border-0 shadow-md">
                               <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-full">
-                                <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                               </div>
-                              <div>
+                              <div className="flex-1 min-w-0">
                                 <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
                                   Email
                                 </div>
-                                <div className="font-semibold text-blue-900 dark:text-blue-100 break-all">
+                                <div className="font-semibold text-sm text-blue-900 dark:text-blue-100 break-all">
                                   {displayMentor.email || "Not available"}
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-3 p-4 bg-white/60 dark:bg-gray-950/40 rounded-xl border-0 shadow-md">
+                            <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-gray-950/40 rounded-xl border-0 shadow-md">
                               <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-full">
-                                <Phone className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                <Phone className="h-4 w-4 text-green-600 dark:text-green-400" />
                               </div>
-                              <div>
+                              <div className="flex-1 min-w-0">
                                 <div className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide">
                                   Phone
                                 </div>
-                                <div className="font-semibold text-green-900 dark:text-green-100">
+                                <div className="font-semibold text-sm text-green-900 dark:text-green-100">
                                   {displayMentor.phone || "Not available"}
                                 </div>
                               </div>
@@ -1349,39 +1416,41 @@ export default function Profile() {
                           </CardContent>
                         </Card>
 
-                        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-0 shadow-xl rounded-2xl">
+                        {/* Office Location */}
+                        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-orange-200 dark:border-orange-800">
                           <CardHeader className="pb-3">
                             <CardTitle className="text-lg flex items-center gap-2 text-orange-700 dark:text-orange-300">
                               <div className="p-1.5 bg-orange-100 dark:bg-orange-900/50 rounded-xl">
-                                <Building className="h-5 w-5" />
+                                <MapPin className="h-5 w-5" />
                               </div>
-                              Department Info
+                              Office Location
                             </CardTitle>
                           </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div className="flex items-center gap-3 p-4 bg-white/60 dark:bg-gray-950/40 rounded-xl border-0 shadow-md">
-                              <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-full">
-                                <GraduationCap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                          <CardContent className="space-y-3">
+                            <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-gray-950/40 rounded-xl border-0 shadow-md">
+                              <div className="p-2 bg-orange-100 dark:bg-orange-900/50 rounded-full">
+                                <Building className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                               </div>
-                              <div>
-                                <div className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wide">
-                                  Department
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wide">
+                                  Cabin Location
                                 </div>
-                                <div className="font-semibold text-purple-900 dark:text-purple-100">
-                                  {displayMentor.department || "Not available"}
+                                <div className="font-semibold text-sm text-orange-900 dark:text-orange-100">
+                                  {studentProfile.mentorCabinLocation ||
+                                    "Not available"}
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-3 p-4 bg-white/60 dark:bg-gray-950/40 rounded-xl border-0 shadow-md">
-                              <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-full">
-                                <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                            <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-gray-950/40 rounded-xl border-0 shadow-md">
+                              <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-full">
+                                <Clock className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                               </div>
-                              <div>
-                                <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                                  Employee ID
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
+                                  Office Hours
                                 </div>
-                                <div className="font-semibold text-blue-900 dark:text-blue-100">
-                                  {selectedMentor?.employeeId ||
+                                <div className="font-semibold text-sm text-indigo-900 dark:text-indigo-100">
+                                  {studentProfile.mentorOfficeHours ||
                                     "Not available"}
                                 </div>
                               </div>
@@ -1389,6 +1458,154 @@ export default function Profile() {
                           </CardContent>
                         </Card>
                       </div>
+
+                      {/* Department & Academic Info */}
+                      <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border-purple-200 dark:border-purple-800">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                            <div className="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
+                              <GraduationCap className="h-5 w-5" />
+                            </div>
+                            Academic Profile
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid gap-3 md:grid-cols-3">
+                            <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-gray-950/40 rounded-xl border-0 shadow-md">
+                              <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-full">
+                                <Building className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wide">
+                                  Department
+                                </div>
+                                <div className="font-semibold text-sm text-purple-900 dark:text-purple-100">
+                                  {studentProfile.mentorDepartment ||
+                                    "Not available"}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-gray-950/40 rounded-xl border-0 shadow-md">
+                              <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-full">
+                                <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
+                                  Employee ID
+                                </div>
+                                <div className="font-semibold text-sm text-blue-900 dark:text-blue-100">
+                                  {studentProfile.mentorEmployeeId ||
+                                    selectedMentor?.employeeId ||
+                                    "Not available"}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-gray-950/40 rounded-xl border-0 shadow-md">
+                              <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-full">
+                                <Briefcase className="h-4 w-4 text-green-600 dark:text-green-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide">
+                                  Experience
+                                </div>
+                                <div className="font-semibold text-sm text-green-900 dark:text-green-100">
+                                  {studentProfile.mentorExperience
+                                    ? `${studentProfile.mentorExperience} years`
+                                    : "Not available"}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Bio & Research Interests */}
+                      {(studentProfile.mentorBio ||
+                        studentProfile.mentorResearchInterests?.length > 0) && (
+                        <div className="grid gap-6 md:grid-cols-2">
+                          {/* Bio */}
+                          {studentProfile.mentorBio && (
+                            <Card className="bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 border-teal-200 dark:border-teal-800">
+                              <CardHeader className="pb-3">
+                                <CardTitle className="text-lg flex items-center gap-2 text-teal-700 dark:text-teal-300">
+                                  <div className="p-1.5 bg-teal-100 dark:bg-teal-900/50 rounded-xl">
+                                    <User className="h-5 w-5" />
+                                  </div>
+                                  About Mentor
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="p-4 bg-white/60 dark:bg-gray-950/40 rounded-xl border-0 shadow-md">
+                                  <p className="text-sm text-teal-900 dark:text-teal-100 leading-relaxed">
+                                    {studentProfile.mentorBio}
+                                  </p>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Research Interests */}
+                          {studentProfile.mentorResearchInterests?.length >
+                            0 && (
+                            <Card className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 border-rose-200 dark:border-rose-800">
+                              <CardHeader className="pb-3">
+                                <CardTitle className="text-lg flex items-center gap-2 text-rose-700 dark:text-rose-300">
+                                  <div className="p-1.5 bg-rose-100 dark:bg-rose-900/50 rounded-xl">
+                                    <Target className="h-5 w-5" />
+                                  </div>
+                                  Research Interests
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="flex flex-wrap gap-2 p-4 bg-white/60 dark:bg-gray-950/40 rounded-xl border-0 shadow-md">
+                                  {studentProfile.mentorResearchInterests.map(
+                                    (interest, index) => (
+                                      <Badge
+                                        key={index}
+                                        variant="outline"
+                                        className="border-rose-300 bg-rose-100 text-rose-800 dark:border-rose-700 dark:bg-rose-900/30 dark:text-rose-200"
+                                      >
+                                        {interest}
+                                      </Badge>
+                                    )
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Qualifications */}
+                      {studentProfile.mentorQualifications?.length > 0 && (
+                        <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-amber-200 dark:border-amber-800">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-lg flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                              <div className="p-1.5 bg-amber-100 dark:bg-amber-900/50 rounded-xl">
+                                <Award className="h-5 w-5" />
+                              </div>
+                              Qualifications
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid gap-2">
+                              {studentProfile.mentorQualifications.map(
+                                (qual, index) => (
+                                  <div
+                                    key={index}
+                                    className="flex items-center gap-3 p-3 rounded-lg bg-white/60 dark:bg-gray-950/40 border-0 shadow-md"
+                                  >
+                                    <CheckCircle2 className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                                    <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                                      {qual}
+                                    </span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
                     </>
                   )
                 );

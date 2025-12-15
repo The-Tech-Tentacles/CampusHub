@@ -24,7 +24,7 @@ import Forms from "@/pages/student/forms";
 import Schedule from "@/pages/student/schedule";
 import Timetable from "@/pages/student/timetable";
 import Applications from "@/pages/student/applications";
-import Profile from "@/pages/profile";
+import Profile from "@/pages/student/profile";
 
 // Role-based Dashboard Pages
 import FacultyDashboard from "@/pages/faculty";
@@ -32,6 +32,8 @@ import FacultyNotices from "@/pages/faculty/notices";
 import FacultySchedule from "@/pages/faculty/schedule";
 import FacultyForms from "@/pages/faculty/forms";
 import FacultyApplications from "@/pages/faculty/applications";
+import FacultyMentees from "@/pages/faculty/mentees";
+import FacultyProfile from "@/pages/faculty/profile";
 import HODDashboard from "@/pages/hod";
 import DeanDashboard from "@/pages/dean";
 import AdminDashboard from "@/pages/admin";
@@ -176,6 +178,14 @@ function Router() {
           />
         )}
       </Route>
+      <Route path="/faculty/mentees">
+        {() => (
+          <ProtectedRoute
+            component={FacultyMentees}
+            allowedRoles={["FACULTY", "HOD"]}
+          />
+        )}
+      </Route>
       <Route path="/faculty/schedule">
         {() => (
           <ProtectedRoute
@@ -196,6 +206,14 @@ function Router() {
         {() => (
           <ProtectedRoute
             component={FacultyApplications}
+            allowedRoles={["FACULTY", "HOD", "DEAN", "ADMIN"]}
+          />
+        )}
+      </Route>
+      <Route path="/faculty/profile">
+        {() => (
+          <ProtectedRoute
+            component={FacultyProfile}
             allowedRoles={["FACULTY", "HOD", "DEAN", "ADMIN"]}
           />
         )}
@@ -393,7 +411,7 @@ function Router() {
 }
 
 function MainLayout() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { setNotifications } = useNotificationsStore();
   const [location] = useLocation();
 
@@ -490,13 +508,16 @@ function MainLayout() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <NotificationsDropdown />
+              {/* Notifications only for students if student role */}
+              {isAuthenticated && user?.role === "STUDENT" && (
+                <NotificationsDropdown />
+              )}
               {/* Profile dropdown */}
               <ProfileDropdown />
             </div>
           </header>
           <main className="flex-1 overflow-auto">
-            <div className="container max-w-7xl mx-auto">
+            <div className="container max-w-8xl mx-auto">
               <Router />
             </div>
           </main>

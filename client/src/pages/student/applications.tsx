@@ -27,6 +27,7 @@ import {
   UserCheck,
   Crown,
   X,
+  Trash2,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLocation } from "wouter";
@@ -69,6 +70,13 @@ export default function Applications() {
     description: "",
     proofFile: null as File | null,
   });
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] =
+    useState<Application | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [applicationToDelete, setApplicationToDelete] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -181,6 +189,34 @@ export default function Applications() {
     }
   };
 
+  const handleViewApplication = (application: Application) => {
+    setSelectedApplication(application);
+    setIsViewOpen(true);
+  };
+
+  const handleDeleteClick = (applicationId: string) => {
+    setApplicationToDelete(applicationId);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!applicationToDelete) return;
+
+    try {
+      await dataService.deleteApplication(applicationToDelete);
+
+      // Reload applications
+      const applicationsData = await dataService.getApplications();
+      setApplications(applicationsData);
+
+      setIsDeleteConfirmOpen(false);
+      setApplicationToDelete(null);
+    } catch (error) {
+      console.error("Error deleting application:", error);
+      alert("Failed to delete application. Please try again.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex-1 space-y-4 p-4 md:p-6">
@@ -206,7 +242,7 @@ export default function Applications() {
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 w-full"
               data-testid="button-create-application"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -574,6 +610,30 @@ export default function Applications() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 pt-3 border-t border-gray-100">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleViewApplication(application)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </Button>
+                        {application.status === "PENDING" && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleDeleteClick(application.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </Button>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 );
@@ -677,6 +737,19 @@ export default function Applications() {
                               </span>
                             </div>
                           )}
+                      </div>
+
+                      {/* Action Button */}
+                      <div className="pt-3 border-t border-green-200">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => handleViewApplication(application)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -790,6 +863,19 @@ export default function Applications() {
                           </div>
                         )}
                       </div>
+
+                      {/* Action Button */}
+                      <div className="pt-3 border-t border-red-200">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => handleViewApplication(application)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 );
@@ -798,6 +884,224 @@ export default function Applications() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* View Application Dialog */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Application Details</DialogTitle>
+            <DialogDescription>
+              Complete information about this application
+            </DialogDescription>
+          </DialogHeader>
+          {selectedApplication && (
+            <div className="space-y-6 py-4">
+              {/* Application Info */}
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Title
+                  </Label>
+                  <p className="text-base mt-1">{selectedApplication.title}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Type
+                  </Label>
+                  <div className="mt-1">
+                    <Badge variant="outline">{selectedApplication.type}</Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Status
+                  </Label>
+                  <div className="mt-1">
+                    <Badge
+                      variant="outline"
+                      className={
+                        getStatusInfo(selectedApplication.status).color
+                      }
+                    >
+                      {getStatusInfo(selectedApplication.status).text}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Description
+                  </Label>
+                  <p className="text-base mt-1 text-gray-600 dark:text-gray-400 leading-relaxed">
+                    {selectedApplication.description}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Submitted Date
+                  </Label>
+                  <p className="text-base mt-1">
+                    {new Date(
+                      selectedApplication.submittedAt
+                    ).toLocaleDateString("en-US", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
+                {selectedApplication.proofFileUrl && (
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Proof/Supporting Document
+                    </Label>
+                    <div className="mt-1 flex items-center gap-2">
+                      <Paperclip className="h-4 w-4 text-blue-500" />
+                      <a
+                        href={selectedApplication.proofFileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline text-sm"
+                      >
+                        {selectedApplication.proofFileUrl.split("/").pop()}
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Approval Flow */}
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  Approval Flow
+                </h3>
+                <div className="space-y-4">
+                  {/* Mentor Status */}
+                  <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <UserCheck className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                      <h4 className="font-semibold">Mentor Teacher</h4>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        {selectedApplication.mentorStatus === "APPROVED" ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : selectedApplication.mentorStatus === "REJECTED" ? (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        ) : selectedApplication.mentorStatus ===
+                          "UNDER_REVIEW" ? (
+                          <Clock className="h-4 w-4 text-orange-500" />
+                        ) : (
+                          <Clock className="h-4 w-4 text-gray-300" />
+                        )}
+                        <span className="text-sm">
+                          Status:{" "}
+                          {selectedApplication.mentorStatus || "Pending"}
+                        </span>
+                      </div>
+                      {selectedApplication.mentorReviewedAt && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Reviewed on:{" "}
+                          {new Date(
+                            selectedApplication.mentorReviewedAt
+                          ).toLocaleDateString()}
+                        </p>
+                      )}
+                      {selectedApplication.mentorNotes && (
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded border">
+                          <p className="text-sm font-semibold mb-1">Notes:</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+                            "{selectedApplication.mentorNotes}"
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* HOD Status */}
+                  <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Crown className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                      <h4 className="font-semibold">Head of Department</h4>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        {selectedApplication.hodStatus === "APPROVED" ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : selectedApplication.hodStatus === "REJECTED" ? (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        ) : selectedApplication.hodStatus === "UNDER_REVIEW" ? (
+                          <Clock className="h-4 w-4 text-orange-500" />
+                        ) : (
+                          <Clock className="h-4 w-4 text-gray-300" />
+                        )}
+                        <span className="text-sm">
+                          Status: {selectedApplication.hodStatus || "Pending"}
+                        </span>
+                      </div>
+                      {selectedApplication.hodReviewedAt && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Reviewed on:{" "}
+                          {new Date(
+                            selectedApplication.hodReviewedAt
+                          ).toLocaleDateString()}
+                        </p>
+                      )}
+                      {selectedApplication.hodNotes && (
+                        <div className="bg-white dark:bg-gray-800 p-3 rounded border">
+                          <p className="text-sm font-semibold mb-1">Notes:</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+                            "{selectedApplication.hodNotes}"
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+        <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-red-600 dark:text-red-400">
+              Confirm Deletion
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this application? This action
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteConfirmOpen(false);
+                setApplicationToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Application
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

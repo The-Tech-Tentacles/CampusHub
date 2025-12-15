@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useAuthStore } from "@/stores/auth-store";
 import {
   Card,
@@ -29,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/services/api";
+import { api, Department, AcademicYear } from "@/services/api";
 import { Form } from "@/services/dataService";
 import { FormSubmission } from "@/services/api";
 import {
@@ -45,6 +46,7 @@ import {
   X,
   Send,
   CheckCircle2,
+  ArrowLeft,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -80,16 +82,23 @@ interface CreateFormData {
   maxSubmissions?: number;
   allowMultipleSubmissions: boolean;
   requiresApproval: boolean;
+  status?: "ACTIVE" | "INACTIVE" | "DRAFT";
 }
 
 export default function FacultyForms() {
   const { user } = useAuthStore();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [myForms, setMyForms] = useState<Form[]>([]);
   const [allForms, setAllForms] = useState<Form[]>([]);
+  const [activeForms, setActiveForms] = useState<Form[]>([]);
+  const [draftForms, setDraftForms] = useState<Form[]>([]);
+  const [facultyForms, setFacultyForms] = useState<Form[]>([]);
   const [selectedForm, setSelectedForm] = useState<Form | null>(null);
   const [submissions, setSubmissions] = useState<FormSubmission[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
 
   // Dialogs
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -105,6 +114,7 @@ export default function FacultyForms() {
     formData: { fields: [] },
     allowMultipleSubmissions: false,
     requiresApproval: false,
+    status: "DRAFT",
   });
 
   // Temporary field being added
@@ -115,8 +125,22 @@ export default function FacultyForms() {
     required: false,
   });
 
+  // Track which field is being edited
+  const [isEditingFieldIndex, setIsEditingFieldIndex] = useState<number | null>(
+    null
+  );
+
+  // Track whether the Add New Field card is visible
+  const [isAddFieldVisible, setIsAddFieldVisible] = useState<boolean>(false);
+
+  // Track form details dialog
+  const [isViewDetailsDialogOpen, setIsViewDetailsDialogOpen] = useState(false);
+  const [viewingForm, setViewingForm] = useState<Form | null>(null);
+
   useEffect(() => {
     loadForms();
+    loadDepartments();
+    loadAcademicYears();
   }, []);
 
   const loadForms = async () => {
@@ -128,10 +152,34 @@ export default function FacultyForms() {
       ]);
 
       if (myFormsRes.success && myFormsRes.data) {
-        setMyForms(myFormsRes.data as Form[]);
+        const forms = myFormsRes.data as Form[];
+        setMyForms(forms);
+
+        // Filter forms created by this faculty by status
+        setActiveForms(forms.filter((form) => form.status === "ACTIVE"));
+        setDraftForms(forms.filter((form) => form.status === "DRAFT"));
       }
       if (allFormsRes.success && allFormsRes.data) {
-        setAllForms(allFormsRes.data as Form[]);
+        const forms = allFormsRes.data as Form[];
+        setAllForms(forms);
+
+        // Filter forms targeted to faculty role
+        setFacultyForms(
+          forms.filter((form) => {
+            // Must be targeted to faculty role
+            const hasFacultyRole =
+              form.targetRoles && form.targetRoles.includes("FACULTY");
+
+            // Must be for all departments OR match faculty's department
+            const departmentMatch =
+              !form.targetDepartments ||
+              form.targetDepartments.length === 0 ||
+              (user?.departmentId &&
+                form.targetDepartments.includes(user.departmentId));
+
+            return hasFacultyRole && departmentMatch;
+          })
+        );
       }
     } catch (error) {
       console.error("Error loading forms:", error);
@@ -161,6 +209,28 @@ export default function FacultyForms() {
     }
   };
 
+  const loadDepartments = async () => {
+    try {
+      const response = await api.getDepartments();
+      if (response.success && response.data) {
+        setDepartments(response.data as Department[]);
+      }
+    } catch (error) {
+      console.error("Error loading departments:", error);
+    }
+  };
+
+  const loadAcademicYears = async () => {
+    try {
+      const response = await api.getAcademicYears();
+      if (response.success && response.data) {
+        setAcademicYears(response.data as AcademicYear[]);
+      }
+    } catch (error) {
+      console.error("Error loading academic years:", error);
+    }
+  };
+
   const handleViewSubmissions = async (form: Form) => {
     setSelectedForm(form);
     await loadSubmissions(form.id);
@@ -177,12 +247,36 @@ export default function FacultyForms() {
       return;
     }
 
-    setFormData({
-      ...formData,
-      formData: {
-        fields: [...formData.formData.fields, { ...tempField }],
-      },
-    });
+    // Ensure required field is explicitly set
+    const fieldToSave: FormField = {
+      name: tempField.name,
+      label: tempField.label,
+      type: tempField.type,
+      placeholder: tempField.placeholder,
+      required: tempField.required === true, // Explicitly convert to boolean
+      options: tempField.options,
+    };
+
+    if (isEditingFieldIndex !== null) {
+      // Update existing field
+      const newFields = [...formData.formData.fields];
+      newFields[isEditingFieldIndex] = fieldToSave;
+      setFormData({
+        ...formData,
+        formData: { fields: newFields },
+      });
+      setIsEditingFieldIndex(null);
+    } else {
+      // Add new field
+      setFormData({
+        ...formData,
+        formData: {
+          fields: [...formData.formData.fields, fieldToSave],
+        },
+      });
+      // Hide the add field card after adding
+      setIsAddFieldVisible(false);
+    }
 
     setTempField({
       name: "",
@@ -198,6 +292,22 @@ export default function FacultyForms() {
       ...formData,
       formData: { fields: newFields },
     });
+    // If we were editing this field, reset
+    if (isEditingFieldIndex === index) {
+      setIsEditingFieldIndex(null);
+      setTempField({
+        name: "",
+        label: "",
+        type: "text",
+        required: false,
+      });
+    }
+  };
+
+  const handleEditField = (index: number) => {
+    const field = formData.formData.fields[index];
+    setTempField({ ...field });
+    setIsEditingFieldIndex(index);
   };
 
   const handleCreateForm = async () => {
@@ -205,12 +315,16 @@ export default function FacultyForms() {
       !formData.title.trim() ||
       !formData.description.trim() ||
       !formData.deadline ||
-      formData.formData.fields.length === 0
+      formData.formData.fields.length === 0 ||
+      !formData.targetRoles ||
+      formData.targetRoles.length === 0 ||
+      !formData.targetYears ||
+      formData.targetYears.length === 0
     ) {
       toast({
         title: "Validation Error",
         description:
-          "Please fill in all required fields and add at least one form field",
+          "Please fill in all required fields, add at least one form field, and select target roles and years",
         variant: "destructive",
       });
       return;
@@ -281,6 +395,7 @@ export default function FacultyForms() {
       formData: { fields: [] },
       allowMultipleSubmissions: false,
       requiresApproval: false,
+      status: "DRAFT",
     });
   };
 
@@ -371,7 +486,13 @@ export default function FacultyForms() {
                 </Badge>
               )}
             </div>
-            <CardTitle className="text-lg leading-tight">
+            <CardTitle
+              className="text-lg leading-tight cursor-pointer hover:text-primary transition-colors"
+              onClick={() => {
+                setViewingForm(form);
+                setIsViewDetailsDialogOpen(true);
+              }}
+            >
               {form.title}
             </CardTitle>
             <CardDescription className="text-sm line-clamp-2">
@@ -448,75 +569,168 @@ export default function FacultyForms() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto">
+    <div className="p-4 md:p-6 space-y-6 max-w-9xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <FileText className="h-8 w-8 text-blue-600" />
-            Forms Management
-          </h1>
-          <p className="text-muted-foreground">
-            Create forms and view student submissions
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+              <FileText className="h-8 w-8 text-blue-600" />
+              Forms Management
+            </h1>
+          </div>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Create Form
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.history.back()}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </div>
+      </div>
+
+      {/* Create Form Button */}
+      <div className="flex justify-center md:justify-end w-full max-w-9xl mx-auto md:w-full">
+        <Button
+          onClick={() => {
+            setIsCreateDialogOpen(true);
+            // Auto-select faculty's department if they're faculty
+            if (user?.role === "FACULTY" && user?.departmentId) {
+              setFormData((prev) => ({
+                ...prev,
+                targetDepartments: [user.departmentId as string],
+              }));
+            }
+          }}
+          className="w-full"
+        >
+          Create New Form
         </Button>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="my-forms" className="space-y-4">
-        <TabsList className="grid w-full max-w-2xl grid-cols-2">
-          <TabsTrigger value="my-forms" className="gap-2">
+      <Tabs defaultValue="active-forms" className="space-y-4">
+        <TabsList className="w-full inline-flex md:flex h-auto overflow-x-auto md:overflow-x-visible overflow-y-hidden justify-start md:justify-around gap-2 p-1">
+          <TabsTrigger
+            value="active-forms"
+            className="gap-2 flex-shrink-0 md:flex-1"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Active
+            <Badge variant="secondary">{activeForms.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger
+            value="draft-forms"
+            className="gap-2 flex-shrink-0 md:flex-1"
+          >
             <FileText className="h-4 w-4" />
-            My Forms
-            <Badge variant="secondary">{myForms.length}</Badge>
+            Draft
+            <Badge variant="secondary">{draftForms.length}</Badge>
           </TabsTrigger>
-          <TabsTrigger value="all-forms" className="gap-2">
+          <TabsTrigger
+            value="faculty-forms"
+            className="gap-2 flex-shrink-0 md:flex-1"
+          >
             <Users className="h-4 w-4" />
-            All Forms
-            <Badge variant="secondary">{allForms.length}</Badge>
+            Faculty Forms
+            <Badge variant="secondary">{facultyForms.length}</Badge>
           </TabsTrigger>
+          {user?.role === "HOD" && (
+            <TabsTrigger
+              value="all-forms"
+              className="gap-2 flex-shrink-0 md:flex-1"
+            >
+              <FileText className="h-4 w-4" />
+              All Forms
+              <Badge variant="secondary">{allForms.length}</Badge>
+            </TabsTrigger>
+          )}
         </TabsList>
 
-        <TabsContent value="my-forms" className="space-y-4">
-          {myForms.length === 0 ? (
+        <TabsContent value="active-forms" className="space-y-4">
+          {activeForms.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium">No forms created yet</p>
+                <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-lg font-medium">No active forms</p>
                 <p className="text-sm text-muted-foreground">
-                  Create your first form to get started
+                  Forms with ACTIVE status will appear here
                 </p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {myForms.map((form) => (
+              {activeForms.map((form) => (
                 <FormCard key={form.id} form={form} showActions />
               ))}
             </div>
           )}
         </TabsContent>
 
-        <TabsContent value="all-forms" className="space-y-4">
-          {allForms.length === 0 ? (
+        <TabsContent value="draft-forms" className="space-y-4">
+          {draftForms.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium">No forms available</p>
+                <p className="text-lg font-medium">No draft forms</p>
+                <p className="text-sm text-muted-foreground">
+                  Forms with DRAFT status will appear here
+                </p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {allForms.map((form) => (
+              {draftForms.map((form) => (
+                <FormCard key={form.id} form={form} showActions />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="faculty-forms" className="space-y-4">
+          {facultyForms.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-lg font-medium">
+                  No faculty forms available
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Forms targeted to FACULTY role will appear here
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {facultyForms.map((form) => (
                 <FormCard key={form.id} form={form} />
               ))}
             </div>
           )}
         </TabsContent>
+
+        {user?.role === "HOD" && (
+          <TabsContent value="all-forms" className="space-y-4">
+            {allForms.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-lg font-medium">No forms available</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {allForms.map((form) => (
+                  <FormCard key={form.id} form={form} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Create Form Dialog */}
@@ -582,36 +796,216 @@ export default function FacultyForms() {
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.allowMultipleSubmissions}
-                  onChange={(e) =>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Form Status *</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value: any) =>
                     setFormData({
                       ...formData,
-                      allowMultipleSubmissions: e.target.checked,
+                      status: value as "ACTIVE" | "INACTIVE" | "DRAFT",
                     })
                   }
-                  className="h-4 w-4"
-                />
-                <span className="text-sm">Allow multiple submissions</span>
-              </label>
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DRAFT">Draft</SelectItem>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="INACTIVE">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Draft forms are hidden from users until activated
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Form Options</Label>
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.allowMultipleSubmissions}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          allowMultipleSubmissions: e.target.checked,
+                        })
+                      }
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm">Allow multiple submissions</span>
+                  </label>
 
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.requiresApproval}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      requiresApproval: e.target.checked,
-                    })
-                  }
-                  className="h-4 w-4"
-                />
-                <span className="text-sm">Requires approval</span>
-              </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.requiresApproval}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          requiresApproval: e.target.checked,
+                        })
+                      }
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm">Requires approval</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Target Settings */}
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold mb-4">Target Audience</h3>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Target Roles *</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {(() => {
+                      // Filter roles based on current user's role
+                      let availableRoles: string[] = [];
+                      if (user?.role === "FACULTY") {
+                        availableRoles = ["STUDENT", "FACULTY"];
+                      } else if (user?.role === "HOD") {
+                        availableRoles = ["STUDENT", "FACULTY", "HOD"];
+                      } else {
+                        availableRoles = ["STUDENT", "FACULTY", "HOD"];
+                      }
+                      return availableRoles.map((role) => (
+                        <label
+                          key={role}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={
+                              formData.targetRoles?.includes(role) || false
+                            }
+                            onChange={(e) => {
+                              const roles = formData.targetRoles || [];
+                              if (e.target.checked) {
+                                setFormData({
+                                  ...formData,
+                                  targetRoles: [...roles, role],
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  targetRoles: roles.filter((r) => r !== role),
+                                });
+                              }
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <span className="text-sm">{role}</span>
+                        </label>
+                      ));
+                    })()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Select which user roles can access this form
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Target Years *</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {academicYears.map((year) => (
+                      <label
+                        key={year.id}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={
+                            formData.targetYears?.includes(year.name) || false
+                          }
+                          onChange={(e) => {
+                            const years = formData.targetYears || [];
+                            if (e.target.checked) {
+                              setFormData({
+                                ...formData,
+                                targetYears: [...years, year.name],
+                              });
+                            } else {
+                              setFormData({
+                                ...formData,
+                                targetYears: years.filter(
+                                  (y) => y !== year.name
+                                ),
+                              });
+                            }
+                          }}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm">{year.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Select at least one year
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Target Departments (Optional)</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {(() => {
+                      // Filter departments based on user role
+                      let availableDepartments = departments;
+                      if (user?.role === "FACULTY" && user?.departmentId) {
+                        // Faculty can only see their own department
+                        availableDepartments = departments.filter(
+                          (dept) => dept.id === user.departmentId
+                        );
+                      }
+                      // HOD can see all departments
+                      return availableDepartments.map((dept) => (
+                        <label
+                          key={dept.id}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={
+                              formData.targetDepartments?.includes(dept.id) ||
+                              false
+                            }
+                            onChange={(e) => {
+                              const depts = formData.targetDepartments || [];
+                              if (e.target.checked) {
+                                setFormData({
+                                  ...formData,
+                                  targetDepartments: [...depts, dept.id],
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  targetDepartments: depts.filter(
+                                    (d) => d !== dept.id
+                                  ),
+                                });
+                              }
+                            }}
+                            disabled={user?.role === "FACULTY"}
+                            className="h-4 w-4"
+                          />
+                          <span className="text-sm">{dept.name}</span>
+                        </label>
+                      ));
+                    })()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {user?.role === "FACULTY"
+                      ? "Your department is automatically selected"
+                      : "Leave empty to target all departments"}
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Form Fields Builder */}
@@ -622,139 +1016,303 @@ export default function FacultyForms() {
               {formData.formData.fields.length > 0 && (
                 <div className="space-y-2 mb-4">
                   {formData.formData.fields.map((field, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 p-3 bg-muted rounded-md"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium">{field.label}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {field.type} • {field.name}
-                          {field.required && " • Required"}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveField(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Card key={index}>
+                      {isEditingFieldIndex === index ? (
+                        // Expanded edit mode
+                        <CardContent className="pt-6 space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Field Name (identifier)</Label>
+                              <Input
+                                value={tempField.name}
+                                onChange={(e) =>
+                                  setTempField({
+                                    ...tempField,
+                                    name: e.target.value,
+                                  })
+                                }
+                                placeholder="e.g., studentName"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Field Label (display)</Label>
+                              <Input
+                                value={tempField.label}
+                                onChange={(e) =>
+                                  setTempField({
+                                    ...tempField,
+                                    label: e.target.value,
+                                  })
+                                }
+                                placeholder="e.g., Student Name"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Field Type</Label>
+                              <Select
+                                value={tempField.type}
+                                onValueChange={(value: any) =>
+                                  setTempField({ ...tempField, type: value })
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="text">Text</SelectItem>
+                                  <SelectItem value="number">Number</SelectItem>
+                                  <SelectItem value="date">Date</SelectItem>
+                                  <SelectItem value="select">
+                                    Dropdown
+                                  </SelectItem>
+                                  <SelectItem value="checkbox">
+                                    Checkbox
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Placeholder (optional)</Label>
+                              <Input
+                                value={tempField.placeholder || ""}
+                                onChange={(e) =>
+                                  setTempField({
+                                    ...tempField,
+                                    placeholder: e.target.value,
+                                  })
+                                }
+                                placeholder="Enter placeholder text"
+                              />
+                            </div>
+                          </div>
+                          {(tempField.type === "select" ||
+                            tempField.type === "checkbox") && (
+                            <div className="space-y-2">
+                              <Label>Options (comma-separated)</Label>
+                              <Input
+                                value={tempField.options?.join(", ") || ""}
+                                onChange={(e) =>
+                                  setTempField({
+                                    ...tempField,
+                                    options: e.target.value
+                                      .split(",")
+                                      .map((s) => s.trim()),
+                                  })
+                                }
+                                placeholder="e.g., Option 1, Option 2, Option 3"
+                              />
+                            </div>
+                          )}
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={tempField.required}
+                              onChange={(e) =>
+                                setTempField({
+                                  ...tempField,
+                                  required: e.target.checked,
+                                })
+                              }
+                              className="h-4 w-4"
+                            />
+                            <span className="text-sm">Required field</span>
+                          </label>
+                          <div className="flex gap-2">
+                            <Button onClick={handleAddField} className="flex-1">
+                              <Edit className="h-4 w-4 mr-2" />
+                              Update Field
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setIsEditingFieldIndex(null);
+                                setTempField({
+                                  name: "",
+                                  label: "",
+                                  type: "text",
+                                  required: false,
+                                });
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </CardContent>
+                      ) : (
+                        // Collapsed view
+                        <CardContent className="flex items-center gap-2 p-3">
+                          <div className="flex-1">
+                            <div className="font-medium">{field.label}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {field.type} • {field.name}
+                              {field.required && " • Required"}
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditField(index)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRemoveField(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
                   ))}
                 </div>
               )}
 
               {/* Add New Field */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Add New Field</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Field Name (identifier)</Label>
-                      <Input
-                        value={tempField.name}
-                        onChange={(e) =>
-                          setTempField({ ...tempField, name: e.target.value })
-                        }
-                        placeholder="e.g., studentName"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Field Label (display)</Label>
-                      <Input
-                        value={tempField.label}
-                        onChange={(e) =>
-                          setTempField({ ...tempField, label: e.target.value })
-                        }
-                        placeholder="e.g., Student Name"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Field Type</Label>
-                      <Select
-                        value={tempField.type}
-                        onValueChange={(value: any) =>
-                          setTempField({ ...tempField, type: value })
-                        }
+              {!isAddFieldVisible ? (
+                <Button
+                  variant="outline"
+                  onClick={() => setIsAddFieldVisible(true)}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Field
+                </Button>
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">Add New Field</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setIsAddFieldVisible(false);
+                          setTempField({
+                            name: "",
+                            label: "",
+                            type: "text",
+                            required: false,
+                          });
+                        }}
                       >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="text">Text</SelectItem>
-                          <SelectItem value="textarea">Text Area</SelectItem>
-                          <SelectItem value="email">Email</SelectItem>
-                          <SelectItem value="number">Number</SelectItem>
-                          <SelectItem value="date">Date</SelectItem>
-                          <SelectItem value="select">Dropdown</SelectItem>
-                          <SelectItem value="checkbox">Checkbox</SelectItem>
-                          <SelectItem value="radio">Radio Buttons</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Field Name (identifier)</Label>
+                        <Input
+                          value={tempField.name}
+                          onChange={(e) =>
+                            setTempField({ ...tempField, name: e.target.value })
+                          }
+                          placeholder="e.g., studentName"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Field Label (display)</Label>
+                        <Input
+                          value={tempField.label}
+                          onChange={(e) =>
+                            setTempField({
+                              ...tempField,
+                              label: e.target.value,
+                            })
+                          }
+                          placeholder="e.g., Student Name"
+                        />
+                      </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Placeholder (optional)</Label>
-                      <Input
-                        value={tempField.placeholder || ""}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Field Type</Label>
+                        <Select
+                          value={tempField.type}
+                          onValueChange={(value: any) =>
+                            setTempField({ ...tempField, type: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="text">Text</SelectItem>
+                            <SelectItem value="textarea">Text Area</SelectItem>
+                            <SelectItem value="email">Email</SelectItem>
+                            <SelectItem value="number">Number</SelectItem>
+                            <SelectItem value="date">Date</SelectItem>
+                            <SelectItem value="select">Dropdown</SelectItem>
+                            <SelectItem value="checkbox">Checkbox</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Placeholder (optional)</Label>
+                        <Input
+                          value={tempField.placeholder || ""}
+                          onChange={(e) =>
+                            setTempField({
+                              ...tempField,
+                              placeholder: e.target.value,
+                            })
+                          }
+                          placeholder="Enter placeholder text"
+                        />
+                      </div>
+                    </div>
+
+                    {(tempField.type === "select" ||
+                      tempField.type === "checkbox") && (
+                      <div className="space-y-2">
+                        <Label>Options (comma-separated)</Label>
+                        <Input
+                          value={tempField.options?.join(", ") || ""}
+                          onChange={(e) =>
+                            setTempField({
+                              ...tempField,
+                              options: e.target.value
+                                .split(",")
+                                .map((s) => s.trim()),
+                            })
+                          }
+                          placeholder="e.g., Option 1, Option 2, Option 3"
+                        />
+                      </div>
+                    )}
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={tempField.required}
                         onChange={(e) =>
                           setTempField({
                             ...tempField,
-                            placeholder: e.target.value,
+                            required: e.target.checked,
                           })
                         }
-                        placeholder="Enter placeholder text"
+                        className="h-4 w-4"
                       />
-                    </div>
-                  </div>
+                      <span className="text-sm">Required field</span>
+                    </label>
 
-                  {(tempField.type === "select" ||
-                    tempField.type === "radio") && (
-                    <div className="space-y-2">
-                      <Label>Options (comma-separated)</Label>
-                      <Input
-                        value={tempField.options?.join(", ") || ""}
-                        onChange={(e) =>
-                          setTempField({
-                            ...tempField,
-                            options: e.target.value
-                              .split(",")
-                              .map((s) => s.trim()),
-                          })
-                        }
-                        placeholder="e.g., Option 1, Option 2, Option 3"
-                      />
-                    </div>
-                  )}
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={tempField.required}
-                      onChange={(e) =>
-                        setTempField({
-                          ...tempField,
-                          required: e.target.checked,
-                        })
-                      }
-                      className="h-4 w-4"
-                    />
-                    <span className="text-sm">Required field</span>
-                  </label>
-
-                  <Button onClick={handleAddField} className="w-full">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Field
-                  </Button>
-                </CardContent>
-              </Card>
+                    <Button onClick={handleAddField} className="w-full">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Field
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
 
@@ -864,6 +1422,267 @@ export default function FacultyForms() {
             <Button
               variant="outline"
               onClick={() => setIsViewSubmissionsDialogOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Form Details Dialog */}
+      <Dialog
+        open={isViewDetailsDialogOpen}
+        onOpenChange={setIsViewDetailsDialogOpen}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">{viewingForm?.title}</DialogTitle>
+            <DialogDescription className="text-base mt-2">
+              {viewingForm?.description}
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingForm && (
+            <div className="space-y-6 py-4">
+              {/* Form Info */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div className="space-y-1">
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Status
+                  </div>
+                  <Badge
+                    variant={
+                      viewingForm.status === "ACTIVE" ? "default" : "secondary"
+                    }
+                  >
+                    {viewingForm.status}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Deadline
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      {format(
+                        new Date(viewingForm.deadline),
+                        "MMM dd, yyyy HH:mm"
+                      )}
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Created
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      {format(new Date(viewingForm.createdAt), "MMM dd, yyyy")}
+                    </span>
+                  </div>
+                </div>
+                {viewingForm.createdBy && (
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Created By
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{viewingForm.createdBy}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Form Fields */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Form Fields</h3>
+                  <Badge variant="outline">
+                    {viewingForm.formData?.fields?.length || 0} fields
+                  </Badge>
+                </div>
+
+                {viewingForm.formData?.fields &&
+                viewingForm.formData.fields.length > 0 ? (
+                  <div className="space-y-3">
+                    {viewingForm.formData.fields.map(
+                      (field: FormField, index: number) => (
+                        <Card
+                          key={index}
+                          className="overflow-hidden border-l-4 border-l-primary"
+                        >
+                          <CardContent className="p-4">
+                            <div className="space-y-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 space-y-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h4 className="font-semibold text-base">
+                                      {field.label}
+                                    </h4>
+                                    {field.required && (
+                                      <Badge
+                                        variant="destructive"
+                                        className="text-xs px-1.5 py-0"
+                                      >
+                                        Required
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground font-mono">
+                                    {field.name}
+                                  </p>
+                                </div>
+                                <Badge
+                                  variant="secondary"
+                                  className="capitalize"
+                                >
+                                  {field.type}
+                                </Badge>
+                              </div>
+
+                              {field.placeholder && (
+                                <div className="pt-2 border-t">
+                                  <span className="text-xs text-muted-foreground">
+                                    Placeholder:{" "}
+                                  </span>
+                                  <span className="text-sm italic">
+                                    {field.placeholder}
+                                  </span>
+                                </div>
+                              )}
+
+                              {field.options && field.options.length > 0 && (
+                                <div className="pt-2 border-t">
+                                  <span className="text-xs text-muted-foreground mb-2 block">
+                                    Options:
+                                  </span>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {field.options.map((option, idx) => (
+                                      <Badge
+                                        key={idx}
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
+                                        {option}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No fields defined for this form
+                  </div>
+                )}
+              </div>
+
+              {/* Target Information */}
+              {(viewingForm.targetRoles ||
+                viewingForm.targetYears ||
+                viewingForm.targetDepartments) && (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold">Target Audience</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {viewingForm.targetRoles &&
+                      viewingForm.targetRoles.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium text-muted-foreground">
+                            Roles
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {viewingForm.targetRoles.map((role, idx) => (
+                              <Badge
+                                key={idx}
+                                variant="outline"
+                                className="capitalize"
+                              >
+                                {role.toLowerCase()}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    {viewingForm.targetYears &&
+                      viewingForm.targetYears.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium text-muted-foreground">
+                            Academic Years
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {viewingForm.targetYears.map((year, idx) => (
+                              <Badge key={idx} variant="outline">
+                                {year}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    {viewingForm.targetDepartments &&
+                      viewingForm.targetDepartments.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium text-muted-foreground">
+                            Departments
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {viewingForm.targetDepartments.map((dept, idx) => (
+                              <Badge key={idx} variant="outline">
+                                {departments.find((d) => d.id === dept)?.name ||
+                                  dept}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                  </div>
+                </div>
+              )}
+
+              {/* Additional Settings */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Settings</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                    {viewingForm.allowMultipleSubmissions ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className="text-sm">Allow Multiple Submissions</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                    {viewingForm.requiresApproval ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className="text-sm">Requires Approval</span>
+                  </div>
+                  {viewingForm.maxSubmissions && (
+                    <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        Max Submissions: {viewingForm.maxSubmissions}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsViewDetailsDialogOpen(false)}
             >
               Close
             </Button>

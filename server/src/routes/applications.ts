@@ -3,7 +3,6 @@ import {
     getApplications,
     getApplicationById,
     createApplication,
-    updateApplicationStatus,
     deleteApplication
 } from '../controllers/applications.js';
 import { authenticateToken } from '../middleware/auth.js';
@@ -32,17 +31,12 @@ router.get('/:id', authenticateToken, getApplicationById);
 router.post('/', authenticateToken, createApplication);
 
 /**
- * @route   PATCH /api/applications/:id/status
- * @desc    Update application status (Faculty/HOD/DEAN)
- * @access  Private (requires authentication, reviewer role)
- */
-router.patch('/:id/status', authenticateToken, updateApplicationStatus);
-
-/**
  * @route   DELETE /api/applications/:id
  * @desc    Delete/Cancel application
  * @access  Private (requires authentication)
  */
 router.delete('/:id', authenticateToken, deleteApplication);
+
+// NOTE: Faculty route (updateApplicationStatus) moved to /api/faculty/applications/:id/review
 
 export default router;

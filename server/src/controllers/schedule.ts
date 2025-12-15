@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { getDatabase } from '../config/database.js';
-import { events, academicEvents, users } from '../schema/complete.js';
+import { events, users } from '../schema/complete.js';
 import { and, eq, gte, lte, inArray, or, SQL } from 'drizzle-orm';
 
 /**
@@ -25,21 +25,22 @@ export const getEvents = async (req: Request, res: Response) => {
         // Base conditions - only active events
         const conditions: SQL[] = [eq(events.isActive, true)];
 
-        // Filter by month and year if provided
+        // Filter by month and year if provided (events that overlap with this month)
         if (month !== undefined && year !== undefined) {
             const monthNum = parseInt(month as string);
             const yearNum = parseInt(year as string);
 
             if (!isNaN(monthNum) && !isNaN(yearNum)) {
-                const startDate = new Date(yearNum, monthNum, 1);
-                const endDate = new Date(yearNum, monthNum + 1, 0);
+                const monthStart = new Date(yearNum, monthNum, 1);
+                const monthEnd = new Date(yearNum, monthNum + 1, 0);
 
-                const startDateStr = startDate.toISOString().split('T')[0] as string;
-                const endDateStr = endDate.toISOString().split('T')[0] as string;
+                const monthStartStr = monthStart.toISOString().split('T')[0] as string;
+                const monthEndStr = monthEnd.toISOString().split('T')[0] as string;
 
+                // Events that start before month ends AND end after month starts
                 const dateCondition = and(
-                    gte(events.date, startDateStr),
-                    lte(events.date, endDateStr)
+                    lte(events.startDate, monthEndStr),
+                    gte(events.endDate, monthStartStr)
                 );
                 if (dateCondition) {
                     conditions.push(dateCondition);
@@ -238,14 +239,14 @@ export const getAcademicEvents = async (req: Request, res: Response) => {
         const { year, month, semester, type } = req.query;
         const user = req.user;
 
-        // Base conditions
-        const conditions: SQL[] = [];
+        // Base conditions - filter by eventCategory = 'ACADEMIC'
+        const conditions: SQL[] = [eq(events.eventCategory, 'ACADEMIC')];
 
         // Filter by academic year if provided
         if (year) {
             const yearNum = parseInt(year as string);
             if (!isNaN(yearNum)) {
-                conditions.push(eq(academicEvents.academicYear, yearNum));
+                conditions.push(eq(events.academicYear, yearNum));
             }
         }
 
@@ -263,8 +264,8 @@ export const getAcademicEvents = async (req: Request, res: Response) => {
 
                 // Events that start before month ends AND end after month starts
                 const dateCondition = and(
-                    lte(academicEvents.startDate, monthEndStr),
-                    gte(academicEvents.endDate, monthStartStr)
+                    lte(events.startDate, monthEndStr),
+                    gte(events.endDate, monthStartStr)
                 );
                 if (dateCondition) {
                     conditions.push(dateCondition);
@@ -276,56 +277,56 @@ export const getAcademicEvents = async (req: Request, res: Response) => {
         if (semester) {
             const semesterNum = parseInt(semester as string);
             if (semesterNum === 1 || semesterNum === 2) {
-                conditions.push(eq(academicEvents.semester, semesterNum as 1 | 2));
+                conditions.push(eq(events.semester, semesterNum as 1 | 2));
             }
         }
 
         // Filter by type if provided
         if (type) {
-            conditions.push(eq(academicEvents.type, type as any));
+            conditions.push(eq(events.type, type as any));
         }
 
         // Fetch all academic events matching base conditions
         let allAcademicEvents = await db
             .select({
-                academicEvent: academicEvents,
+                event: events,
                 createdByUser: {
                     id: users.id,
                     name: users.name,
                     email: users.email
                 }
             })
-            .from(academicEvents)
-            .leftJoin(users, eq(academicEvents.createdBy, users.id))
+            .from(events)
+            .leftJoin(users, eq(events.createdBy, users.id))
             .where(conditions.length > 0 ? and(...conditions) : undefined);
 
         // Filter academic events based on targeting
-        const filteredAcademicEvents = allAcademicEvents.filter(({ academicEvent }: any) => {
+        const filteredAcademicEvents = allAcademicEvents.filter(({ event }: any) => {
             // If no targeting specified, event is visible to everyone
             const hasTargeting =
-                academicEvent.targetDepartments?.length ||
-                academicEvent.targetYears?.length ||
-                academicEvent.targetRoles?.length;
+                event.targetDepartments?.length ||
+                event.targetYears?.length ||
+                event.targetRoles?.length;
 
             if (!hasTargeting) {
                 return true;
             }
 
             // Check role targeting
-            if (academicEvent.targetRoles?.length && !academicEvent.targetRoles.includes(user!.role)) {
+            if (event.targetRoles?.length && !event.targetRoles.includes(user!.role)) {
                 return false;
             }
 
             // Check department targeting
-            if (academicEvent.targetDepartments?.length && user!.departmentId) {
-                if (!academicEvent.targetDepartments.includes(user!.departmentId)) {
+            if (event.targetDepartments?.length && user!.departmentId) {
+                if (!event.targetDepartments.includes(user!.departmentId)) {
                     return false;
                 }
             }
 
             // Check academic year targeting
-            if (academicEvent.targetYears?.length && user!.academicYearId) {
-                if (!academicEvent.targetYears.includes(user!.academicYearId)) {
+            if (event.targetYears?.length && user!.academicYearId) {
+                if (!event.targetYears.includes(user!.academicYearId)) {
                     return false;
                 }
             }
@@ -334,8 +335,8 @@ export const getAcademicEvents = async (req: Request, res: Response) => {
         });
 
         // Format the response
-        const formattedAcademicEvents = filteredAcademicEvents.map(({ academicEvent, createdByUser }: any) => ({
-            ...academicEvent,
+        const formattedAcademicEvents = filteredAcademicEvents.map(({ event, createdByUser }: any) => ({
+            ...event,
             createdByEmail: createdByUser?.email
         }));
 
@@ -378,19 +379,19 @@ export const getAcademicEventById = async (req: Request, res: Response) => {
 
         const user = req.user;
 
-        // Fetch the academic event
+        // Fetch the academic event (now from unified events table)
         const result = await db
             .select({
-                academicEvent: academicEvents,
+                event: events,
                 createdByUser: {
                     id: users.id,
                     name: users.name,
                     email: users.email
                 }
             })
-            .from(academicEvents)
-            .leftJoin(users, eq(academicEvents.createdBy, users.id))
-            .where(eq(academicEvents.id, id))
+            .from(events)
+            .leftJoin(users, eq(events.createdBy, users.id))
+            .where(and(eq(events.id, id), eq(events.eventCategory, 'ACADEMIC')))
             .limit(1);
 
         if (!result.length || !result[0]) {
@@ -400,19 +401,19 @@ export const getAcademicEventById = async (req: Request, res: Response) => {
             });
         }
 
-        const { academicEvent, createdByUser } = result[0] as any;
+        const { event, createdByUser } = result[0] as any;
 
         // Check if user has access to this academic event
         const hasTargeting =
-            academicEvent.targetDepartments?.length ||
-            academicEvent.targetYears?.length ||
-            academicEvent.targetRoles?.length;
+            event.targetDepartments?.length ||
+            event.targetYears?.length ||
+            event.targetRoles?.length;
 
         if (hasTargeting) {
             const hasAccess =
-                (!academicEvent.targetRoles?.length || academicEvent.targetRoles.includes(user!.role)) &&
-                (!academicEvent.targetDepartments?.length || !user!.departmentId || academicEvent.targetDepartments.includes(user!.departmentId)) &&
-                (!academicEvent.targetYears?.length || !user!.academicYearId || academicEvent.targetYears.includes(user!.academicYearId));
+                (!event.targetRoles?.length || event.targetRoles.includes(user!.role)) &&
+                (!event.targetDepartments?.length || !user!.departmentId || event.targetDepartments.includes(user!.departmentId)) &&
+                (!event.targetYears?.length || !user!.academicYearId || event.targetYears.includes(user!.academicYearId));
 
             if (!hasAccess) {
                 return res.status(403).json({
@@ -425,7 +426,7 @@ export const getAcademicEventById = async (req: Request, res: Response) => {
         return res.status(200).json({
             success: true,
             data: {
-                ...academicEvent,
+                ...event,
                 createdByEmail: createdByUser?.email
             },
             message: 'Academic event retrieved successfully'

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { getDatabase } from '../config/database.js';
-import { users, userRoleEnum, departments, academicYears, profiles, applications, events } from '../schema/complete.js';
+import { users, userRoleEnum, departments, academicYears, profiles, applications, events, rooms } from '../schema/complete.js';
 import { eq, and, or } from 'drizzle-orm';
 import { hashPassword, comparePassword, validatePassword } from '../services/password.js';
 import { generateTokenPair, verifyToken } from '../services/jwt.js';
@@ -527,6 +527,8 @@ export async function getProfile(req: Request, res: Response): Promise<void> {
                 // Social and Skills
                 socialLinks: profiles.socialLinks,
                 skills: profiles.skills,
+                hobbies: profiles.hobbies,
+                achievements: profiles.achievements,
             })
             .from(users)
             .leftJoin(profiles, eq(profiles.userId, users.id))
@@ -552,7 +554,13 @@ export async function getProfile(req: Request, res: Response): Promise<void> {
                     email: users.email,
                     phone: users.phone,
                     departmentId: users.departmentId,
+                    employeeId: users.employeeId,
                     officeHours: profiles.officeHours,
+                    cabinLocationId: profiles.cabinLocationId,
+                    bio: profiles.bio,
+                    researchInterests: profiles.researchInterests,
+                    qualifications: profiles.qualifications,
+                    experienceYears: profiles.experienceYears,
                 })
                 .from(users)
                 .leftJoin(profiles, eq(profiles.userId, users.id))
@@ -560,12 +568,48 @@ export async function getProfile(req: Request, res: Response): Promise<void> {
                 .limit(1);
 
             if (mentor) {
+                // Fetch cabin location if exists
+                let cabinLocation = null;
+                if (mentor.cabinLocationId) {
+                    const [room] = await db
+                        .select({
+                            name: rooms.name,
+                            code: rooms.code,
+                            building: rooms.building,
+                            floorNumber: rooms.floorNumber,
+                        })
+                        .from(rooms)
+                        .where(eq(rooms.id, mentor.cabinLocationId))
+                        .limit(1);
+                    if (room) {
+                        cabinLocation = `${room.name} (${room.code}) - ${room.building}, Floor ${room.floorNumber}`;
+                    }
+                }
+
+                // Fetch mentor department name
+                let mentorDepartmentName = null;
+                if (mentor.departmentId) {
+                    const [dept] = await db
+                        .select({ name: departments.name })
+                        .from(departments)
+                        .where(eq(departments.id, mentor.departmentId))
+                        .limit(1);
+                    mentorDepartmentName = dept?.name || null;
+                }
+
                 mentorInfo = {
                     id: mentor.id,
                     name: mentor.name,
                     email: mentor.email,
                     phone: mentor.phone,
+                    employeeId: mentor.employeeId,
+                    department: mentorDepartmentName,
                     officeHours: mentor.officeHours,
+                    cabinLocation: cabinLocation,
+                    bio: mentor.bio,
+                    researchInterests: mentor.researchInterests || [],
+                    qualifications: mentor.qualifications || [],
+                    experienceYears: mentor.experienceYears,
                 };
             }
         }
@@ -636,6 +680,12 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
         }
         if (profileData.avatarUrl !== undefined) {
             userUpdateData.avatarUrl = profileData.avatarUrl?.trim() || null;
+        }
+        if (profileData.enrollmentNumber !== undefined) {
+            userUpdateData.enrollmentNumber = profileData.enrollmentNumber?.trim() || null;
+        }
+        if (profileData.academicYearId !== undefined) {
+            userUpdateData.academicYearId = profileData.academicYearId?.trim() || null;
         }
 
         // Update users table if there are changes

@@ -36,6 +36,8 @@ export default function FacultyDashboard() {
     mentees: 0,
     pendingReviews: 0,
     activeForms: 0,
+    notices: 0,
+    upcomingEvents: 0,
   });
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -55,6 +57,8 @@ export default function FacultyDashboard() {
           ...prev,
           mentees: (response.data as any).mentees || 0,
           pendingReviews: (response.data as any).pendingReviews || 0,
+          notices: (response.data as any).notices || 0,
+          upcomingEvents: (response.data as any).upcomingEvents || 0,
         }));
       }
     } catch (error) {
@@ -93,6 +97,7 @@ export default function FacultyDashboard() {
       description: "Currently accepting responses",
       icon: FileText,
       color: "purple",
+      link: "/faculty/forms",
       trend: statsLoading
         ? "Loading..."
         : facultyStats.activeForms === 0
@@ -105,6 +110,7 @@ export default function FacultyDashboard() {
       description: "Students assigned",
       icon: Award,
       color: "green",
+      link: "/faculty/mentees",
       trend: statsLoading
         ? "Loading..."
         : facultyStats.mentees === 0
@@ -117,51 +123,42 @@ export default function FacultyDashboard() {
       description: "Forms & Applications",
       icon: CheckCircle2,
       color: "orange",
+      link: "/faculty/applications",
       trend: statsLoading
         ? "Loading..."
         : facultyStats.pendingReviews === 0
         ? "No pending items"
         : `${facultyStats.pendingReviews} awaiting`,
     },
+    {
+      title: "Notices",
+      value: statsLoading ? "..." : facultyStats.notices.toString(),
+      description: "Posted by you",
+      icon: Bell,
+      color: "blue",
+      link: "/faculty/notices",
+      trend: statsLoading
+        ? "Loading..."
+        : facultyStats.notices === 0
+        ? "No notices yet"
+        : "Active communications",
+    },
+    {
+      title: "Calendar/Events",
+      value: statsLoading ? "..." : facultyStats.upcomingEvents.toString(),
+      description: "Scheduled by you",
+      icon: Calendar,
+      color: "indigo",
+      link: "/faculty/schedule",
+      trend: statsLoading
+        ? "Loading..."
+        : facultyStats.upcomingEvents === 0
+        ? "No events scheduled"
+        : "Events planned",
+    },
   ];
 
   const stats = commonStats;
-
-  // Quick action cards
-  const quickActions = [
-    {
-      title: "View Notices",
-      description: "Check latest announcements",
-      icon: Bell,
-      route: "/faculty/notices",
-      color: "bg-blue-50 dark:bg-blue-900/20",
-      iconColor: "text-blue-600 dark:text-blue-400",
-    },
-    {
-      title: "Review Forms",
-      description: "Pending student submissions",
-      icon: FileText,
-      route: "/faculty/forms",
-      color: "bg-purple-50 dark:bg-purple-900/20",
-      iconColor: "text-purple-600 dark:text-purple-400",
-    },
-    {
-      title: "Class Schedule",
-      description: "View your teaching schedule",
-      icon: Calendar,
-      route: "/faculty/schedule",
-      color: "bg-green-50 dark:bg-green-900/20",
-      iconColor: "text-green-600 dark:text-green-400",
-    },
-    {
-      title: "Applications",
-      description: "Student leave requests",
-      icon: CheckCircle2,
-      route: "/faculty/applications",
-      color: "bg-orange-50 dark:bg-orange-900/20",
-      iconColor: "text-orange-600 dark:text-orange-400",
-    },
-  ];
 
   // Upcoming classes/events
   const upcomingClasses = [
@@ -236,6 +233,8 @@ export default function FacultyDashboard() {
         "bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800",
       green:
         "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800",
+      indigo:
+        "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800",
     };
     return colors[color as keyof typeof colors] || colors.blue;
   };
@@ -251,21 +250,27 @@ export default function FacultyDashboard() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto">
+    <div className="space-y-6 p-4 md:p-6 max-w-9xl mx-auto">
       {/* Welcome Header */}
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold">Welcome back, {user.name}! 👋</h1>
+          <h1 className="text-3xl font-bold">Welcome, {user.name}! 👋</h1>
         </div>
-        <p className="text-muted-foreground">
-          Manage your courses, students, and teaching schedule
-        </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {stats.map((stat) => (
-          <Card key={stat.title} className="border-0 shadow-md">
+          <Card
+            key={stat.title}
+            onClick={() => stat.link && setLocation(stat.link)}
+            role={stat.link ? "button" : undefined}
+            className={`border-0 shadow-md ${
+              stat.link
+                ? "cursor-pointer hover:shadow-lg transition-shadow"
+                : ""
+            }`}
+          >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -290,39 +295,6 @@ export default function FacultyDashboard() {
             </CardContent>
           </Card>
         ))}
-      </div>
-
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {quickActions.map((action) => (
-            <Card
-              key={action.title}
-              className="cursor-pointer hover:shadow-lg transition-all border-0 shadow-md"
-              onClick={() => setLocation(action.route)}
-            >
-              <CardContent className="p-6">
-                <div className="space-y-3">
-                  <div
-                    className={`w-12 h-12 rounded-lg ${action.color} flex items-center justify-center`}
-                  >
-                    <action.icon className={`h-6 w-6 ${action.iconColor}`} />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">{action.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {action.description}
-                    </p>
-                  </div>
-                  <div className="flex items-center text-sm font-medium text-primary">
-                    Open <ArrowRight className="h-4 w-4 ml-1" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       </div>
 
       {/* Main Content Grid */}

@@ -35,6 +35,17 @@ export function ProfileDropdown() {
     setTheme(theme === "light" ? "dark" : "light");
   };
 
+  const getProfileUrl = () => {
+    if (
+      user?.role === "FACULTY" ||
+      user?.role === "HOD" ||
+      user?.role === "DEAN"
+    ) {
+      return "/faculty/profile";
+    }
+    return "/profile";
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -102,7 +113,7 @@ export function ProfileDropdown() {
         <div className="p-2 space-y-1">
           <DropdownMenuItem
             className="group rounded-lg px-3 py-3 cursor-pointer hover:bg-primary/5 focus:bg-blue-100 dark:focus:bg-blue-950/30 transition-all duration-200"
-            onClick={() => setLocation("/profile")}
+            onClick={() => setLocation(getProfileUrl())}
           >
             <div className="flex items-center gap-3 w-full">
               <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
