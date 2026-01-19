@@ -225,7 +225,7 @@ This project is licensed under a Custom License - see the [LICENSE](LICENSE) fil
 <div align="center">
   <strong>Built with 🚀 by
   <br />
-  Team: Rakesh Yadav
+  Team: [Rakesh_Yadav & Team](https://github.com/Rakeshyadav-19)
   <br />
   The Tech Tentacles</strong>
 </div>
